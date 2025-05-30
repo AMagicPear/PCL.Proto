@@ -1,0 +1,1 @@
+import{_ as n,c as t,a as r,b as a,r as s,F as c,o as l}from"./index-Dv31YZT0.js";const _={};function m(u,e){const o=s("RouterView");return l(),t(c,null,[e[0]||(e[0]=r("nav",null," 下载页面 ",-1)),a(o)],64)}const f=n(_,[["render",m]]);export{f as default};
