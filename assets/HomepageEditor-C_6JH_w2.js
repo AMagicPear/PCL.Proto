@@ -1,1 +1,0 @@
-import{d as o,r,o as t,e as n,f as a}from"./index-d6QKKlFe.js";const f="/PCL.Proto/pcl-home-zx/index.html",d=o({__name:"HomepageEditor",setup(m){const e=r();return t(()=>{e.value.src=f}),(s,c)=>(a(),n("iframe",{ref_key:"iframeRef",ref:e,width:"100%",height:"100%",frameborder:"0",style:{border:"none"}},null,512))}});export{d as default};
