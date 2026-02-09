@@ -36,6 +36,7 @@ const useTerracottaStore = defineStore('terracotta', {
     difficulty: undefined as string | undefined,
     type: undefined as ExceptionType | undefined,
     avaliable_mc_ports: [] as number[],
+    // 下面是仅前端使用的字段
     username: 'PCL.Proto Anonymous',
     autoUpdateEnabled: false,
     autoUpdateInterval: 2000,

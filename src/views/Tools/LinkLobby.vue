@@ -5,7 +5,9 @@ import PCard from '@/components/widget/PCard.vue'
 import PInput from '@/components/widget/PInput.vue'
 import sideTip from '@/composables/sideTip'
 import useTerracottaStore from '@/stores/terracotta'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import type { MCPingResult } from '@/types/mcPing'
+import { invoke } from '@tauri-apps/api/core'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -41,7 +43,7 @@ const createLobby = async (port?: string) => {
     })
   } catch (err) {
     console.error('[terracotta] create lobby failed', err)
-    sideTip.show('创建大厅失败', 'warn')
+    sideTip.show('创建大厅失败：' + err, 'warn')
     return
   }
 }
@@ -66,13 +68,31 @@ onUnmounted(() => {
 
 const selectedPort = ref<string>()
 const customPort = ref<string>()
+const portDescriptions = ref<Record<number, string>>({})
+
+watch(
+  () => terracotta.avaliable_mc_ports,
+  (ports) => {
+    if (ports.length > 0 && !selectedPort.value) {
+      selectedPort.value = ports[0]!.toString()
+    }
+    ports.forEach(async (port) => {
+      try {
+        const [result, latency] = await invoke<[MCPingResult, number]>('server_query', {
+          addrStr: `localhost:${port}`,
+        })
+        portDescriptions.value[port] = `${port}: ${result.description} (${latency}ms)`
+      } catch (err) {
+        portDescriptions.value[port] = `${port}: 连接失败`
+      }
+    })
+  },
+)
 
 const dropdownOptions = computed(() => {
-  if (!selectedPort.value && terracotta.avaliable_mc_ports.length > 0)
-    selectedPort.value = terracotta.avaliable_mc_ports[0]!.toString()
   return terracotta.avaliable_mc_ports.map((port) => ({
     key: port.toString(),
-    text: port.toString(),
+    text: portDescriptions.value[port] || port.toString(),
   }))
 })
 </script>
