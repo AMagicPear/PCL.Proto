@@ -32,7 +32,7 @@ pub fn set_terracotta_host_starting(mc_port: u16, player: String) -> Result<Stri
 #[tauri::command]
 pub fn set_terracotta_guesting(room_code: String, player: String) -> Result<(), String> {
     let room = Room::from(&room_code).ok_or("invalid room code")?;
-    if controller::set_guesting(room, Some(player)) {
+    if controller::set_guesting(room, Some(player), vec![]) {
         Ok(())
     } else {
         Err("set guesting failed".to_string())
