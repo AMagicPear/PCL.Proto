@@ -24,13 +24,13 @@
     "@tauri-apps/plugin-dialog": "~2.6.0",
     "@tauri-apps/plugin-log": "^2.8.0",
     "@tauri-apps/plugin-os": "~2.3.2",
-    "@vueuse/router": "^14.2.0",
+    "@vueuse/router": "^14.2.1",
     "esbuild": "^0.27.3",
     "marked": "^17.0.1",
-    "motion-v": "^1.10.2",
+    "motion-v": "^1.10.3",
     "pinia": "^3.0.4",
     "skinview3d": "^3.4.1",
-    "vue": "^3.5.27",
+    "vue": "^3.5.28",
     "vue-i18n": "^11.2.8",
     "vue-router": "^5.0.2",
     "xml-js": "^1.6.11"
@@ -38,7 +38,7 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.0",
     "@tsconfig/node22": "^22.0.5",
-    "@types/node": "^25.2.1",
+    "@types/node": "^25.2.3",
     "@vitejs/plugin-vue": "^6.0.4",
     "@vitejs/plugin-vue-jsx": "^5.1.4",
     "@vue/language-plugin-pug": "^3.2.4",
@@ -65,5 +65,5 @@
       "esbuild"
     ]
   },
-  "packageManager": "pnpm@10.28.2+sha512.41872f037ad22f7348e3b1debbaf7e867cfd448f2726d9cf74c08f19507c31d2c8e7a11525b983febc2df640b5438dee6023ebb1f84ed43cc2d654d2bc326264"
+  "packageManager": "pnpm@10.29.2+sha512.bef43fa759d91fd2da4b319a5a0d13ef7a45bb985a3d7342058470f9d2051a3ba8674e629672654686ef9443ad13a82da2beb9eeb3e0221c87b8154fff9d74b8"
 }
