@@ -16,6 +16,14 @@ const cardDropAnimate = (element: ElementOrSelector | RendererNode) => {
 
 export default cardDropAnimate
 
+export function getPageAnimationElements(root: Element): Element[] {
+  return Array.from(root.children).flatMap((child) =>
+    child.matches('.mycard-container') || !child.querySelector('.mycard-container')
+      ? [child]
+      : getPageAnimationElements(child),
+  )
+}
+
 // directives that should be register at main.ts and can be used anywhere
 export const vAnimateDrop: Directive<HTMLElement, void> = {
   mounted(el) {
@@ -23,11 +31,11 @@ export const vAnimateDrop: Directive<HTMLElement, void> = {
   },
 }
 
-export const vAnimateChildrenDrop: Directive<HTMLElement, void> = {
-  mounted(el) {
-    cardDropAnimate(Array.from(el.children))
+export const vAnimateChildrenDrop: Directive<HTMLElement, boolean | undefined> = {
+  mounted(el, { value }) {
+    if (value !== false) cardDropAnimate(getPageAnimationElements(el))
   },
-  // updated(el) {
-  //   cardDropAnimate(Array.from(el.children))
-  // }
+  updated(el, { value, oldValue }) {
+    if (value && value !== oldValue) cardDropAnimate(getPageAnimationElements(el))
+  },
 }

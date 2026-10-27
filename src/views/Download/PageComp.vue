@@ -140,9 +140,7 @@ watch(() => props.projectType, reset, { immediate: true })
         ><PSvgIcon name="lucide/rotate-ccw"
       /></PButton>
     </div>
-    <PCard v-if="loading" hide-title
-      ><PLoading :card="false" :loading-text="text('Download.Version.LoadingList')"
-    /></PCard>
+    <PLoading v-if="loading" :loading-text="text('Download.Version.LoadingList')" />
     <PHint v-else-if="error" severity="error"
       >{{ error }} <PButton inline :click="search">{{ '重试' }}</PButton></PHint
     >

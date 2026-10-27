@@ -77,9 +77,7 @@ watch(
 <template>
   <section class="pcl-page select-page">
     <PSearchBox v-model="query" :placeholder="text('Select.Instance.Search.Hint')" />
-    <PCard v-if="loading" hide-title class="empty-card"
-      ><PLoading :card="false" :loading-text="text('Select.Instance.Loading')"
-    /></PCard>
+    <PLoading v-if="loading" :loading-text="text('Select.Instance.Loading')" />
     <PHint v-else-if="error" severity="error"
       >{{ error }}<PButton inline :click="load">重试</PButton></PHint
     >

@@ -3,15 +3,14 @@ import { defineComponent, onMounted, onUnmounted, useTemplateRef, ref, provide }
 import useSideNavState from '@/stores/windowState'
 import SideGroup from '@/components/widget/SideGroup.vue'
 import { type INavItemGroup } from '@/types/naviOptions'
-import PLoading from '@/components/widget/PLoading.vue'
-import cardDropAnimate from '@/util/cardDropAnimate'
+import cardDropAnimate, { getPageAnimationElements } from '@/util/cardDropAnimate'
 import { useModal } from '@/composables/useModal'
+import { useRoute } from 'vue-router'
 
 export default defineComponent({
   name: 'SideNavLayout',
   components: {
     SideGroup,
-    PLoading,
   },
   props: {
     sideNavGroups: {
@@ -19,7 +18,9 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(_props, context) {
+  setup() {
+    const route = useRoute()
+    let animatedPath = ''
     const revision = ref(0)
     provide('navAction', (kind: string) => {
       if (kind === 'refresh') revision.value++
@@ -30,7 +31,6 @@ export default defineComponent({
           plainText: true,
         })
     })
-    context.expose({ animateSubview })
     let observer: ResizeObserver | null = null
     const asideRef = useTemplateRef<HTMLElement>('asideRef')
     const subviewRef = useTemplateRef<HTMLElement>('subviewRef')
@@ -44,9 +44,13 @@ export default defineComponent({
 
     function animateSubview() {
       if (subviewRef.value) {
-        const allChildren = Array.from(subviewRef.value.children)
-        cardDropAnimate(allChildren)
+        cardDropAnimate(getPageAnimationElements(subviewRef.value))
+        animatedPath = route.path
       }
+    }
+
+    function animateOnNavigation() {
+      if (animatedPath !== route.path) animateSubview()
     }
 
     onMounted(async () => {
@@ -70,6 +74,7 @@ export default defineComponent({
       asideRef,
       subviewRef,
       animateSubview,
+      animateOnNavigation,
       revision,
     }
   },
@@ -83,8 +88,9 @@ export default defineComponent({
             v-for="group in sideNavGroups"
             v-bind="group"
         )
-    article.subview(ref="subviewRef" v-card-drop-children-animate)
-        RouterView(:key="revision" @animate-subview="animateSubview" @vue:mounted="animateSubview")
+    article.subview(ref="subviewRef")
+        RouterView(:key="revision" v-slot="{ Component }")
+            component(:is="Component" @vue:mounted="animateSubview" @vue:updated="animateOnNavigation")
 </template>
 
 <style scoped>

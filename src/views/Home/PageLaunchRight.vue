@@ -6,7 +6,7 @@ defineProps<{ launchLog?: string }>()
 const { text } = usePageSettings('PageLaunchRight')
 </script>
 <template>
-  <section class="pcl-page launch-cards">
+  <section class="pcl-page launch-cards" v-card-drop-children-animate>
     <PCard title="欢迎来到 PCL.Proto！" default-fold-status="unfold"
       ><div class="proto-introduction">
         <PHint severity="info"

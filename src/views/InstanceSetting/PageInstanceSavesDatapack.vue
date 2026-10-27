@@ -57,8 +57,13 @@ const visibleDatapacks = computed(() =>
 )
 </script>
 <template>
-  <div class="pcl-page">
-    <div>
+  <div class="pcl-page datapack-page">
+    <PLoading
+      v-if="loading"
+      data-control="PanLoad"
+      :loading-text="text('Instance.Resource.Datapack.Loading')"
+    />
+    <div v-else>
       <div style="display: grid">
         <div
           data-control="PanAllBack"
@@ -66,7 +71,7 @@ const visibleDatapacks = computed(() =>
         >
           <div data-control="PanBack" style="grid-row: 1 / span 1; grid-column: 1 / span 1">
             <div
-              v-if="!loading && datapacks.length"
+              v-if="datapacks.length"
               data-control="PanMain"
               style="margin: 10px 25px 10px 25px; display: flex; flex-direction: column"
             >
@@ -198,7 +203,7 @@ const visibleDatapacks = computed(() =>
             </div>
           </div>
           <PCard
-            v-if="!loading && !datapacks.length"
+            v-if="!datapacks.length"
             data-control="PanEmpty"
             style="
               margin: 40px;
@@ -255,25 +260,6 @@ const visibleDatapacks = computed(() =>
             </div>
           </PCard>
         </div>
-        <PCard
-          v-if="loading"
-          data-control="PanLoad"
-          style="
-            margin: 0px 40px;
-            grid-row: 1 / span 1;
-            grid-column: 1 / span 1;
-            justify-self: center;
-            align-self: center;
-          "
-          hide-title
-        >
-          <PLoading
-            :card="false"
-            data-control="Load"
-            style="margin: 20px 20px 17px 20px"
-            :loading-text="text('Instance.Resource.Datapack.Loading')"
-          />
-        </PCard>
       </div>
     </div>
     <PCard v-if="selected.size" hide-title class="pcl-selection-toolbar"
@@ -294,3 +280,10 @@ const visibleDatapacks = computed(() =>
     >
   </div>
 </template>
+
+<style scoped>
+.datapack-page {
+  display: flex;
+  flex-direction: column;
+}
+</style>

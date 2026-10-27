@@ -112,6 +112,7 @@ function settings() {
   padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
+  animation: pcl-zoom-in 0.4s ease forwards;
 }
 .login-panel {
   flex: 1;

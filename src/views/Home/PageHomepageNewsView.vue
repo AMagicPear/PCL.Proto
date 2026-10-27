@@ -21,9 +21,8 @@ withDefaults(
 </script>
 <template>
   <section class="pcl-page news-page">
-    <PCard v-if="loading" hide-title
-      ><PLoading :card="false" :loading-text="text('Launch.Homepage.News.Loading')" /></PCard
-    ><PHint v-else-if="error" severity="error">{{ error }}</PHint
+    <PLoading v-if="loading" :loading-text="text('Launch.Homepage.News.Loading')" />
+    <PHint v-else-if="error" severity="error">{{ error }}</PHint
     ><PCard v-for="item in items" :key="item.id" :title="item.title"
       ><div class="news-content">
         <small>{{ item.author }} · {{ item.publishDate }}</small>

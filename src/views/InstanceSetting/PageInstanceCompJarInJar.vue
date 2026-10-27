@@ -43,9 +43,7 @@ const groups = computed(() =>
 </script>
 <template>
   <section class="pcl-page jar-page">
-    <PCard v-if="loading" hide-title
-      ><PLoading :card="false" :loading-text="text('Instance.Resource.Loading')"
-    /></PCard>
+    <PLoading v-if="loading" :loading-text="text('Instance.Resource.Loading')" />
     <PHint v-else-if="error" severity="error"
       >{{ error
       }}<PButton inline :click="() => emit('refresh')">{{

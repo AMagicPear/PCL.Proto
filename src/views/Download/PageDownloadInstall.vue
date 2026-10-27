@@ -163,12 +163,10 @@ watch(versionId, (id) => {
 })
 </script>
 <template>
-  <section class="pcl-page install-page">
+  <section class="pcl-page install-page" v-card-drop-children-animate="!!versions">
     <p v-if="modify && !versionId" class="pcl-empty">请先选择一个游戏实例</p>
     <template v-else-if="!versionId">
-      <PCard v-if="loading" hide-title
-        ><PLoading :card="false" :loading-text="text('Download.Version.LoadingList')"
-      /></PCard>
+      <PLoading v-if="loading" :loading-text="text('Download.Version.LoadingList')" />
       <PHint v-else-if="error" severity="error"
         >{{ error }} <PButton inline :click="load">重试</PButton></PHint
       >

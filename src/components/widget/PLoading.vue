@@ -29,7 +29,12 @@ watchEffect(() => {
 </script>
 
 <template>
-  <component :is="card ? PCard : 'div'" :hide-title="true" :class="{ 'card-loading': card }">
+  <component
+    :is="card ? PCard : 'div'"
+    :hide-title="true"
+    :class="{ 'card-loading': card }"
+    role="status"
+  >
     <div class="loading-container">
       <svg
         width="60"
@@ -62,26 +67,34 @@ watchEffect(() => {
           transform="translate(4 23) scale(.85)"
         />
       </svg>
+      <p class="loading-text" :class="state">
+        {{
+          state === 'loading'
+            ? loadingText || pclText('Application.Control.Loading.Default')
+            : pclText('Application.Control.Loading.Failed')
+        }}
+      </p>
     </div>
-    <p class="loading-text" :class="state">
-      {{
-        state === 'loading'
-          ? loadingText || pclText('Application.Control.Loading.Default')
-          : pclText('Application.Control.Loading.Failed')
-      }}
-    </p>
   </component>
 </template>
 
 <style lang="css" scoped>
 .card-loading {
-  width: min(300px, 100%);
+  width: min(180px, 100%);
+  margin: auto;
+}
+
+.card-loading .loading-container {
+  min-height: 140px;
+  padding: 20px 18px;
 }
 
 .loading-text {
   text-align: center;
-  font-size: 16px;
-  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 @keyframes hammerAnim {
@@ -183,13 +196,19 @@ watchEffect(() => {
 }
 
 .loading-container {
+  min-height: 160px;
+  padding: 30px 24px;
   flex-shrink: 0;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
   align-items: center;
   justify-content: center;
 }
 
 .load-svg {
+  flex-shrink: 0;
+  overflow: visible;
   transition: color 0.4s ease;
 }
 

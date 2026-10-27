@@ -61,8 +61,9 @@ const selectionActions = [
 ]
 </script>
 <template>
-  <div class="pcl-page">
-    <div>
+  <div class="pcl-page resource-page">
+    <PLoading v-if="loading" :loading-text="text('Instance.Resource.Loading')" />
+    <div v-else>
       <PCard
         v-if="route.meta.resourceType === 'Schematic' && !schematicAvailable"
         hide-title
@@ -85,7 +86,7 @@ const selectionActions = [
           style="grid-row: 1 / span 1; grid-column: 1 / span 1; display: grid"
         >
           <div data-control="PanBack" style="grid-row: 1 / span 1; grid-column: 1 / span 1">
-            <div v-if="items.length && !loading && !error" class="resource-main">
+            <div v-if="items.length && !error" class="resource-main">
               <PSearchBox
                 :placeholder="text('Instance.Resource.Search.Hint')"
                 @search="(value) => (query = value || '')"
@@ -144,17 +145,14 @@ const selectionActions = [
               >
             </div>
           </div>
-          <PCard v-if="loading" hide-title class="resource-status"
-            ><PLoading :card="false" :loading-text="text('Instance.Resource.Loading')"
-          /></PCard>
-          <PHint v-else-if="error" severity="error" class="resource-status"
+          <PHint v-if="error" severity="error" class="resource-status"
             >{{ error
             }}<PButton inline :click="() => act('BtnRefresh')">{{
               text('Common.Action.Refresh')
             }}</PButton></PHint
           >
           <PCard
-            v-if="!loading && !error && !items.length"
+            v-if="!error && !items.length"
             data-control="PanEmpty"
             style="
               margin: 40px;
@@ -233,6 +231,11 @@ const selectionActions = [
 </template>
 
 <style scoped>
+.resource-page {
+  display: flex;
+  flex-direction: column;
+}
+
 .resource-main {
   padding: 25px;
   display: flex;

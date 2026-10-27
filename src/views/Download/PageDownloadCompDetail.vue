@@ -99,9 +99,7 @@ watch(
 </script>
 <template>
   <article class="subview pcl-page detail-page">
-    <PCard v-if="loading" hide-title
-      ><PLoading :card="false" :loading-text="text('Download.Version.LoadingList')"
-    /></PCard>
+    <PLoading v-if="loading" :loading-text="text('Download.Version.LoadingList')" />
     <PHint v-else-if="error" severity="error"
       >{{ error }}<PButton inline :click="load">重试</PButton></PHint
     >
