@@ -22,10 +22,11 @@ const text = (key: string) => pclText(key, locale.value)
       ><div class="profile-actions">
         <details>
           <summary
+            class="profile-action"
             :aria-label="text('Launch.Account.ProfileSkin.SkinsAndCapes')"
             :title="text('Launch.Account.ProfileSkin.SkinsAndCapes')"
           >
-            <PSvgIcon name="lucide/shirt" />
+            <PSvgIcon name="lucide/shirt" :size="14" />
           </summary>
           <div class="profile-menu">
             <PButton
@@ -39,10 +40,11 @@ const text = (key: string) => pclText(key, locale.value)
         </details>
         <details>
           <summary
+            class="profile-action"
             :aria-label="text('Launch.Account.ProfileSkin.EditProfile')"
             :title="text('Launch.Account.ProfileSkin.EditProfile')"
           >
-            <PSvgIcon name="lucide/pencil" />
+            <PSvgIcon name="lucide/pencil" :size="14" />
           </summary>
           <div class="profile-menu">
             <PButton inline :click="() => act('BtnEditPassword')">{{
@@ -53,12 +55,15 @@ const text = (key: string) => pclText(key, locale.value)
             }}</PButton>
           </div>
         </details>
-        <PButton
-          inline
-          :click="() => router.push('/account')"
+        <button
+          type="button"
+          class="profile-action"
+          @click="router.push('/account')"
+          :aria-label="text('Launch.Account.ProfileSkin.SwitchProfile')"
           :title="text('Launch.Account.ProfileSkin.SwitchProfile')"
-          ><PSvgIcon name="lucide/arrow-right-left"
-        /></PButton></div
+        >
+          <PSvgIcon name="lucide/arrow-right-left" :size="14" />
+        </button></div
     ></PCard>
   </div>
 </template>
@@ -79,22 +84,45 @@ const text = (key: string) => pclText(key, locale.value)
 }
 .profile-actions {
   display: flex;
+  align-items: center;
   gap: 9px;
-  margin-top: 8px;
-  padding: 3px 10px;
+  padding: 3px 9px 3px 10px;
   position: relative;
 }
 .profile-actions-card {
+  margin-top: 8px;
+  border-radius: 5px;
   overflow: visible;
 }
 .profile-actions-card :deep(.mycard-content) {
   overflow: visible;
 }
-summary {
+.profile-action {
+  width: 24px;
+  height: 24px;
+  padding: 5px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-tint-light, var(--color-tint));
   cursor: pointer;
   list-style: none;
   display: flex;
-  padding: 6px 0;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.15s,
+    transform 0.25s;
+}
+.profile-action::-webkit-details-marker {
+  display: none;
+}
+.profile-action:hover,
+.profile-action:focus-visible {
+  color: var(--color-tint);
+}
+.profile-action:active {
+  transform: scale(0.8);
 }
 .profile-menu {
   position: absolute;

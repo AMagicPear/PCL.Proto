@@ -123,6 +123,10 @@ function settings() {
   overflow-y: auto;
   padding: 15px 0;
 }
+.login-panel:has(.profile-actions details[open]) {
+  overflow: visible;
+  z-index: 1;
+}
 .launch-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
