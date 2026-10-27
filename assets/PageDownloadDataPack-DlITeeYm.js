@@ -1,0 +1,1 @@
+import{U as a,Y as e,tt as t}from"./index-BW0FPM0X.js";import{t as o}from"./PageComp-DakY-yRR.js";var r=e({__name:"PageDownloadDataPack",setup(_){return(p,c)=>(t(),a(o,{"project-type":"datapack"}))}}),l=r;export{l as default};

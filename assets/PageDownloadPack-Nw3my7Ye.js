@@ -1,0 +1,1 @@
+import{U as e,Y as a,tt as t}from"./index-BW0FPM0X.js";import{t as o}from"./PageComp-DakY-yRR.js";var r=a({__name:"PageDownloadPack",setup(_){return(p,c)=>(t(),e(o,{"project-type":"modpack"}))}}),l=r;export{l as default};

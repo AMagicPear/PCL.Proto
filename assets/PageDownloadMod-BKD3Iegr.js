@@ -1,0 +1,1 @@
+import{U as e,Y as o,tt as a}from"./index-BW0FPM0X.js";import{t}from"./PageComp-DakY-yRR.js";var r=o({__name:"PageDownloadMod",setup(_){return(p,d)=>(a(),e(t,{"project-type":"mod"}))}}),l=r;export{l as default};

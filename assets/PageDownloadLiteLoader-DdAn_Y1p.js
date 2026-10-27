@@ -1,0 +1,1 @@
+import{U as e,Y as a,tt as t}from"./index-BW0FPM0X.js";import{t as o}from"./PageDownloadVersionList-eJOwAwlX.js";var r=a({__name:"PageDownloadLiteLoader",setup(_){return(d,l)=>(t(),e(o,{loader:"LiteLoader",website:"https://www.liteloader.com"}))}}),i=r;export{i as default};

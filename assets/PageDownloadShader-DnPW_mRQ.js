@@ -1,0 +1,1 @@
+import{U as e,Y as a,tt as t}from"./index-BW0FPM0X.js";import{t as r}from"./PageComp-DakY-yRR.js";var o=a({__name:"PageDownloadShader",setup(_){return(p,d)=>(t(),e(r,{"project-type":"shader"}))}}),l=o;export{l as default};
