@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-// import TitleMessage from './components/website/TitleMessage.vue'
+import TitleMessage from './components/website/TitleMessage.vue'
 import useSideNavState from '@/stores/windowState'
 import WindowHeader from './components/WindowHeader.vue'
 import Modal from './components/Modal.vue'
@@ -14,6 +14,7 @@ import { useFloatButton } from './composables/useFloatButton'
 const sideNavState = useSideNavState()
 const modal = useModal()
 const { floatButtonState } = useFloatButton()
+const website = !isTauri()
 
 if (isTauri())
   listen<string>('modal-open', (event) => {
@@ -26,8 +27,9 @@ if (isTauri())
 </script>
 
 <template>
+  <TitleMessage v-if="website" />
   <!-- 主体窗口 -->
-  <div id="main-window">
+  <div id="main-window" :class="{ 'website-preview': website }">
     <!-- 标题框 -->
     <WindowHeader />
     <!-- 主页面 -->
@@ -37,11 +39,11 @@ if (isTauri())
       <!-- 用作动画 -->
       <div id="side-nav-background" />
     </div>
+    <!-- 一些浮动内容 -->
+    <Modal />
+    <SideTip />
+    <FloatButton v-bind="floatButtonState" />
   </div>
-  <!-- 一些浮动内容 -->
-  <Modal />
-  <SideTip />
-  <FloatButton v-bind="floatButtonState" />
 </template>
 
 <style>
@@ -77,6 +79,26 @@ if (isTauri())
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+#main-window.website-preview {
+  width: 814px;
+  height: 464px;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: var(--box-shadow);
+}
+
+html.website,
+.website body {
+  overflow: auto;
+}
+
+.website #app {
+  width: max-content;
+  min-width: 100%;
+  height: auto;
+  padding: 32px 32px 64px;
 }
 
 @supports selector(::-webkit-scrollbar) {

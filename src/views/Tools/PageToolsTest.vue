@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, defineAsyncComponent } from 'vue'
+import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { usePageSettings } from '@/composables/usePageSettings'
 import { useModal } from '@/composables/useModal'
@@ -8,6 +9,7 @@ import getSkinUrl from '@/api/skinGetter'
 import MinecraftServerCard from '@/components/widget/MinecraftServerCard.vue'
 const SkinViewer = defineAsyncComponent(() => import('@/components/widget/SkinViewer.vue'))
 const skin = ref('')
+const router = useRouter()
 import PTextBox from '@/components/widget/PTextBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
 import PCard from '@/components/widget/PCard.vue'
@@ -86,6 +88,11 @@ async function act(id: string, event = '', type = '', data = '') {
                 flex-wrap: wrap;
               "
             >
+              <PButton
+                style="min-width: 120px; margin: 0px 15px 15px 0px"
+                :click="() => router.push('/homepageeditor')"
+                >PCL 主页制作器</PButton
+              >
               <PButton
                 data-control="BtnClear"
                 style="min-width: 120px; margin: 0px 15px 15px 0px"

@@ -51,6 +51,7 @@ app.directive('card-drop-animate', vAnimateDrop)
 app.directive('card-drop-children-animate', vAnimateChildrenDrop)
 
 document.documentElement.classList.add('theme-blue')
+document.documentElement.classList.toggle('website', !isTauri())
 
 void loadPclLocale(i18n.global.locale.value)
 app.mount('#app')

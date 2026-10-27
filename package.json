@@ -16,7 +16,7 @@
     "ui:build-only": "vite build",
     "type-check": "vue-tsc --build",
     "format": "prettier --write src/",
-    "deploy": "vite build && gh-pages -d dist",
+    "deploy": "pnpm ui:build && gh-pages -d dist",
     "tauri": "tauri",
     "check:ui": "node scripts/check-pcl-ui.mjs"
   },

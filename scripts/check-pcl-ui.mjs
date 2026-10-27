@@ -310,6 +310,12 @@ const header = fs.readFileSync(
   'utf8',
 )
 assert.ok(header.includes('.title-tag Proto'), 'retain the Proto badge')
+const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8')
+assert.match(
+  html,
+  /<link\b[^>]*rel="icon"[^>]*href="\/PCL\.Proto\.svg"/,
+  'use the current app logo as the website favicon',
+)
 const about = fs.readFileSync(
   new URL('../src/views/Setup/PageSetupAbout.vue', import.meta.url),
   'utf8',

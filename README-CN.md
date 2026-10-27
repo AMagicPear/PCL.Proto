@@ -12,6 +12,10 @@
 
 你可以前往 [PCL.Proto](https://amagicpear.top/PCL.Proto/) 在线查看本项目。
 
+网站与桌面客户端统一在 `main` 分支维护。浏览器中会显示项目介绍、启动器预览和首页组件演示，PCL 主页制作器也可从百宝箱进入；桌面客户端只显示启动器界面。
+
+更新 GitHub Pages 时运行 `pnpm run deploy`，检查和构建通过后会将网站发布到 `origin` 的 `gh-pages` 分支。
+
 ## 原型
 
 如果你的 PCL 分支版本并非基于 Web 技术，则直接使用本仓库可能并不显得那么方便。那么，你可以前往 [即时设计 - 「PCL.Prototype」](https://js.design/f/QVPQRY?p=zX2rcVk6Cy&mode=design)查看具体的应用原型，并切图导出或参考其生成的样式代码。
