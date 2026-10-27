@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { computed, ref } from 'vue'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
@@ -94,7 +95,7 @@ const groups = computed(() =>
           /></section
       ></template>
       <p v-if="query && groups.every((group) => !group.entries.length)" class="pcl-empty">
-        没有符合条件的结果
+        {{ pclText('Download.Comp.List.NoMatchingResults') }}
       </p>
     </template>
     <PCard v-else hide-title class="empty-card"

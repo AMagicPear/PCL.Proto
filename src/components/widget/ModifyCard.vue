@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import PCard from '@/components/widget/PCard.vue'
 import { pluginShowText, showIconPath, type pluginType, type showIconType } from '@/types/gameInfo'
 import PListItem from './PListItem.vue'
@@ -40,27 +41,35 @@ onMounted(() => {
     <template #title> {{ pluginShowText[plugin] }}</template>
     <template #description>
       <div v-if="notCompatibleWith" class="sub">
-        <span>与 {{ notCompatibleWith }} 不兼容</span>
+        <span>{{
+          pclText('Download.Install.Compat.IncompatibleWithLoader', [notCompatibleWith])
+        }}</span>
       </div>
       <div v-else-if="isLoading" class="sub">
-        <span>加载中...</span>
+        <span>{{ pclText('Application.Control.Loading.Default') }}</span>
       </div>
       <div v-else-if="selectedVersionId" class="version">
         <img :src="showIconPath[iconType]" />
         <span>{{ selectedVersionId }} </span>
       </div>
       <div v-else-if="versions" class="sub">
-        <span>选择版本</span>
+        <span>{{ pclText('Proto.Download.SelectVersion') }}</span>
       </div>
       <div v-else class="sub">
-        <span>加载错误或无可用版本</span>
+        <span>{{ pclText('Proto.Download.LoadError') }}</span>
       </div>
     </template>
     <template #content v-if="plugin != 'vanilla' && versions">
       <PListItem
         v-for="version in versions"
         :title="version.version"
-        :subtitle="version.stable == null ? undefined : version.stable ? '稳定版' : '开发版'"
+        :subtitle="
+          version.stable == null
+            ? undefined
+            : version.stable
+              ? pclText('Download.Version.Type.Stable')
+              : pclText('Proto.Label.Development')
+        "
         :click="() => select(version.version)"
         :icon="showIconPath[iconType]"
       />

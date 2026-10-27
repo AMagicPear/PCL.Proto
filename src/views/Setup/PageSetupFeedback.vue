@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
@@ -54,7 +55,7 @@ async function load() {
         )
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         const data: unknown = await response.json()
-        if (!Array.isArray(data)) throw new Error('反馈列表格式错误')
+        if (!Array.isArray(data)) throw new Error(pclText('Proto.Feedback.InvalidResponse'))
         return data
       }),
     )
@@ -115,7 +116,10 @@ onUnmounted(() => controller?.abort())
       ><PLoading :card="false" :loading-text="text('Setup.Feedback.Loading')"
     /></PCard>
     <PHint v-else-if="error" severity="error"
-      >{{ error }}<PButton inline :click="load">重试</PButton></PHint
+      >{{ error
+      }}<PButton inline :click="load">{{
+        pclText('Launch.Homepage.LoadFailed.Retry')
+      }}</PButton></PHint
     >
     <template v-else>
       <PCard
@@ -137,7 +141,7 @@ onUnmounted(() => controller?.abort())
           />
         </div>
       </PCard>
-      <p v-if="!issues.length" class="pcl-empty">暂无反馈</p>
+      <p v-if="!issues.length" class="pcl-empty">{{ pclText('Proto.Empty.Feedback') }}</p>
     </template>
   </section>
 </template>

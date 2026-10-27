@@ -9,13 +9,11 @@ import PComboBox from '@/components/widget/PComboBox.vue'
 import PButton from '@/components/widget/PButton.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import PHint from '@/components/widget/PHint.vue'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 const props = defineProps<{ loader: string; website: string; supported?: boolean }>()
-const { locale } = useI18n()
 const localeName = computed(() => (props.loader === 'OptiFine' ? 'Optifine' : props.loader))
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 const minecraft = ref('')
 const minecraftOptions = ref<{ key: string; text: string }[]>([])
 const versions = ref<McPluginReport[]>([])
@@ -28,14 +26,14 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    if (!isTauri()) throw new Error('请在桌面客户端中查询加载器版本。')
+    if (!isTauri()) throw new Error(pclText('Proto.Desktop.Loaders'))
     const data = await invoke<McPluginReport[]>('get_plugin_versions', {
       plugin_type: props.loader.toLowerCase(),
       mc_version: minecraft.value,
     })
     if (current === request) versions.value = data
   } catch (err) {
-    if (current === request) error.value = `无法获取版本列表：${String(err)}`
+    if (current === request) error.value = pclText('Proto.Error.Versions', [String(err)])
   } finally {
     if (current === request) loading.value = false
   }
@@ -55,7 +53,7 @@ async function initialize() {
     minecraft.value = data.latest.release?.id || minecraftOptions.value[0]?.key || ''
     if (!minecraft.value) loading.value = false
   } catch (err) {
-    error.value = `无法获取游戏版本：${String(err)}`
+    error.value = pclText('Proto.Error.GameVersion', [String(err)])
     loading.value = false
   }
 }
@@ -79,13 +77,16 @@ watch(minecraft, load)
         v-if="minecraftOptions.length"
         v-model="minecraft"
         :options="minecraftOptions"
-        aria-label="Minecraft 版本"
+        :aria-label="pclText('Proto.Label.MinecraftVersion')"
       /><PCard v-if="loading" hide-title
         ><PLoading
           :card="false"
           :loading-text="text(`Download.Version.${localeName}.LoadingList`)" /></PCard
       ><PHint v-else-if="error" severity="error"
-        >{{ error }}<PButton inline :click="retry">重试</PButton></PHint
+        >{{ error
+        }}<PButton inline :click="retry">{{
+          pclText('Launch.Homepage.LoadFailed.Retry')
+        }}</PButton></PHint
       ><PCard v-else :title="minecraft || loader"
         ><div class="version-list">
           <PListItem
@@ -93,14 +94,16 @@ watch(minecraft, load)
             :key="version.version"
             :title="version.version"
             :subtitle="version.stable ? text('Download.Version.Type.Stable') : undefined"
-            :click="() => sideTip.show('安装包下载尚未接入 PCL.Proto。')"
+            :click="() => sideTip.show(pclText('Proto.NotImplemented.Installer'))"
           />
-          <p v-if="!versions.length" class="pcl-empty">没有可用版本</p>
+          <p v-if="!versions.length" class="pcl-empty">
+            {{ pclText('Download.Install.State.NoAvailableVersion') }}
+          </p>
         </div></PCard
       ></template
-    ><PHint v-else severity="info"
-      >{{ loader }} 安装包下载尚未接入 PCL.Proto，可前往官方网站获取。</PHint
-    >
+    ><PHint v-else severity="info">{{
+      text('Proto.Download.InstallerUnavailable', [loader])
+    }}</PHint>
   </section>
 </template>
 <style scoped>

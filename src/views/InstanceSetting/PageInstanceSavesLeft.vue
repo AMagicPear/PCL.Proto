@@ -2,11 +2,9 @@
 import SideNavLayout from '@/layout/SideNavLayout.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { computed, h } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 const groups = computed(() => [
   {
     content: [
@@ -28,7 +26,7 @@ const groups = computed(() => [
       {
         text: text('Common.Action.OpenFolder'),
         icon: () => h(PSvgIcon, { name: 'lucide/folder-open' }),
-        clickCallback: () => sideTip.show('此操作尚未接入 PCL.Proto。'),
+        clickCallback: () => sideTip.show(pclText('Proto.NotImplemented.Action')),
       },
     ],
   },

@@ -4,14 +4,12 @@ import PCard from '@/components/widget/PCard.vue'
 import PButton from '@/components/widget/PButton.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import sideTip from '@/composables/sideTip'
 import { maxLogLines } from '@/util/logLines'
 const props = withDefaults(defineProps<{ log?: string; stack?: string }>(), { log: '', stack: '' })
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 const { values } = usePageSettings('PageLogRight', { SliderMaxLog: 13 })
 const cleared = ref(false)
 const autoScroll = ref(true)
@@ -30,7 +28,7 @@ watch(
 )
 function exportText(value: string, filename: string) {
   if (!value) {
-    sideTip.show('暂无可导出的日志。')
+    sideTip.show(pclText('Proto.Empty.ExportLog'))
     return
   }
   const url = URL.createObjectURL(new Blob([value], { type: 'text/plain;charset=utf-8' }))
@@ -44,7 +42,7 @@ function exportText(value: string, filename: string) {
 <template>
   <article class="subview pcl-page log-page">
     <PCard hide-title class="log-content">
-      <pre ref="logElement">{{ content || '暂无日志内容' }}</pre>
+      <pre ref="logElement">{{ content || pclText('Proto.Empty.Log') }}</pre>
     </PCard>
     <PCard hide-title
       ><div class="log-actions">
@@ -59,7 +57,7 @@ function exportText(value: string, filename: string) {
         <PButton inline :click="() => (cleared = true)"
           ><PSvgIcon name="lucide/trash-2" />{{ text('LogPage.Action.Clear') }}</PButton
         >
-        <PButton inline :click="() => sideTip.show('进程管理尚未接入 PCL.Proto。')"
+        <PButton inline :click="() => sideTip.show(pclText('Proto.NotImplemented.Processes'))"
           ><PSvgIcon name="lucide/x" />{{ text('LogPage.Action.KillProcess') }}</PButton
         >
         <PButton inline :disabled="!stack" :click="() => exportText(stack, 'PCL.Proto-stack.log')"

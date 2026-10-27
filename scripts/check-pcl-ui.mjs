@@ -20,7 +20,10 @@ const findNode = (node, name) =>
     ? node
     : node.children?.map((child) => findNode(child, name)).find(Boolean)
 const manifest = read('../src/assets/pcl-manifest.json')
-const strings = read('../src/assets/languages/zh-CN.json')
+const strings = {
+  ...read('../src/assets/languages/zh-CN.json'),
+  ...read('../src/assets/messages/zh-CN.json'),
+}
 const iconNames = new Set(read('../src/assets/icon-names.json'))
 const navActions = read('../src/assets/nav-actions.json')
 assert.equal(navActions.PageSetupLeft.ItemLaunch.kind, 'initialize')
@@ -122,11 +125,7 @@ const walk = (dir) =>
   fs
     .readdirSync(dir, { withFileTypes: true })
     .flatMap((entry) =>
-      entry.name === 'locales'
-        ? []
-        : entry.isDirectory()
-          ? walk(path.join(dir, entry.name))
-          : [path.join(dir, entry.name)],
+      entry.isDirectory() ? walk(path.join(dir, entry.name)) : [path.join(dir, entry.name)],
     )
 const files = walk(fileURLToPath(new URL('../src', import.meta.url))).filter((file) =>
   /\.(vue|tsx?)$/.test(file),
@@ -165,7 +164,7 @@ for (const file of files) {
   )
   assert.ok(!/:label="text\(''\)"/.test(source), `empty checkbox label: ${file}`)
   for (const match of source.matchAll(
-    /(?:\btext|\bpclText)\('((?:Common|Launch|Main|Download|Instance|Setup|Tools|Select|Speed|LogPage|Help|Application)\.[^']+)'/g,
+    /(?:\btext|\bpclText)\('((?:Common|Launch|Main|Download|Instance|Setup|Tools|Select|Speed|LogPage|Help|Application|Proto)\.[^']+)'/g,
   )) {
     assert.ok(strings[match[1]] !== undefined, `${file}: missing UI text ${match[1]}`)
   }
@@ -321,7 +320,10 @@ const about = fs.readFileSync(
   'utf8',
 )
 for (const identity of ['AMagicPear', 'Vue.js', 'Rust Programming Language', 'Tauri', 'PCL.Proto'])
-  assert.ok(about.includes(identity), `retain Proto identity: ${identity}`)
+  assert.ok(
+    about.replace(/pclText\('([^']+)'\)/g, (all, key) => strings[key] ?? all).includes(identity),
+    `retain Proto identity: ${identity}`,
+  )
 if (process.argv[2])
   for (const [name, item] of Object.entries(manifest.pages)) {
     assert.equal(

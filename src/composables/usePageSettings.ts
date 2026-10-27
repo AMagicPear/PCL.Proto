@@ -7,7 +7,6 @@ import { useSetup } from '@/stores/setup'
 import { useSelectedInstance } from '@/stores/gameLaunch'
 import sideTip from '@/composables/sideTip'
 import { useModal } from '@/composables/useModal'
-import { useI18n } from 'vue-i18n'
 
 export function usePageSettings(
   page: string,
@@ -27,7 +26,6 @@ export function usePageSettings(
   const route = useRoute()
   const router = useRouter()
   const setup = useSetup()
-  const { locale } = useI18n()
   const instance = useSelectedInstance()
   const storageKey = computed(
     () =>
@@ -78,7 +76,7 @@ export function usePageSettings(
         ),
       )
     } catch {
-      sideTip.show('无法保存设置，请检查可用存储空间。', 'warn')
+      sideTip.show(pclText('Proto.Storage.SettingsFailed'), 'warn')
     }
   }
   watch(values, save, { deep: true })
@@ -98,9 +96,9 @@ export function usePageSettings(
     if (eventType === '复制文本') {
       try {
         await navigator.clipboard.writeText(eventData || '')
-        sideTip.show('已成功复制！', 'success')
+        sideTip.show(pclText('Common.Hint.Copied'), 'success')
       } catch {
-        sideTip.show('复制失败，请检查剪贴板权限。', 'warn')
+        sideTip.show(pclText('Proto.Clipboard.CopyFailed'), 'warn')
       }
       return
     }
@@ -186,12 +184,12 @@ export function usePageSettings(
       return
     }
     await useModal().open({
-      title: '提示',
-      content: '此操作尚未接入 PCL.Proto。',
-      buttons: [{ type: 'tint', content: '确定' }],
+      title: pclText('Common.Dialog.Title'),
+      content: pclText('Proto.NotImplemented.Action'),
+      buttons: [{ type: 'tint', content: pclText('Common.Action.Confirm') }],
     })
   }
-  const text = (value: string) => pclText(value, locale.value)
+  const text = pclText
   const image = (value: string) => pclImagePath(value, import.meta.env.BASE_URL)
   return { values, change, act, text, image }
 }

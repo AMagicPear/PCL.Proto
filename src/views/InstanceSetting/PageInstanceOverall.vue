@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { useSelectedInstance } from '@/stores/gameLaunch'
 import PListItem from '@/components/widget/PListItem.vue'
 import { showIconPath } from '@/types/gameInfo'
@@ -28,7 +29,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                 :subtitle="instance.instance_info.version"
                 :icon="showIconPath.grass"
               />
-              <p v-else class="pcl-empty">请先选择一个游戏实例</p>
+              <p v-else class="pcl-empty">{{ pclText('Proto.Instance.SelectFirst') }}</p>
             </div>
           </PCard>
           <PCard style="margin: 0px 0px 15px 0px" :title="text('Instance.Overall.Info.Title')">
@@ -108,7 +109,11 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                   style="grid-row: 3 / span 1; grid-column: 2 / span 1"
                   :options="[
                     { key: '0', text: text('Common.Option.Auto') },
-                    { key: '1', text: text('Instance.Overall.Category.Hidden'), title: text('Instance.Overall.Category.Hidden.ToolTip') },
+                    {
+                      key: '1',
+                      text: text('Instance.Overall.Category.Hidden'),
+                      title: text('Instance.Overall.Category.Hidden.ToolTip'),
+                    },
                     { key: '2', text: text('Instance.Overall.Category.Modable') },
                     { key: '3', text: text('Instance.Overall.Category.Regular') },
                     { key: '4', text: text('Instance.Overall.Category.LessUsed') },

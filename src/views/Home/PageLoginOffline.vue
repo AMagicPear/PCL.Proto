@@ -4,12 +4,10 @@ import PTextBox from '@/components/widget/PTextBox.vue'
 import PButton from '@/components/widget/PButton.vue'
 import { useAccountInfo } from '@/stores/account'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 const router = useRouter()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 const username = ref(useAccountInfo().username || '')
 const uuidType = ref('standard')
 const uuid = ref('')
@@ -22,7 +20,7 @@ function create() {
     sideTip.show(text('Launch.Account.Offline.Uuid.Custom.Input.ToolTip'), 'warn')
     return
   }
-  sideTip.show('档案创建尚未接入 PCL.Proto。')
+  sideTip.show(pclText('Proto.NotImplemented.Profile'))
 }
 </script>
 <template>

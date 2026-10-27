@@ -1,4 +1,5 @@
 <script lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { defineComponent, onMounted, onUnmounted, useTemplateRef, ref, provide } from 'vue'
 import useSideNavState from '@/stores/windowState'
 import SideGroup from '@/components/widget/SideGroup.vue'
@@ -26,8 +27,8 @@ export default defineComponent({
       if (kind === 'refresh') revision.value++
       else
         void useModal().open({
-          title: '提示',
-          content: '初始化设置尚未接入 PCL.Proto。',
+          title: pclText('Common.Dialog.Title'),
+          content: pclText('Proto.NotImplemented.Initialize'),
           plainText: true,
         })
     })

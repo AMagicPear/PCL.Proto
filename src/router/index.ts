@@ -35,7 +35,7 @@ const router = createRouter({
     {
       path: '/account/:login?',
       component: HomeView,
-      meta: { isSubPage: true, title: '账号管理' },
+      meta: { isSubPage: true, title: 'Proto.Title.Accounts' },
       children: [{ path: '', component: HomeSubView }],
     },
     {
@@ -170,7 +170,7 @@ const router = createRouter({
     {
       path: '/instance_select',
       component: InstanceSelect,
-      meta: { isSubPage: true, title: 'home.instance_select' }, // 用于标识当前处于特殊子页面
+      meta: { isSubPage: true, title: 'Main.Title.InstanceSelect' }, // 用于标识当前处于特殊子页面
       children: [
         {
           path: 'instance_select_sub/:repository',
@@ -187,7 +187,7 @@ const router = createRouter({
       name: 'instance_setting',
       component: InstanceSetting,
       redirect: '/instance_setting/overview',
-      meta: { isSubPage: true, title: 'home.instance_setting' /* + selectedInstance.name */ }, // 用于标识当前处于特殊子页面
+      meta: { isSubPage: true, title: 'Proto.Title.InstanceSetup' /* + selectedInstance.name */ }, // 用于标识当前处于特殊子页面
       children: [
         {
           path: 'mod/disabled',
@@ -254,7 +254,7 @@ const router = createRouter({
       path: '/instance_save',
       component: () => import('@/views/InstanceSetting/PageInstanceSavesLeft.vue'),
       redirect: '/instance_save/info',
-      meta: { isSubPage: true, title: '存档管理' },
+      meta: { isSubPage: true, title: 'Proto.Title.Saves' },
       children: [
         {
           path: 'info',
@@ -271,13 +271,13 @@ const router = createRouter({
       path: '/logs',
       component: () => import('@/views/Tools/PageLogLeft.vue'),
       redirect: '/logs/view',
-      meta: { isSubPage: true, title: '日志' },
+      meta: { isSubPage: true, title: 'Proto.Title.Log' },
       children: [{ path: 'view', component: () => import('@/views/Tools/PageLogRight.vue') }],
     },
     {
       path: '/news',
       component: () => import('@/views/Home/PageHomepageNewsView.vue'),
-      meta: { fullPage: true, isSubPage: true, title: '新闻' },
+      meta: { fullPage: true, isSubPage: true, title: 'Proto.Title.News' },
     },
     {
       path: '/resource',
@@ -289,13 +289,13 @@ const router = createRouter({
       path: '/homepageeditor',
       name: 'homepageeditor',
       component: () => import('@/views/Tools/HomepageEditor.vue'),
-      meta: { isSubPage: true, title: ' PCL 主页制作器', fullPage: true },
+      meta: { isSubPage: true, title: 'Proto.Title.HomepageEditor', fullPage: true },
     },
     {
       path: '/downloading',
       name: 'downloading',
       component: Dowloading,
-      meta: { fullPage: false, isSubPage: true, title: '任务管理' },
+      meta: { fullPage: false, isSubPage: true, title: 'Main.Title.TaskManager' },
     },
   ],
 })

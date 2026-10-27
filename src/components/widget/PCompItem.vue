@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclLocale } from '@/api/pclLocale'
 import { computed } from 'vue'
 import PSvgIcon from './PSvgIcon.vue'
 import type { ISearchHit } from '@/api/modrinthApi'
@@ -9,12 +10,11 @@ const props = withDefaults(defineProps<{ clickable?: boolean; data: ISearchHit }
   clickable: false,
 })
 
-const downloadsText = computed(() => {
-  if (props.data.downloads >= 10000) {
-    return `${Math.floor(props.data.downloads / 10000)}万`
-  }
-  return props.data.downloads.toString()
-})
+const downloadsText = computed(() =>
+  new Intl.NumberFormat(pclLocale.value, { notation: 'compact', maximumFractionDigits: 1 }).format(
+    props.data.downloads,
+  ),
+)
 
 const dateText = computed(() => {
   let date = new Date(props.data.date_modified)

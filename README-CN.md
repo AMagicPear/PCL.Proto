@@ -101,3 +101,7 @@ pnpm run tauri build
 - [PCL.Neo](https://github.com/PCL-Community/PCL.Neo)
 - [xphost008/MMCLL](https://github.com/xphost008/MMCLL)
 - [Steve-xmh/scl](https://github.com/Steve-xmh/scl)
+
+### 多语言开发
+
+[应用多语言方案与文案约定](docs/LOCALIZATION.md)

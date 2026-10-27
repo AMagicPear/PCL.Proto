@@ -6,12 +6,10 @@ import PCard from '@/components/widget/PCard.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 const account = useAccountInfo()
 const router = useRouter()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 defineProps<{ createAndSelect?: boolean; requireMicrosoft?: boolean }>()
 </script>
 <template>

@@ -1,4 +1,5 @@
 <script lang="tsx" setup>
+import { pclText } from '@/api/pclLocale'
 import { defineComponent, ref } from 'vue'
 import PCard from './PCard.vue'
 import PTextBox from './PTextBox.vue'
@@ -25,7 +26,7 @@ async function performQuery() {
       latency.value = latency_got
     } else {
       mcPingResult.value = null
-      sideTip.show('请输入地址后再查询')
+      sideTip.show(pclText('Proto.Server.EnterAddress'))
     }
   } catch (err) {
     if (isTauri()) void error(`server query: ${err}`)
@@ -126,7 +127,7 @@ const DescriptionExtra = defineComponent(
 </script>
 
 <template>
-  <component :is="embedded ? 'div' : PCard" title="瞅眼服务器">
+  <component :is="embedded ? 'div' : PCard" :title="pclText('Tools.Test.ServerQuery.Title')">
     <div
       style="
         display: flex;
@@ -136,15 +137,21 @@ const DescriptionExtra = defineComponent(
         margin-bottom: 8px;
       "
     >
-      <PTextBox v-model="serverInput" placeholder="输入服务器地址" style="flex: 1" />
-      <PButton inline :click="performQuery" :disabled="!serverInput">查询</PButton>
+      <PTextBox
+        v-model="serverInput"
+        :placeholder="pclText('Tools.ServerQuery.Address.Hint')"
+        style="flex: 1"
+      />
+      <PButton inline :click="performQuery" :disabled="!serverInput">{{
+        pclText('Tools.ServerQuery.Action.Query')
+      }}</PButton>
     </div>
     <div class="server-card" v-if="mcPingResult">
       <div>
         <img class="server-favicon" v-if="mcPingResult.favicon" :src="mcPingResult.favicon" />
         <div class="server-title">
           <p style="font-size: 15px; font-weight: bold">
-            服务器版本: {{ mcPingResult.version.name }}
+            {{ pclText('Proto.Server.Version', [mcPingResult.version.name]) }}
           </p>
           <!-- 描述部分需要递归渲染 -->
           <p>

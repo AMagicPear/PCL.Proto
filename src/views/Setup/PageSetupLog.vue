@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
@@ -52,7 +53,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLog', {})
               data-control="PanList"
               style="margin: 0px 18px 18px 20px; display: flex; flex-direction: column"
             >
-              <p class="pcl-empty">暂无可读取的日志文件</p>
+              <p class="pcl-empty">{{ pclText('Proto.Empty.LogFiles') }}</p>
             </div>
           </PCard>
         </div>

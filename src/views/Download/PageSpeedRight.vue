@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import PCard from '@/components/widget/PCard.vue'
 import TaskItem from '@/components/widget/TaskItem.vue'
 import { useTaskManager } from '@/stores/task'
@@ -8,9 +9,9 @@ const tasks = useTaskManager()
   <article class="subview pcl-page speed-right">
     <PCard v-for="task in tasks.tasks" :key="task.id" :title="task.name"
       ><div class="task-items">
-        <TaskItem v-for="item in task.items" :key="item.id" v-bind="item" /></div
+        <TaskItem v-for="item in task.items" :key="item.id" v-bind="item" :name="item.name" /></div
     ></PCard>
-    <p v-if="!tasks.tasks.length" class="pcl-empty">暂无任务</p>
+    <p v-if="!tasks.tasks.length" class="pcl-empty">{{ pclText('Proto.Empty.Tasks') }}</p>
   </article>
 </template>
 <style scoped>

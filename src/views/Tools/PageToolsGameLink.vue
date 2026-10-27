@@ -40,18 +40,18 @@ watch(options, (list) => {
 async function connect(code: string) {
   code = code.trim()
   if (!code) {
-    sideTip.show('请输入大厅编号', 'warn')
+    sideTip.show(pclText('Proto.Lobby.EnterCode'), 'warn')
     return
   }
   if (!isTauri()) {
-    sideTip.show('请在桌面客户端中使用联机功能。', 'warn')
+    sideTip.show(pclText('Proto.Desktop.Link'), 'warn')
     return
   }
   operation.value = 'join'
   try {
     if (await terracotta.setGuesting(code, account.username || 'PCL.Proto Anonymous Guest'))
       await router.push({ path: '/tools/lobby/inner', query: { code } })
-    else error.value = '加入大厅失败，请检查大厅编号和网络连接。'
+    else error.value = pclText('Proto.Lobby.JoinFailed')
   } finally {
     operation.value = ''
   }
@@ -59,11 +59,11 @@ async function connect(code: string) {
 async function create(port: string) {
   const n = Number(port)
   if (!/^\d+$/.test(port) || !Number.isInteger(n) || n < 1 || n > 65535) {
-    sideTip.show('请输入 1 至 65535 之间的端口', 'warn')
+    sideTip.show(pclText('Proto.Lobby.InvalidPort'), 'warn')
     return
   }
   if (!isTauri()) {
-    sideTip.show('请在桌面客户端中使用联机功能。', 'warn')
+    sideTip.show(pclText('Proto.Desktop.Link'), 'warn')
     return
   }
   operation.value = 'create'
@@ -71,7 +71,7 @@ async function create(port: string) {
     const code = await terracotta.setHostStarting(n, account.username || 'PCL.Proto Anonymous Host')
     await router.push({ path: '/tools/lobby/inner', query: { code } })
   } catch (err) {
-    error.value = `创建大厅失败：${err}`
+    error.value = pclText('Proto.Lobby.CreateFailed', [err])
   } finally {
     operation.value = ''
   }
@@ -79,9 +79,9 @@ async function create(port: string) {
 async function copy(text: string) {
   try {
     await navigator.clipboard.writeText(text)
-    sideTip.show('复制成功', 'success')
+    sideTip.show(pclText('Proto.Clipboard.CopySuccess'), 'success')
   } catch {
-    sideTip.show('复制失败，请检查剪贴板权限。', 'warn')
+    sideTip.show(pclText('Proto.Clipboard.CopyFailed'), 'warn')
   }
 }
 async function action({ id, attrs }: { id: string; attrs: Record<string, string> }) {
@@ -94,7 +94,7 @@ async function action({ id, attrs }: { id: string; attrs: Record<string, string>
       await create(selectedPort.value)
       return
     case 'BtnRefresh':
-      if (!(await terracotta.setHostScanning())) error.value = '扫描失败，请在桌面客户端中重试。'
+      if (!(await terracotta.setHostScanning())) error.value = pclText('Proto.Lobby.ScanFailed')
       return
     case 'BtnClearLobbyId':
       values.TextJoinLobbyId = ''
@@ -103,17 +103,25 @@ async function action({ id, attrs }: { id: string; attrs: Record<string, string>
       try {
         values.TextJoinLobbyId = await navigator.clipboard.readText()
       } catch {
-        sideTip.show('无法读取剪贴板，请手动输入大厅编号。', 'warn')
+        sideTip.show(pclText('Proto.Clipboard.ReadLobbyFailed'), 'warn')
       }
       return
     case 'BtnInputPort': {
       const modal = useModal()
       const result = await modal.open({
-        title: '手动输入端口',
+        title: pclText('Proto.Lobby.EnterPort'),
         showInput: true,
         buttons: [
-          { type: 'tint', content: '创建', operation: () => modal.close(true) },
-          { type: 'default', content: '取消', operation: () => modal.close(false) },
+          {
+            type: 'tint',
+            content: pclText('Launch.Account.Offline.Create'),
+            operation: () => modal.close(true),
+          },
+          {
+            type: 'default',
+            content: pclText('Common.Action.Cancel'),
+            operation: () => modal.close(false),
+          },
         ],
       })
       if (result.confirmed && result.input) await create(result.input)
@@ -124,21 +132,21 @@ async function action({ id, attrs }: { id: string; attrs: Record<string, string>
       return
     case 'BtnFinishCopyIp':
       if (terracotta.url) await copy(terracotta.url)
-      else sideTip.show('尚未获取到虚拟 IP。', 'warn')
+      else sideTip.show(pclText('Proto.Lobby.NoVirtualIP'), 'warn')
       return
     case 'BtnFinishExit':
       try {
         await terracotta.setWaiting()
         await router.push('/tools/lobby')
       } catch (err) {
-        error.value = `退出大厅失败：${err}`
+        error.value = pclText('Proto.Lobby.LeaveFailed', [err])
       }
       return
   }
   const url = attrs['CustomEventService.EventData']
   if (attrs['CustomEventService.EventType'] === 'OpenUrl' && /^https?:\/\//.test(url || ''))
     window.open(url, '_blank', 'noopener,noreferrer')
-  else sideTip.show('此操作尚未接入 PCL.Proto。')
+  else sideTip.show(pclText('Proto.NotImplemented.Action'))
 }
 let disposed = false
 onMounted(async () => {
@@ -156,10 +164,8 @@ onUnmounted(() => {
   terracotta.stopAutoUpdate()
 })
 
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 function change(id: string, value: string | boolean | number) {
   values[id] = value
 }
@@ -187,7 +193,7 @@ function act(id: string, event = '', type = '', data = '') {
               "
             >
               <span>{{
-                error || (isTauri() ? 'PCL.Proto 联机大厅' : '请在桌面客户端中使用联机大厅。')
+                error || (isTauri() ? pclText('Proto.Lobby.Title') : pclText('Proto.Desktop.Lobby'))
               }}</span>
             </div>
             <div
@@ -559,10 +565,7 @@ function act(id: string, event = '', type = '', data = '') {
                 "
                 :title="
                   terracotta.profiles
-                    ? text('Tools.GameLink.Member.ListCount').replace(
-                        '{0}',
-                        String(terracotta.profiles.length),
-                      )
+                    ? text('Tools.GameLink.Member.ListCount', [terracotta.profiles.length])
                     : text('Tools.GameLink.Member.ListLoading')
                 "
               >

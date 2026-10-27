@@ -1,3 +1,4 @@
+import { pclText } from '@/api/pclLocale'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { ISearchHit } from '@/api/modrinthApi'
@@ -32,7 +33,7 @@ export const useCompFavorites = defineStore('comp-favorites', () => {
       localStorage.setItem(key, JSON.stringify(next))
       items.value = next
     } catch {
-      sideTip.show('收藏保存失败，请检查可用存储空间。', 'warn')
+      sideTip.show(pclText('Proto.Storage.FavoritesFailed'), 'warn')
     }
   }
   return { items, has, toggle }

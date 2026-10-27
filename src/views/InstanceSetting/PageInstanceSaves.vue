@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
@@ -52,7 +53,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceSaves'
                 ><PComboBox
                   v-model="sort"
                   :options="[
-                    { key: 'name', text: '名称' },
+                    { key: 'name', text: pclText('Proto.Label.Name') },
                     { key: 'default', text: text('Common.Option.Default') },
                   ]"
                 />

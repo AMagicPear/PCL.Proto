@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
@@ -193,11 +194,13 @@ const visibleDatapacks = computed(() =>
                     ><template #actions
                       ><PCheckBox
                         :id="`datapack-${pack.id}`"
-                        :label="`选择 ${pack.name}`"
+                        :label="pclText('Proto.Label.Select', [pack.name])"
                         :model-value="selected.has(pack.id)"
                         @update:model-value="(checked) => select(pack.id, checked)" /></template
                   ></PListItem>
-                  <p v-if="!visibleDatapacks.length" class="pcl-empty">没有符合条件的结果</p>
+                  <p v-if="!visibleDatapacks.length" class="pcl-empty">
+                    {{ pclText('Download.Comp.List.NoMatchingResults') }}
+                  </p>
                 </div>
               </PCard>
             </div>
@@ -263,7 +266,7 @@ const visibleDatapacks = computed(() =>
       </div>
     </div>
     <PCard v-if="selected.size" hide-title class="pcl-selection-toolbar"
-      ><p>{{ text('Instance.Resource.SelectedCount').replace('{0}', String(selected.size)) }}</p>
+      ><p>{{ text('Instance.Resource.SelectedCount', [selected.size]) }}</p>
       <div>
         <PButton
           v-for="action in selectionActions"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { defineAsyncComponent } from 'vue'
 import { isTauri } from '@tauri-apps/api/core'
 import PHint from '@/components/widget/PHint.vue'
@@ -13,17 +14,10 @@ const ComponentShowcase = defineAsyncComponent(
 </script>
 <template>
   <section class="pcl-page launch-cards" v-card-drop-children-animate>
-    <PCard title="欢迎来到 PCL.Proto！" default-fold-status="unfold"
+    <PCard :title="pclText('Proto.About.Welcome')" default-fold-status="unfold"
       ><div class="proto-introduction">
-        <PHint severity="info"
-          >随着 PCL 的分支版本竞相启动，UI 的还原成为了一大困扰众开发者的难题。PCL.Proto
-          应运而生。</PHint
-        >
-        <p>
-          本项目以 PCL2（龙腾猫跃）和 PCL2-CE 为蓝本，旨在为各 PCL
-          分支版本提供一个标准化的原型样本。该仓库使用 Vue3 搭建，如果你的仓库使用 Webview
-          作为前端，则可以直接引用该项目。
-        </p>
+        <PHint severity="info">{{ pclText('Proto.About.Intro') }}</PHint>
+        <p>{{ pclText('Proto.About.Description') }}</p>
       </div></PCard
     >
     <PCard v-if="launchLog" :title="text('Launch.Right.Log.Title')">

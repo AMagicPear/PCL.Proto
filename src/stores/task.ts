@@ -1,3 +1,4 @@
+import { pclText } from '@/api/pclLocale'
 import { FloatButtonType, useFloatButton } from '@/composables/useFloatButton'
 import { Channel, invoke } from '@tauri-apps/api/core'
 import { defineStore } from 'pinia'
@@ -12,22 +13,26 @@ export enum TaskStatus {
 
 export class Task {
   id: number
-  name: string
+  versionId: string
   status: TaskStatus
   speed: number
   items: TaskItem[]
   progress: number
 
+  get name() {
+    return pclText('Proto.Task.Download', [this.versionId])
+  }
+
   constructor(id: number, version_id: string) {
     this.id = id
-    this.name = version_id + '下载'
+    this.versionId = version_id
     this.status = TaskStatus.Pending
     this.speed = 0
     this.items = [
-      new TaskItem(0, '下载版本信息', id, 1),
-      new TaskItem(1, '下载游戏主文件', id, 1),
-      new TaskItem(2, '下载支持库', id),
-      new TaskItem(3, '下载资源文件', id),
+      new TaskItem(0, 'Proto.Task.Manifest', id, 1),
+      new TaskItem(1, 'Proto.Task.Client', id, 1),
+      new TaskItem(2, 'Proto.Task.Libraries', id),
+      new TaskItem(3, 'Minecraft.Download.Stage.DownloadAssets', id),
     ]
     this.progress = 0
   }
@@ -46,15 +51,19 @@ export interface ITaskItem {
 class TaskItem implements ITaskItem {
   id: number
   task_id: number
-  name: string
+  nameKey: string
   status: TaskStatus
   speed: number | null
   progress: number
   remaining: number | undefined
 
+  get name() {
+    return pclText(this.nameKey)
+  }
+
   constructor(id: number, name: string, task_id: number, files_num?: number) {
     this.id = id
-    this.name = name
+    this.nameKey = name
     this.task_id = task_id
     this.status = TaskStatus.Pending
     this.progress = 0

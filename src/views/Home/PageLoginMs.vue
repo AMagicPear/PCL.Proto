@@ -5,15 +5,13 @@ import PPath from '@/components/widget/PPath.vue'
 import paths from '@/assets/vector-paths.json'
 const loginShape = paths['05803c336117c503'].data
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 const router = useRouter()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 defineExpose({ showLoginDialog: PMsgLogin })
 function login() {
-  sideTip.show('正版验证尚未接入 PCL.Proto。')
+  sideTip.show(pclText('Proto.NotImplemented.Microsoft'))
 }
 function open(url: string) {
   window.open(url, '_blank', 'noopener,noreferrer')

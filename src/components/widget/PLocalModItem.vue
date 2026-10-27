@@ -26,7 +26,7 @@ const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
     <template #icon
       ><input
         type="checkbox"
-        :aria-label="`选择 ${title}`"
+        :aria-label="pclText('Proto.Label.Select', [title])"
         :checked="selected"
         @change="emit('select', ($event.target as HTMLInputElement).checked)" /><img
         :src="icon || fallback"

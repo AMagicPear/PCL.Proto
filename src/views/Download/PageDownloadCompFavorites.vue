@@ -10,11 +10,9 @@ import PCheckBox from '@/components/widget/PCheckBox.vue'
 import sideTip from '@/composables/sideTip'
 import { usePageSettings } from '@/composables/usePageSettings'
 import { useCompFavorites } from '@/stores/compFavorites'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 const favorites = useCompFavorites()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 const query = ref('')
 const folder = ref('default')
 const { act } = usePageSettings('PageDownloadCompFavorites')
@@ -33,9 +31,9 @@ async function share(ids: string[]) {
   }
   try {
     await navigator.clipboard.writeText(JSON.stringify(ids))
-    sideTip.show('已成功复制！', 'success')
+    sideTip.show(pclText('Common.Hint.Copied'), 'success')
   } catch {
-    sideTip.show('复制失败，请检查剪贴板权限。', 'warn')
+    sideTip.show(pclText('Proto.Clipboard.CopyFailed'), 'warn')
   }
 }
 function unfavoriteSelected() {
@@ -90,16 +88,17 @@ const items = computed(() =>
     <PCard
       v-if="items.length"
       :title="
-        text('Download.Comp.Favorites.CardTitle')
-          .replace('{0}', text('Download.Comp.Detail.Favorites.DefaultName'))
-          .replace('{1}', String(items.length))
+        text('Download.Comp.Favorites.CardTitle', [
+          text('Download.Comp.Detail.Favorites.DefaultName'),
+          items.length,
+        ])
       "
       ><div class="favorite-items">
         <div v-for="item in items" :key="item.project_id" class="favorite-row">
           <PCheckBox
             :id="`favorite-${item.project_id}`"
             :model-value="selected.has(item.project_id)"
-            :label="`选择 ${item.title}`"
+            :label="pclText('Proto.Label.Select', [item.title])"
             class="select-favorite"
             @update:model-value="(checked) => select(item.project_id, checked)"
           />
@@ -114,17 +113,18 @@ const items = computed(() =>
       ><div class="empty-content">
         <h2>{{ text('Download.Comp.Favorites.Empty.Title') }}</h2>
         <hr />
-        <p>{{ query ? '没有找到相关资源' : text('Download.Comp.Favorites.Empty.Description') }}</p>
+        <p>
+          {{
+            query
+              ? pclText('Proto.Empty.Resources')
+              : text('Download.Comp.Favorites.Empty.Description')
+          }}
+        </p>
       </div></PCard
     >
     <PCard v-if="selectedItems.length" hide-title class="selection-card"
       ><p>
-        {{
-          text('Download.Comp.Favorites.Hint.SelectedCount').replace(
-            '{0}',
-            String(selectedItems.length),
-          )
-        }}
+        {{ text('Download.Comp.Favorites.Hint.SelectedCount', [selectedItems.length]) }}
       </p>
       <div class="selection-actions">
         <PButton inline :click="unfavoriteSelected"

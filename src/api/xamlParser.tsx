@@ -1,3 +1,4 @@
+import { pclText } from '@/api/pclLocale'
 import PListItem from '@/components/widget/PListItem.vue'
 import type { ButtonType } from '@/components/widget/PButton.vue'
 import PButton from '@/components/widget/PButton.vue'
@@ -64,7 +65,7 @@ function handleEvent(eventType: string, eventData: string) {
     case '复制文本':
       onClick = () => {
         navigator.clipboard.writeText(eventData).then(() => {
-          sideTip.show('已成功复制！', 'success')
+          sideTip.show(pclText('Common.Hint.Copied'), 'success')
         })
       }
       break

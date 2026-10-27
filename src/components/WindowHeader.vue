@@ -10,11 +10,9 @@ import { debug } from '@tauri-apps/plugin-log'
 import { isTauri } from '@tauri-apps/api/core'
 import PSvgIcon from './widget/PSvgIcon.vue'
 import { pclText } from '@/api/pclLocale'
-import { useI18n } from 'vue-i18n'
 
 const sideNavState = useSideNavState()
 const appWindow = isTauri() ? getCurrentWindow() : null
-const { locale, t, te } = useI18n()
 
 const isSubPage = ref(false)
 const route = useRoute()
@@ -69,7 +67,7 @@ appWindow?.onResized(async () => {
       .left(v-else :class="{ 'mac-margin-title': currentPlatform == 'macos' }")
         i.button-animated(@click="backClicked")
           PSvgIcon(name="lucide/arrow-left" :size="14")
-        span.title-text(v-if="title" data-tauri-drag-region) {{ te(title) ? t(title) : title }}
+        span.title-text(v-if="title" data-tauri-drag-region) {{ pclText(title) }}
 
 
     Transition(name="nav")
@@ -77,7 +75,7 @@ appWindow?.onResized(async () => {
         nav#main-nav(:class="{ 'mac-margin-nav': currentPlatform == 'macos' }")
           RouterLink(v-for="item in navItems" :key="item.to" :to="item.to")
             component(:is="item.icon")
-            | {{ pclText(item.label, locale) }}
+            | {{ pclText(item.label) }}
 
     .right(v-if="currentPlatform != 'macos' && appWindow")
       i.button-animated(@click="appWindow?.minimize()"): PSvgIcon(name="lucide/minus" :size="14")

@@ -36,7 +36,9 @@ withDefaults(
         >
       </div></PCard
     >
-    <p v-if="!loading && !error && !items.length" class="pcl-empty">暂无新闻</p>
+    <p v-if="!loading && !error && !items.length" class="pcl-empty">
+      {{ text('Proto.Empty.News') }}
+    </p>
   </section>
 </template>
 <style scoped>

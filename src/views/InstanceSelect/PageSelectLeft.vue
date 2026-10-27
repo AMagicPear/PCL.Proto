@@ -5,19 +5,17 @@ import SideNavLayout from '@/layout/SideNavLayout.vue'
 import { useRepositoriesStore } from '@/stores/repositories'
 import { computed, h, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import { isTauri } from '@tauri-apps/api/core'
 const repo = useRepositoriesStore()
 const router = useRouter()
 const route = useRoute()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 async function add() {
   try {
     await repo.addNew()
   } catch (err) {
-    sideTip.show(`添加文件夹失败：${String(err)}`, 'warn')
+    sideTip.show(pclText('Proto.Error.AddFolder', [String(err)]), 'warn')
   }
 }
 const groups = computed(() => [
@@ -40,7 +38,7 @@ const groups = computed(() => [
       {
         text: text('Select.Folder.ImportModpack.Title'),
         icon: () => h(PSvgIcon, { name: 'lucide/package' }),
-        clickCallback: () => sideTip.show('此操作尚未接入 PCL.Proto。'),
+        clickCallback: () => sideTip.show(pclText('Proto.NotImplemented.Action')),
       },
     ],
   },
@@ -52,7 +50,7 @@ onMounted(async () => {
     if (repo.repositires?.length && !route.params.repository)
       await router.replace('/instance_select/instance_select_sub/0')
   } catch (err) {
-    sideTip.show(`读取文件夹列表失败：${String(err)}`, 'warn')
+    sideTip.show(pclText('Proto.Error.Folders', [String(err)]), 'warn')
   }
 })
 </script>

@@ -246,17 +246,13 @@ export const setupRoutes: Record<string, string> = {
   ItemFeedback: '/setup/feedback',
   ItemLog: '/setup/log',
 }
-export function pageNavigation(
-  page: string,
-  routes: Record<string, string>,
-  locale: string,
-): INavItemGroup[] {
+export function pageNavigation(page: string, routes: Record<string, string>): INavItemGroup[] {
   return (navigation[page] || []).map((group) => ({
-    title: pclText(group.title, locale),
+    title: pclText(group.title),
     content: group.items
       .filter((item) => routes[item.id])
       .map((item) => ({
-        text: pclText(item.text, locale),
+        text: pclText(item.text),
         linkto: routes[item.id]!,
         icon: () => h(PSvgIcon, { name: item.icon, size: 20 }),
         action: (() => {
@@ -268,7 +264,7 @@ export function pageNavigation(
           )[page]?.[item.id]
           return action
             ? {
-                title: pclText(action.title, locale),
+                title: pclText(action.title),
                 kind: action.kind,
                 icon: () => h(PSvgIcon, { name: action.icon, size: 15 }),
               }

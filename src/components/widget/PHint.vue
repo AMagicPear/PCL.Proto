@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { ref } from 'vue'
 import PSvgIcon from './PSvgIcon.vue'
 
@@ -16,7 +17,7 @@ const visibility = ref(true)
     <div><slot></slot></div>
     <button
       type="button"
-      aria-label="关闭提示"
+      :aria-label="pclText('Proto.Action.CloseHint')"
       class="button-animated"
       v-if="closable"
       @click="visibility = false"

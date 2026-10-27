@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { RouterView } from 'vue-router'
 import TitleMessage from './components/website/TitleMessage.vue'
 import useSideNavState from '@/stores/windowState'
@@ -19,9 +20,9 @@ const website = !isTauri()
 if (isTauri())
   listen<string>('modal-open', (event) => {
     modal.open({
-      title: '错误',
+      title: pclText('Instance.Resource.Filter.Error'),
       content: event.payload,
-      buttons: [{ type: 'tint', content: '确定' }],
+      buttons: [{ type: 'tint', content: pclText('Common.Action.Confirm') }],
     })
   })
 </script>

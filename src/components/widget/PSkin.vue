@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { pclText } from '@/api/pclLocale'
 import { ref, watch } from 'vue'
 const props = defineProps<{ skinUrl?: string }>()
 const fallback = `${import.meta.env.BASE_URL}pcl/images/Skins/Steve.png`
@@ -18,7 +19,7 @@ watch(
       @error="source = fallback"
       crossorigin="anonymous"
       class="avatar-img"
-      alt="玩家皮肤"
+      :alt="pclText('Proto.Label.PlayerSkin')"
     />
     <img
       :src="source"

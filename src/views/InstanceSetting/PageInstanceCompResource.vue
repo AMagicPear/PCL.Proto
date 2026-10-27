@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
@@ -140,7 +141,9 @@ const selectionActions = [
                     @toggle="act('BtnToggle')"
                     @update="act('BtnUpdate')"
                   />
-                  <p v-if="!visibleItems.length" class="pcl-empty">没有符合条件的结果</p>
+                  <p v-if="!visibleItems.length" class="pcl-empty">
+                    {{ pclText('Download.Comp.List.NoMatchingResults') }}
+                  </p>
                 </div></PCard
               >
             </div>
@@ -212,7 +215,7 @@ const selectionActions = [
       </div>
     </div>
     <PCard v-if="selected.size" hide-title class="pcl-selection-toolbar"
-      ><p>{{ text('Instance.Resource.SelectedCount').replace('{0}', String(selected.size)) }}</p>
+      ><p>{{ text('Instance.Resource.SelectedCount', [selected.size]) }}</p>
       <div>
         <PButton
           v-for="action in selectionActions"

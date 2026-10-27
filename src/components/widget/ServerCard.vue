@@ -17,10 +17,7 @@ const emit = defineEmits<{ connect: []; refresh: []; edit: []; remove: [] }>()
 async function copyAddress() {
   try {
     await navigator.clipboard.writeText(props.address)
-    sideTip.show(
-      pclText('Instance.Server.Card.AddressCopied').replace('{0}', props.address),
-      'success',
-    )
+    sideTip.show(pclText('Instance.Server.Card.AddressCopied', [props.address]), 'success')
   } catch {
     sideTip.show(pclText('Instance.Server.Card.CopyAddressFailed'), 'warn')
   }

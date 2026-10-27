@@ -55,7 +55,11 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                 data-control="ComboSystemActivity"
                 style="grid-row: 1 / span 1; grid-column: 2 / span 1"
                 :options="[
-                  { key: '0', text: text('Setup.Misc.System.Announcement.All'), title: text('Setup.Misc.System.Announcement.All.ToolTip') },
+                  {
+                    key: '0',
+                    text: text('Setup.Misc.System.Announcement.All'),
+                    title: text('Setup.Misc.System.Announcement.All.ToolTip'),
+                  },
                   { key: '1', text: text('Setup.Misc.System.Announcement.ImportantOnly') },
                   { key: '2', text: text('Setup.Misc.System.Announcement.Disabled') },
                 ]"
@@ -264,7 +268,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                   data-control="TextSystemHttpProxy"
                   style="grid-row: 3 / span 1; grid-column: 1 / span 5"
                   :title="text('Setup.Misc.Network.Proxy.InvalidWarning')"
-                  :placeholder="text('比如 http://127.0.0.1:1080/')"
+                  :placeholder="text('Proto.Settings.ProxyExample')"
                   :model-value="String(values['TextSystemHttpProxy'])"
                   @update:model-value="(value) => change('TextSystemHttpProxy', value || '')"
                 />

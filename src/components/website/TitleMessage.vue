@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { pclText } from '@/api/pclLocale'
 import picPCLProto from '/PCL.Proto.svg?url'
 </script>
 
@@ -15,7 +16,7 @@ import picPCLProto from '/PCL.Proto.svg?url'
       br
       p.webapi Now the project has been a Tauri project. #[br]If you want to get full experience, please go to the repository to #[a(href="https://github.com/PCL-Community/PCL.Proto/releases") download the release].
       p.webapi
-        RouterLink(to="/homepageeditor") PCL 主页制作器
+        RouterLink(to="/homepageeditor") {{ pclText('Proto.Title.HomepageEditor') }}
 </template>
 
 <style scoped>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { ref, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
@@ -36,18 +37,18 @@ async function act(id: string, event = '', type = '', data = '') {
       const luck = await invoke<number>('get_lucky_today')
       await useModal().open({
         title: text('Tools.Test.Luck.Title'),
-        content: `你今天的人品值是：${luck}`,
-        buttons: [{ type: 'tint', content: '确定' }],
+        content: pclText('Proto.Tools.Luck', [luck]),
+        buttons: [{ type: 'tint', content: pclText('Common.Action.Confirm') }],
       })
     } catch (err) {
-      sideTip.show(`未能获取今日人品：${String(err)}`, 'warn')
+      sideTip.show(pclText('Proto.Tools.LuckFailed', [String(err)]), 'warn')
     }
     return
   }
   if (id === 'BtnSkinSave') {
     const name = String(values.TextSkinID || '').trim()
     if (!/^[A-Za-z0-9_]{3,16}$/.test(name)) {
-      sideTip.show('请输入有效的正版玩家名。', 'warn')
+      sideTip.show(pclText('Proto.Tools.InvalidPlayer'), 'warn')
       return
     }
     try {
@@ -63,7 +64,7 @@ async function act(id: string, event = '', type = '', data = '') {
         'username',
       )
     } catch (err) {
-      sideTip.show(`未能获取玩家皮肤：${String(err)}`, 'warn')
+      sideTip.show(pclText('Proto.Tools.SkinFailed', [String(err)]), 'warn')
     }
     return
   }
@@ -91,7 +92,7 @@ async function act(id: string, event = '', type = '', data = '') {
               <PButton
                 style="min-width: 120px; margin: 0px 15px 15px 0px"
                 :click="() => router.push('/homepageeditor')"
-                >PCL 主页制作器</PButton
+                >{{ pclText('Proto.Title.HomepageEditor') }}</PButton
               >
               <PButton
                 data-control="BtnClear"

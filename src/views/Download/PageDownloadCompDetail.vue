@@ -10,15 +10,13 @@ import PHint from '@/components/widget/PHint.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { useRoute } from 'vue-router'
 import { computed, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 import { useCompFavorites } from '@/stores/compFavorites'
 const favorites = useCompFavorites()
 
 const route = useRoute()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 const project = ref<IProject>()
 const versions = ref<IVersion[]>([])
 const loading = ref(false)
@@ -59,7 +57,7 @@ async function load() {
   versions.value = []
   try {
     const id = String(route.query.id || '')
-    if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw new Error('资源 ID 无效。')
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw new Error(pclText('Proto.Resource.InvalidId'))
     const [data, files] = await Promise.all([
       modrinthApi.getProject(id),
       modrinthApi.getProjectVersions(id),
@@ -68,7 +66,7 @@ async function load() {
     project.value = data
     versions.value = files
   } catch (err) {
-    if (current === request) error.value = `资源加载失败：${String(err)}`
+    if (current === request) error.value = pclText('Proto.Error.Resource', [String(err)])
   } finally {
     if (current === request) loading.value = false
   }
@@ -76,9 +74,9 @@ async function load() {
 async function copy(value: string) {
   try {
     await navigator.clipboard.writeText(value)
-    sideTip.show('已成功复制！', 'success')
+    sideTip.show(pclText('Common.Hint.Copied'), 'success')
   } catch {
-    sideTip.show('无法访问剪贴板。', 'warn')
+    sideTip.show(pclText('Proto.Clipboard.Unavailable'), 'warn')
   }
 }
 function openUrl(url: string) {
@@ -101,7 +99,10 @@ watch(
   <article class="subview pcl-page detail-page">
     <PLoading v-if="loading" :loading-text="text('Download.Version.LoadingList')" />
     <PHint v-else-if="error" severity="error"
-      >{{ error }}<PButton inline :click="load">重试</PButton></PHint
+      >{{ error
+      }}<PButton inline :click="load">{{
+        pclText('Launch.Homepage.LoadFailed.Retry')
+      }}</PButton></PHint
     >
     <template v-else-if="project && item">
       <PCard hide-title>
@@ -154,7 +155,7 @@ watch(
               { key: '', text: text('Common.Option.All') },
               ...gameVersions.map((value) => ({ key: value, text: value })),
             ]"
-            aria-label="游戏版本"
+            :aria-label="pclText('Proto.Label.GameVersion')"
           />
           <PComboBox
             v-model="loaderFilter"
@@ -162,7 +163,7 @@ watch(
               { key: '', text: text('Common.Option.All') },
               ...loaders.map((value) => ({ key: value, text: value })),
             ]"
-            aria-label="加载器"
+            :aria-label="pclText('Download.Comp.Filter.Loader')"
           />
         </div>
       </PCard>
@@ -182,13 +183,13 @@ watch(
                 rel="noopener noreferrer"
                 :download="file.filename"
                 class="file-download"
-                ><PSvgIcon name="lucide/download" />下载</a
+                ><PSvgIcon name="lucide/download" />{{ pclText('Common.Action.Download') }}</a
               ></template
             >
           </PListItem>
         </div>
       </PCard>
-      <p v-if="!filtered.length" class="pcl-empty">没有符合筛选条件的版本</p>
+      <p v-if="!filtered.length" class="pcl-empty">{{ pclText('Proto.Empty.FilteredVersions') }}</p>
     </template>
   </article>
 </template>

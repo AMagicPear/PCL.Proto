@@ -22,9 +22,9 @@ export function PMsgLogin(code: string, verificationUrl: string, caption: string
         operation: async () => {
           try {
             await navigator.clipboard.writeText(code)
-            sideTip.show('已成功复制！', 'success')
+            sideTip.show(pclText('Common.Hint.Copied'), 'success')
           } catch {
-            sideTip.show('复制失败，请检查剪贴板权限。', 'warn')
+            sideTip.show(pclText('Proto.Clipboard.CopyFailed'), 'warn')
           }
         },
       },

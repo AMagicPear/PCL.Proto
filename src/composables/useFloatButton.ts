@@ -1,3 +1,4 @@
+import { pclText } from '@/api/pclLocale'
 import IconDownload from '@/components/icons/header/IconDownload.vue'
 import { shallowReactive, type Component } from 'vue'
 
@@ -16,23 +17,20 @@ export interface FloatButtonState {
 
 const floatButtonState = shallowReactive<FloatButtonState>({
   visible: false,
-  text: '开始下载',
+  get text() {
+    return this.type === FloatButtonType.DownloadGame
+      ? pclText('Download.Install.StartDownload')
+      : undefined
+  },
   icon: IconDownload,
-  title: undefined as string | undefined,
+  get title() {
+    return this.type === FloatButtonType.TaskManage ? pclText('Main.Title.TaskManager') : undefined
+  },
   type: FloatButtonType.DownloadGame,
 })
 
 export const useFloatButton = () => {
   const set = (type: FloatButtonType) => {
-    switch (type) {
-      case FloatButtonType.DownloadGame:
-        floatButtonState.text = '开始下载'
-        break
-      case FloatButtonType.TaskManage:
-        floatButtonState.text = undefined
-        floatButtonState.title = '任务管理'
-        break
-    }
     floatButtonState.type = type
   }
   return {

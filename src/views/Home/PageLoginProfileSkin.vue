@@ -4,15 +4,13 @@ import PButton from '@/components/widget/PButton.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { useAccountInfo } from '@/stores/account'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import PCard from '@/components/widget/PCard.vue'
 import { usePageSettings } from '@/composables/usePageSettings'
 const { act } = usePageSettings('PageLoginProfileSkin')
 const account = useAccountInfo()
 const router = useRouter()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 </script>
 <template>
   <div class="profile-skin">

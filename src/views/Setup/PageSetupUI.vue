@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
@@ -126,10 +127,9 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     height: 28px;
                     margin: 0px 0px 7px 0px;
                     display: grid;
-                    grid-template-columns: auto minmax(0, 1fr) 92px minmax(0, 1fr) minmax(
-                        0,
-                        1fr
-                      ) minmax(0, 1fr);
+                    grid-template-columns:
+                      auto minmax(0, 1fr) 92px minmax(0, 1fr) minmax(0, 1fr)
+                      minmax(0, 1fr);
                   "
                 >
                   <span
@@ -303,8 +303,16 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                       "
                       :title="text('Setup.Ui.Basic.BlurMethod.ToolTip')"
                       :options="[
-                        { key: '0', text: text('Setup.Ui.Basic.BlurMethod.Gaussian'), title: text('Setup.Ui.Basic.BlurMethod.Gaussian.ToolTip') },
-                        { key: '1', text: text('Setup.Ui.Basic.BlurMethod.Box'), title: text('Setup.Ui.Basic.BlurMethod.Box.ToolTip') },
+                        {
+                          key: '0',
+                          text: text('Setup.Ui.Basic.BlurMethod.Gaussian'),
+                          title: text('Setup.Ui.Basic.BlurMethod.Gaussian.ToolTip'),
+                        },
+                        {
+                          key: '1',
+                          text: text('Setup.Ui.Basic.BlurMethod.Box'),
+                          title: text('Setup.Ui.Basic.BlurMethod.Box.ToolTip'),
+                        },
                       ]"
                       :model-value="String(values['ComboBlurType'])"
                       @update:model-value="(value) => change('ComboBlurType', value || '')"
@@ -336,7 +344,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                 data-control="ComboUiFont"
                 style="grid-row: 1 / span 1; grid-column: 3 / span 1"
                 :options="[
-                  { key: 'system-ui', text: '跟随系统' },
+                  { key: 'system-ui', text: pclText('Setup.Ui.Theme.FollowSystem') },
                   { key: 'Microsoft YaHei UI', text: 'Microsoft YaHei UI' },
                   { key: 'PingFang SC', text: 'PingFang SC' },
                 ]"
@@ -352,7 +360,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                 data-control="ComboUiMotdFont"
                 style="grid-row: 3 / span 1; grid-column: 3 / span 1"
                 :options="[
-                  { key: 'system-ui', text: '跟随系统' },
+                  { key: 'system-ui', text: pclText('Setup.Ui.Theme.FollowSystem') },
                   { key: 'Microsoft YaHei UI', text: 'Microsoft YaHei UI' },
                   { key: 'PingFang SC', text: 'PingFang SC' },
                 ]"
@@ -556,10 +564,9 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                 style="
                   margin: 0px 0px 0px -1px;
                   display: grid;
-                  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(
-                      0,
-                      1fr
-                    ) minmax(0, 0.2fr);
+                  grid-template-columns:
+                    minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
+                    minmax(0, 0.2fr);
                 "
               >
                 <label
@@ -680,10 +687,9 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                 style="
                   margin: 0px 0px 0px -1px;
                   display: grid;
-                  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(
-                      0,
-                      1fr
-                    ) minmax(0, 0.2fr);
+                  grid-template-columns:
+                    minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
+                    minmax(0, 0.2fr);
                 "
               >
                 <label
@@ -855,10 +861,9 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
               <div
                 style="
                   display: grid;
-                  grid-template-columns: auto 18px minmax(0, 0.8fr) minmax(0, 0.9fr) minmax(
-                      0,
-                      0.8fr
-                    ) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr);
+                  grid-template-columns:
+                    auto 18px minmax(0, 0.8fr) minmax(0, 0.9fr) minmax(0, 0.8fr)
+                    minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr);
                   grid-template-rows: 4px 30px 30px 30px 30px 30px 30px 30px auto;
                 "
               >

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { computed, onUnmounted, ref } from 'vue'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
@@ -13,12 +14,12 @@ const loading = ref(false)
 const error = ref('')
 const status = computed(() =>
   loading.value
-    ? '正在检查更新…'
+    ? pclText('Proto.Update.Checking')
     : latest.value
       ? latest.value.version.replace(/^v/, '') === appVersion
-        ? '当前已是最新版本'
-        : `最新发布：${latest.value.version}`
-      : '尚未检查更新',
+        ? pclText('Proto.Update.Current')
+        : pclText('Proto.Update.Latest', [latest.value.version])
+      : pclText('Proto.Update.NotChecked'),
 )
 let controller: AbortController | undefined
 async function check() {
@@ -43,7 +44,7 @@ async function check() {
       typeof data.html_url !== 'string' ||
       !data.html_url.startsWith(`${repository}/releases/`)
     )
-      throw new Error('版本信息格式错误')
+      throw new Error(pclText('Proto.Update.InvalidResponse'))
     if (!request.signal.aborted)
       latest.value = {
         version: data.tag_name,
@@ -51,7 +52,7 @@ async function check() {
         body: 'body' in data && typeof data.body === 'string' ? data.body : '',
       }
   } catch (err) {
-    if (!request.signal.aborted) error.value = `检查更新失败：${String(err)}`
+    if (!request.signal.aborted) error.value = pclText('Proto.Update.Failed', [String(err)])
   } finally {
     if (!request.signal.aborted) loading.value = false
   }
@@ -86,16 +87,16 @@ onUnmounted(() => controller?.abort())
         <p>
           {{
             latest
-              ? latest.body || '此版本没有提供更新说明。'
-              : '检查更新后将在此显示 PCL.Proto 的版本说明。'
+              ? latest.body || pclText('Proto.Update.NoNotes')
+              : pclText('Proto.Update.NotesPlaceholder')
           }}
         </p>
         <PButton inline :click="() => open(latest?.url || `${repository}/releases`)">{{
           text('Setup.Update.Changelog.MoreInfo')
         }}</PButton
-        ><PButton v-if="latest" type="tint" :click="() => open(latest!.url)"
-          >前往 GitHub 获取安装包</PButton
-        >
+        ><PButton v-if="latest" type="tint" :click="() => open(latest!.url)">{{
+          pclText('Proto.Update.Download')
+        }}</PButton>
       </div></PCard
     >
   </section>

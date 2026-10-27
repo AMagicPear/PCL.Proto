@@ -9,7 +9,6 @@ import { useSelectedInstance } from '@/stores/gameLaunch'
 import { useRoute, useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 defineProps<{
@@ -26,8 +25,7 @@ defineProps<{
 const route = useRoute()
 const router = useRouter()
 const instance = useSelectedInstance()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 const accountView = computed(() =>
   route.path.startsWith('/account')
     ? { offline: PageLoginOffline, microsoft: PageLoginMs, auth: PageLoginAuth }[
@@ -43,12 +41,12 @@ async function launch() {
   try {
     await invoke('launch_game')
   } catch (err) {
-    sideTip.show(`启动游戏失败：${String(err)}`, 'warn')
+    sideTip.show(pclText('Proto.Error.Launch', [String(err)]), 'warn')
   }
 }
 function settings() {
   if (instance.instance_info) void router.push('/instance_setting')
-  else sideTip.show('请先选择一个游戏实例。')
+  else sideTip.show(pclText('Proto.Instance.SelectFirstHint'))
 }
 </script>
 <template>
@@ -75,7 +73,7 @@ function settings() {
       </dl>
       <h3>{{ text('Launch.Status.Trivia') }}</h3>
       <p>{{ launching.trivia || text('Launch.Status.Trivia.Placeholder') }}</p>
-      <PButton :click="() => sideTip.show('取消启动尚未接入 PCL.Proto。')">{{
+      <PButton :click="() => sideTip.show(pclText('Proto.NotImplemented.CancelLaunch'))">{{
         text('Common.Action.Cancel')
       }}</PButton>
     </div>

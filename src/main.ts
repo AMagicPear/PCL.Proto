@@ -9,13 +9,11 @@ import './assets/main.css'
 import { isTauri } from '@tauri-apps/api/core'
 
 import App from './App.vue'
-import { loadPclLocale } from './api/pclLocale'
+import { initializePclLocale } from './api/pclLocale'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import router from '@/router/index'
-import { createI18n } from 'vue-i18n'
-import locales from './locales/src'
 import { useAccountInfo } from './stores/account'
 import { attachConsole } from '@tauri-apps/plugin-log'
 import { useSelectedInstance } from './stores/gameLaunch'
@@ -23,17 +21,9 @@ import { vAnimateChildrenDrop, vAnimateDrop } from './util/cardDropAnimate'
 
 const pinia = createPinia()
 
-const i18n = createI18n({
-  legacy: false,
-  locale: localStorage.getItem('pcl-language') || localStorage.getItem('ce-language') || 'zh-CN',
-  fallbackLocale: 'zh-CN',
-  messages: locales,
-})
-
 const app = createApp(App)
 
 app.use(pinia)
-app.use(i18n)
 app.use(router)
 
 // ignore non-emit warnnings
@@ -53,8 +43,7 @@ app.directive('card-drop-children-animate', vAnimateChildrenDrop)
 document.documentElement.classList.add('theme-blue')
 document.documentElement.classList.toggle('website', !isTauri())
 
-void loadPclLocale(i18n.global.locale.value)
-app.mount('#app')
+void initializePclLocale().then(() => app.mount('#app'))
 
 // some async actions
 if (isTauri()) void useAccountInfo().initialize()

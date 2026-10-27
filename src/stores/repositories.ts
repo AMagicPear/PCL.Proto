@@ -1,3 +1,4 @@
+import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 import { useModal } from '@/composables/useModal'
 import type GameInstance from '@/types/gameInstance'
@@ -24,27 +25,27 @@ export const useRepositoriesStore = defineStore('repositories', {
       const modal = useModal()
       let file = await open({ multiple: false, directory: true })
       if (!file) {
-        sideTip.show('未选择任何文件夹！', 'warn')
+        sideTip.show(pclText('Proto.Folder.NotSelected'), 'warn')
         return
       }
       let result = await modal.open({
-        title: '输入文件夹名称',
+        title: pclText('Proto.Folder.EnterName'),
         showInput: true,
         defaultInputText: file.split('/').pop(),
         buttons: [
           {
-            content: '添加',
+            content: pclText('Setup.Java.Add'),
             type: 'tint',
             operation() {
               if (modal.inputValue.value?.trim()) {
                 modal.close(true)
               } else {
-                sideTip.show('请输入合理的文件夹名称！', 'warn')
+                sideTip.show(pclText('Proto.Folder.InvalidName'), 'warn')
               }
             },
           },
           {
-            content: '取消',
+            content: pclText('Common.Action.Cancel'),
             type: 'warn',
           },
         ],

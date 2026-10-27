@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { useModal } from '@/composables/useModal'
 import PButton from './widget/PButton.vue'
 import type { ModalButtonOption } from '@/types/modal'
@@ -15,7 +16,7 @@ const handleButtonClick = async (btn: ModalButtonOption) => {
     .modal-mask(v-if="isOpen")
       .modal-container
         .modal-header
-          h2 {{ options.title ?? '模态框标题未设置' }}
+          h2 {{ options.title ?? pclText('Proto.Label.UntitledDialog') }}
 
         .modal-divider
 
@@ -37,8 +38,8 @@ const handleButtonClick = async (btn: ModalButtonOption) => {
               :click="() => handleButtonClick(btn)"
             ) {{ btn.content }}
           template(v-else)
-            PButton(:click="() => close(true)" type="tint") 确认
-            PButton(:click="() => close(false)" type="warn") 取消
+            PButton(:click="() => close(true)" type="tint") {{ pclText('Proto.Action.Confirm') }}
+            PButton(:click="() => close(false)" type="warn") {{ pclText('Common.Action.Cancel') }}
 
 </template>
 

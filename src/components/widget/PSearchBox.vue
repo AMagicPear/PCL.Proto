@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import PButton from './PButton.vue'
 import PCard from './PCard.vue'
 import IconSearch from '@/assets/icons/IconSearch.svg'
@@ -18,7 +19,9 @@ const query = defineModel<string>({ default: '' })
         v-model="query"
         v-on:keydown.enter="emit('search', query)"
       />
-      <PButton inline type="tint" @click="emit('search', query)">搜索</PButton>
+      <PButton inline type="tint" @click="emit('search', query)">{{
+        pclText('Common.Action.Search')
+      }}</PButton>
     </section>
   </PCard>
 </template>

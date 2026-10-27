@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PCard from '@/components/widget/PCard.vue'
 withDefaults(defineProps<{ details?: Record<string, string | number> }>(), { details: () => ({}) })
@@ -33,7 +34,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceSavesI
               >
             </dl>
 
-            <p v-else class="pcl-empty">未读取到存档信息</p></PCard
+            <p v-else class="pcl-empty">{{ pclText('Proto.Empty.SaveInfo') }}</p></PCard
           >
           <PCard
             v-if="$slots.settings"

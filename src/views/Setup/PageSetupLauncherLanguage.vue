@@ -4,19 +4,19 @@ import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
-import { useI18n } from 'vue-i18n'
-import { loadPclLocale } from '@/api/pclLocale'
-import languages from '@/assets/language-names.json'
-const { locale } = useI18n()
-const languageOptions = languages.map((key) => ({
+import { pclLocale as locale, pclLanguages, pclText, setPclLocale } from '@/api/pclLocale'
+import sideTip from '@/composables/sideTip'
+const languageOptions = pclLanguages.map((key) => ({
   key,
   text: new Intl.DisplayNames([key], { type: 'language' }).of(key) || key,
 }))
 async function setLanguage(value?: string) {
   if (!value) return
-  await loadPclLocale(value)
-  locale.value = value
-  localStorage.setItem('pcl-language', value)
+  try {
+    await setPclLocale(value)
+  } catch (error) {
+    sideTip.show(pclText('Proto.Language.Failed', [String(error)]), 'warn')
+  }
 }
 const { values, text, change, act, image } = usePageSettings('PageSetupLauncherLanguage', {
   ComboUiLanguage: '0',

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import IconButtonSave from '../icons/control/IconButtonSave.vue'
 import IconInfo from '../icons/control/IconInfo.vue'
 import IconServer from '../icons/control/IconServer.vue'
@@ -38,9 +39,9 @@ withDefaults(
                 .subtitle {{ subtitle }}
         .right(@click.stop)
             slot(name="actions")
-            a(v-if="isGameInfo"): i(title="另存为"): IconButtonSave
-            a(v-if="isGameInfo" :href="'https://zh.minecraft.wiki/w/Special:Search?search=' + encodeURIComponent(title)" target="_blank" rel="noopener noreferrer"): i(title="更新日志"): IconInfo
-            a(v-if="isGameInfo"): i(title="下载服务端"): IconServer
+            a(v-if="isGameInfo"): i(:title="pclText('Download.Version.SaveAs')"): IconButtonSave
+            a(v-if="isGameInfo" :href="'https://zh.minecraft.wiki/w/Special:Search?search=' + encodeURIComponent(title)" target="_blank" rel="noopener noreferrer"): i(:title="pclText('Common.Action.UpdateLog')"): IconInfo
+            a(v-if="isGameInfo"): i(:title="pclText('Download.Version.DownloadServer')"): IconServer
             a(v-if="btn" :href="btn.link"): PButton(:inline="true") {{btn.text}}
 
 </template>

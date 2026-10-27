@@ -99,3 +99,7 @@ I want to make this project into a Vue component npm package, but I don't know h
 - [PCL.Neo](https://github.com/PCL-Community/PCL.Neo)
 - [xphost008/MMCLL](https://github.com/xphost008/MMCLL)
 - [Steve-xmh/scl](https://github.com/Steve-xmh/scl)
+
+### Localization
+
+[应用多语言方案与文案约定](docs/LOCALIZATION.md)

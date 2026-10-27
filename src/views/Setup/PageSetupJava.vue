@@ -14,7 +14,7 @@ const error = ref('')
 const javaList = ref<IJavaRuntimeInfo[]>([])
 async function load(refresh = false) {
   if (!isTauri()) {
-    error.value = '请在桌面客户端中读取或扫描 Java。'
+    error.value = pclText('Proto.Desktop.JavaScan')
     return
   }
   loading.value = true
@@ -22,7 +22,7 @@ async function load(refresh = false) {
   try {
     javaList.value = await (refresh ? refreshJavaList() : getJavaList())
   } catch (err) {
-    error.value = '未能获取 Java 信息，请在桌面客户端中重试。'
+    error.value = pclText('Proto.Java.ReadFailed')
     console.error(err)
   } finally {
     loading.value = false
@@ -31,25 +31,23 @@ async function load(refresh = false) {
 async function act(id: string, ..._args: string[]) {
   if (id !== 'BtnAdd') return
   if (!isTauri()) {
-    sideTip.show('请在桌面客户端中添加 Java。', 'warn')
+    sideTip.show(pclText('Proto.Desktop.JavaAdd'), 'warn')
     return
   }
   try {
     const runtime = await invoke<IJavaRuntimeInfo | null>('add_java')
     if (runtime) {
       await load()
-      sideTip.show('已添加 Java！', 'success')
+      sideTip.show(pclText('Setup.Java.Added'), 'success')
     }
   } catch (err) {
-    sideTip.show(`未能成功将 Java 加入列表中：${err}`, 'warn')
+    sideTip.show(pclText('Proto.Java.AddFailed', [err]), 'warn')
   }
 }
 onMounted(() => load())
 
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 </script>
 <template>
   <section class="pcl-page">

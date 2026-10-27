@@ -11,14 +11,12 @@ import PHint from '@/components/widget/PHint.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import categories from '@/assets/download-categories.json'
 import { computed, reactive, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 
 const props = defineProps<{
   projectType: 'mod' | 'modpack' | 'resourcepack' | 'shader' | 'datapack' | 'world'
 }>()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 const values = reactive({ source: '0', sort: '0', loader: '', version: '', query: '', tag: '' })
 const hits = ref<ISearchHit[]>([])
 const error = ref('')
@@ -41,8 +39,8 @@ async function search() {
   error.value = ''
   loading.value = true
   try {
-    if (values.source === '1') throw new Error('当前尚未接入 CurseForge，请将来源切换为 Modrinth。')
-    if (props.projectType === 'world') throw new Error('世界资源需要 CurseForge，当前尚未接入。')
+    if (values.source === '1') throw new Error(pclText('Proto.Resource.CurseForgeUnavailable'))
+    if (props.projectType === 'world') throw new Error(pclText('Proto.Resource.WorldUnavailable'))
     const facets = [
       [`project_type:${props.projectType === 'datapack' ? 'mod' : props.projectType}`],
     ]
@@ -51,7 +49,7 @@ async function search() {
     if (values.version.trim()) facets.push([`versions:${values.version.trim()}`])
     if (values.tag) {
       const slug = values.tag.split('/')[1]
-      if (!slug) throw new Error('该分类当前仅支持 CurseForge，请选择其他分类。')
+      if (!slug) throw new Error(pclText('Proto.Resource.CategoryUnavailable'))
       facets.push([`categories:${slug}`])
     }
     const sort =
@@ -71,7 +69,8 @@ async function search() {
     if (current !== request) return
     hits.value = []
     total.value = 0
-    error.value = err instanceof Error ? err.message : `未能获取资源列表，请重试。${String(err)}`
+    error.value =
+      err instanceof Error ? err.message : pclText('Proto.Error.Resources', [String(err)])
   } finally {
     if (current === request) loading.value = false
   }
@@ -142,21 +141,32 @@ watch(() => props.projectType, reset, { immediate: true })
     </div>
     <PLoading v-if="loading" :loading-text="text('Download.Version.LoadingList')" />
     <PHint v-else-if="error" severity="error"
-      >{{ error }} <PButton inline :click="search">{{ '重试' }}</PButton></PHint
+      >{{ error }}
+      <PButton inline :click="search">{{
+        pclText('Launch.Homepage.LoadFailed.Retry')
+      }}</PButton></PHint
     >
     <template v-else>
       <PCard hide-title
         ><div class="projects">
           <PCompItem v-for="project in hits" :key="project.project_id" :data="project" clickable />
-          <p v-if="!hits.length" class="pcl-empty">没有找到相关资源</p>
+          <p v-if="!hits.length" class="pcl-empty">{{ pclText('Proto.Empty.Resources') }}</p>
         </div></PCard
       >
       <PCard hide-title
-        ><nav class="pages" aria-label="分页">
-          <PButton inline :disabled="!page" :click="() => turn(0)" aria-label="首页"
+        ><nav class="pages" :aria-label="pclText('Proto.Label.Pagination')">
+          <PButton
+            inline
+            :disabled="!page"
+            :click="() => turn(0)"
+            :aria-label="pclText('Proto.Action.First')"
             ><PSvgIcon name="lucide/chevrons-left"
           /></PButton>
-          <PButton inline :disabled="!page" :click="() => turn(page - 1)" aria-label="上一页"
+          <PButton
+            inline
+            :disabled="!page"
+            :click="() => turn(page - 1)"
+            :aria-label="pclText('Proto.Action.Previous')"
             ><PSvgIcon name="lucide/chevron-left"
           /></PButton>
           <span>{{ page + 1 }}</span>
@@ -164,7 +174,7 @@ watch(() => props.projectType, reset, { immediate: true })
             inline
             :disabled="(page + 1) * limit >= total"
             :click="() => turn(page + 1)"
-            aria-label="下一页"
+            :aria-label="pclText('Proto.Action.Next')"
             ><PSvgIcon name="lucide/chevron-right"
           /></PButton></nav
       ></PCard>

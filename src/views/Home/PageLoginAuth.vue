@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
 import PButton from '@/components/widget/PButton.vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 import PPath from '@/components/widget/PPath.vue'
@@ -15,8 +14,7 @@ function open(url: string | undefined) {
   if (url && /^https?:\/\//i.test(url)) window.open(url, '_blank', 'noopener,noreferrer')
 }
 const router = useRouter()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 const server = ref('')
 const username = ref('')
 const password = ref('')
@@ -29,7 +27,7 @@ function login() {
     sideTip.show(text('Launch.Account.Auth.EmptyFields'), 'warn')
     return
   }
-  sideTip.show('第三方验证尚未接入 PCL.Proto。')
+  sideTip.show(pclText('Proto.NotImplemented.Auth'))
 }
 </script>
 <template>

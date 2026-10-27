@@ -10,7 +10,6 @@ import PHint from '@/components/widget/PHint.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { getMinecraftVersions, type IVersionShow } from '@/api/gameVersions'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 import { useTaskManager } from '@/stores/task'
 import sideTip from '@/composables/sideTip'
@@ -22,8 +21,7 @@ import { installWarnings, loaderVisible, selectLoader } from '@/api/installSelec
 const props = defineProps<{ manual?: boolean; modify?: boolean }>()
 const route = useRoute()
 const router = useRouter()
-const { locale } = useI18n()
-const text = (key: string) => pclText(`{DynamicResource ${key}}`, locale.value)
+const text = pclText
 const versions = ref<IVersionShow>()
 const loading = ref(false)
 const error = ref('')
@@ -79,14 +77,14 @@ async function load() {
   try {
     versions.value = await getMinecraftVersions()
   } catch (err) {
-    error.value = `无法获取版本列表：${String(err)}`
+    error.value = pclText('Proto.Error.Versions', [String(err)])
   } finally {
     loading.value = false
   }
 }
 function choose(id: string, type: string) {
   if (props.manual) {
-    sideTip.show('Minecraft 安装包另存为尚未接入 PCL.Proto。')
+    sideTip.show(pclText('Proto.NotImplemented.SaveInstaller'))
     return
   }
   void router.push({ path: '/download/game/inner', query: { version_id: id, version_type: type } })
@@ -103,7 +101,7 @@ watch(
       ['Forge', 'Fabric'].map(async (name) => {
         plugins[name] = { loading: true, versions: [], error: '' }
         try {
-          if (!isTauri()) throw new Error('请在桌面客户端中查询加载器版本。')
+          if (!isTauri()) throw new Error(pclText('Proto.Desktop.Loaders'))
           const list = await invoke<McPluginReport[]>('get_plugin_versions', {
             plugin_type: name.toLowerCase(),
             mc_version: id,
@@ -114,7 +112,7 @@ watch(
             plugins[name] = {
               loading: false,
               versions: [],
-              error: `无法获取版本列表：${String(err)}`,
+              error: pclText('Proto.Error.Versions', [String(err)]),
             }
         }
       }),
@@ -124,7 +122,7 @@ watch(
 )
 async function install() {
   if (props.modify) {
-    sideTip.show('实例核心修改尚未接入 PCL.Proto。')
+    sideTip.show(pclText('Proto.NotImplemented.ModifyCore'))
     return
   }
   if (
@@ -132,25 +130,25 @@ async function install() {
     /[\\/:*?"<>|\u0000-\u001f]/.test(instanceName.value) ||
     ['.', '..'].includes(instanceName.value.trim())
   ) {
-    sideTip.show('请输入有效的实例名称。', 'warn')
+    sideTip.show(pclText('Proto.Instance.InvalidName'), 'warn')
     return
   }
   if (!isTauri()) {
-    sideTip.show('请在桌面客户端中下载游戏。', 'warn')
+    sideTip.show(pclText('Proto.Desktop.Download'), 'warn')
     return
   }
   if (Object.values(selected).some(Boolean)) {
-    sideTip.show('加载器安装尚未接入 PCL.Proto，请先下载原版游戏。', 'warn')
+    sideTip.show(pclText('Proto.NotImplemented.LoaderInstall'), 'warn')
     return
   }
   installing.value = true
   try {
     void useTaskManager()
       .startDownloadMCVersion(versionId.value, instanceName.value.trim())
-      .catch((err) => sideTip.show(`下载失败：${String(err)}`, 'warn'))
+      .catch((err) => sideTip.show(pclText('Proto.Error.Download', [String(err)]), 'warn'))
     await router.push('/downloading')
   } catch (err) {
-    sideTip.show(`下载失败：${String(err)}`, 'warn')
+    sideTip.show(pclText('Proto.Error.Download', [String(err)]), 'warn')
   } finally {
     installing.value = false
   }
@@ -164,11 +162,14 @@ watch(versionId, (id) => {
 </script>
 <template>
   <section class="pcl-page install-page" v-card-drop-children-animate="!!versions">
-    <p v-if="modify && !versionId" class="pcl-empty">请先选择一个游戏实例</p>
+    <p v-if="modify && !versionId" class="pcl-empty">{{ pclText('Proto.Instance.SelectFirst') }}</p>
     <template v-else-if="!versionId">
       <PLoading v-if="loading" :loading-text="text('Download.Version.LoadingList')" />
       <PHint v-else-if="error" severity="error"
-        >{{ error }} <PButton inline :click="load">重试</PButton></PHint
+        >{{ error }}
+        <PButton inline :click="load">{{
+          pclText('Launch.Homepage.LoadFailed.Retry')
+        }}</PButton></PHint
       >
       <template v-else-if="versions">
         <PCard :title="text('Download.Version.Latest.Title')" class="latest-card">
@@ -178,9 +179,7 @@ watch(versionId, (id) => {
               :key="version.id"
               :title="version.id"
               :icon="version.type === 'release' ? showIconPath.grass : showIconPath.command"
-              :subtitle="
-                text(`Download.Version.Latest.${version.label}`).replace('{0}', version.releaseTime)
-              "
+              :subtitle="text(`Download.Version.Latest.${version.label}`, [version.releaseTime])"
               :click="() => choose(version.id, version.type)"
             />
           </div>
@@ -208,11 +207,14 @@ watch(versionId, (id) => {
     <template v-else>
       <PCard hide-title>
         <div class="instance-name-row">
-          <PButton inline :click="() => router.push('/download/game')" aria-label="返回"
+          <PButton
+            inline
+            :click="() => router.push('/download/game')"
+            :aria-label="pclText('Common.Action.Back')"
             ><PSvgIcon name="lucide/arrow-left"
           /></PButton>
           <img :src="showIconPath.grass" alt="" />
-          <PTextBox v-model="instanceName" aria-label="实例名称" />
+          <PTextBox v-model="instanceName" :aria-label="pclText('Proto.Label.InstanceName')" />
           <span v-if="modify">{{ text('Instance.Install.Action.ModifyLabel') }}</span>
         </div>
         <div v-if="warnings.length" class="install-warnings">
@@ -232,7 +234,10 @@ watch(versionId, (id) => {
       >
         <template #description
           ><span class="loader-status">{{
-            selected[loader] || (plugins[loader]?.loading ? '加载中…' : '选择版本')
+            selected[loader] ||
+            (plugins[loader]?.loading
+              ? pclText('Proto.Download.Loading')
+              : pclText('Proto.Download.SelectVersion'))
           }}</span></template
         >
         <div class="version-list">
@@ -245,7 +250,7 @@ watch(versionId, (id) => {
               v-if="selected[loader]"
               inline
               :click="() => selectLoader(selected, loader, '')"
-              >清除选择</PButton
+              >{{ pclText('Proto.Action.ClearSelection') }}</PButton
             >
             <PListItem
               v-for="version in plugins[loader]?.versions"
@@ -257,7 +262,9 @@ watch(versionId, (id) => {
           </template>
           <p v-else class="pcl-empty">
             {{
-              ['Forge', 'Fabric'].includes(loader) ? '没有可用版本' : '此加载器尚未接入 PCL.Proto。'
+              ['Forge', 'Fabric'].includes(loader)
+                ? pclText('Download.Install.State.NoAvailableVersion')
+                : pclText('Proto.NotImplemented.Loader')
             }}
           </p>
         </div>

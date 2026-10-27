@@ -2,11 +2,9 @@
 import { computed, onMounted } from 'vue'
 import { useTaskManager } from '@/stores/task'
 import useSideNavState from '@/stores/windowState'
-import { useI18n } from 'vue-i18n'
 import { pclText } from '@/api/pclLocale'
 const tasks = useTaskManager()
-const { locale } = useI18n()
-const text = (key: string) => pclText(key, locale.value)
+const text = pclText
 const speed = computed(() =>
   tasks.totalSpeed < 1024
     ? `${tasks.totalSpeed.toFixed(0)} B/s`
