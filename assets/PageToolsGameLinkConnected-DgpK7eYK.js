@@ -1,0 +1,1 @@
+import{W as e,X as a,nt as o}from"./index-DKJXkQky.js";import{t}from"./PageToolsGameLink-D55hUq5e.js";var n=a({__name:"PageToolsGameLinkConnected",setup(_){return(r,s)=>(o(),e(t,{connected:""}))}}),p=n;export{p as default};

@@ -1,1 +1,0 @@
-import{U as e,Y as t,p as a,tt as o}from"./index-BW0FPM0X.js";var _=t({__name:"PageLogLeft",setup(r){return(u,n)=>(o(),e(a,{"side-nav-groups":[{content:[{text:"PCL.Proto",linkto:"/logs/view"}]}]}))}}),s=_;export{s as default};

@@ -1,0 +1,1 @@
+import{W as e,X as a,nt as t}from"./index-DKJXkQky.js";import{t as r}from"./PageDownloadVersionList-CsD81Eme.js";var o=a({__name:"PageDownloadLegacyFabric",setup(c){return(_,n)=>(t(),e(r,{loader:"LegacyFabric",website:"https://legacyfabric.net/"}))}}),i=o;export{i as default};

@@ -1,1 +1,0 @@
-import{G as t,Y as r,at as a,dt as o,mt as _,tt as i}from"./index-BW0FPM0X.js";var d="/PCL.Proto/pcl-home-zx/index.html",s=["src"],c=r({__name:"HomepageEditor",setup(n){return(p,m)=>{const e=a("card-drop-animate");return o((i(),t("iframe",{src:_(d),width:"100%",height:"100%",frameborder:"0",style:{border:"none"}},null,8,s)),[[e]])}}}),u=c;export{u as default};

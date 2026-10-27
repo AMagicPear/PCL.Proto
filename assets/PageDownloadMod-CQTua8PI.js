@@ -1,0 +1,1 @@
+import{W as e,X as o,nt as a}from"./index-DKJXkQky.js";import{t}from"./PageComp-rKA_KiJ5.js";var r=o({__name:"PageDownloadMod",setup(_){return(p,d)=>(a(),e(t,{"project-type":"mod"}))}}),l=r;export{l as default};

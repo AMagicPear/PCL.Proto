@@ -1,1 +1,0 @@
-import{U as e,Y as a,tt as t}from"./index-BW0FPM0X.js";import{t as r}from"./PageDownloadVersionList-eJOwAwlX.js";var o=a({__name:"PageDownloadFabric",setup(_){return(n,p)=>(t(),e(r,{loader:"Fabric",website:"https://www.fabricmc.net",supported:""}))}}),i=o;export{i as default};

@@ -1,0 +1,1 @@
+import{E as a,X as o,Z as t,f as s,p as l}from"./index-DKJXkQky.js";var u=o({setup(){const{locale:e}=a();return()=>t(l,{sideNavGroups:s("PageToolsLeft",{ItemGameLink:"/tools/lobby",ItemTest:"/tools/wonderbox"},e.value)})}});export{u as default};

@@ -1,1 +1,0 @@
-import{U as e,Y as a,tt as o}from"./index-BW0FPM0X.js";import{t}from"./PageComp-DakY-yRR.js";var r=a({__name:"PageDownloadResourcePack",setup(c){return(_,p)=>(o(),e(t,{"project-type":"resourcepack"}))}}),n=r;export{n as default};

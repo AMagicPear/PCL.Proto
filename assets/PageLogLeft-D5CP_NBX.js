@@ -1,0 +1,1 @@
+import{W as e,X as t,nt as a,p as o}from"./index-DKJXkQky.js";var _=t({__name:"PageLogLeft",setup(r){return(n,u)=>(a(),e(o,{"side-nav-groups":[{content:[{text:"PCL.Proto",linkto:"/logs/view"}]}]}))}}),s=_;export{s as default};

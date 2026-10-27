@@ -1,0 +1,1 @@
+import{W as e,X as a,nt as t}from"./index-DKJXkQky.js";import{t as r}from"./PageComp-rKA_KiJ5.js";var o=a({__name:"PageDownloadShader",setup(_){return(p,d)=>(t(),e(r,{"project-type":"shader"}))}}),l=o;export{l as default};

@@ -1,1 +1,0 @@
-import{U as e,Y as a,tt as t}from"./index-BW0FPM0X.js";import{t as r}from"./PageDownloadVersionList-eJOwAwlX.js";var o=a({__name:"PageDownloadLegacyFabric",setup(c){return(_,n)=>(t(),e(r,{loader:"LegacyFabric",website:"https://legacyfabric.net/"}))}}),i=o;export{i as default};

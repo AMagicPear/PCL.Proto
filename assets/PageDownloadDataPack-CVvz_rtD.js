@@ -1,0 +1,1 @@
+import{W as a,X as e,nt as t}from"./index-DKJXkQky.js";import{t as o}from"./PageComp-rKA_KiJ5.js";var r=e({__name:"PageDownloadDataPack",setup(_){return(p,c)=>(t(),a(o,{"project-type":"datapack"}))}}),l=r;export{l as default};

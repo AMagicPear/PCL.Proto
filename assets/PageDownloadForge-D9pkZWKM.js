@@ -1,0 +1,1 @@
+import{W as e,X as o,nt as t}from"./index-DKJXkQky.js";import{t as a}from"./PageDownloadVersionList-CsD81Eme.js";var r=o({__name:"PageDownloadForge",setup(n){return(_,s)=>(t(),e(a,{loader:"Forge",website:"https://files.minecraftforge.net",supported:""}))}}),u=r;export{u as default};

@@ -1,0 +1,1 @@
+import{W as e,X as a,nt as o}from"./index-DKJXkQky.js";import{t as r}from"./PageComp-rKA_KiJ5.js";var t=a({__name:"PageDownloadResourcePack",setup(c){return(_,p)=>(o(),e(r,{"project-type":"resourcepack"}))}}),n=t;export{n as default};

@@ -1,1 +1,0 @@
-import{U as e,Y as o,tt as a}from"./index-BW0FPM0X.js";import{t}from"./PageComp-DakY-yRR.js";var r=o({__name:"PageDownloadWorld",setup(_){return(l,p)=>(a(),e(t,{"project-type":"world"}))}}),u=r;export{u as default};
