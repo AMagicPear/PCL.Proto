@@ -1,0 +1,87 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageHelpDetail",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "Name": "PanBack",
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanCustom",
+            "Margin": "25,25,25,10"
+          },
+          "children": [
+            {
+              "type": "StackPanel.Resources",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "Style",
+                  "attrs": {
+                    "TargetType": "TextBlock",
+                    "BasedOn": "{StaticResource BasedOnTextBlock}"
+                  },
+                  "children": [
+                    {
+                      "type": "Setter",
+                      "attrs": {
+                        "Property": "TextWrapping",
+                        "Value": "Wrap"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "Style",
+                  "attrs": {
+                    "TargetType": "local:MyCard"
+                  },
+                  "children": [
+                    {
+                      "type": "Setter",
+                      "attrs": {
+                        "Property": "Margin",
+                        "Value": "0,0,0,15"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "Style",
+                  "attrs": {
+                    "TargetType": "Image"
+                  },
+                  "children": [
+                    {
+                      "type": "Setter",
+                      "attrs": {
+                        "Property": "RenderOptions.BitmapScalingMode",
+                        "Value": "HighQuality"
+                      }
+                    },
+                    {
+                      "type": "Setter",
+                      "attrs": {
+                        "Property": "HorizontalAlignment",
+                        "Value": "Center"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -5,6 +5,7 @@ export interface INavItem {
   icon?: Component
   linkto?: string
   clickCallback?: (payload: PointerEvent) => any
+  action?: { title: string; icon: Component; kind: string }
 }
 
 export interface INavItemGroup {

@@ -1,0 +1,128 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageDownloadLegacyFabric",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Orientation": "Vertical",
+            "Margin": "5"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "20,20,20,0",
+                "Grid.IsSharedSizeScope": "True",
+                "Title": "{DynamicResource Download.Version.LegacyFabric.Intro.Title}",
+                "Name": "CardTip"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,15,20"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "0,0,0,11",
+                        "Text": "{DynamicResource Download.Version.LegacyFabric.Intro.Description}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Height": "35"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnWeb",
+                            "Grid.Column": "0",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Download.Version.OpenWebsite}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "HorizontalAlignment": "Left",
+                            "ColorType": "Highlight"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Name": "CardVersions",
+                "Margin": "20,15,20,20",
+                "Title": "{DynamicResource Download.Version.VersionList}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Name": "PanVersions",
+                    "Margin": "20,40,18,20"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "SnapsToDevicePixels": "True",
+                "Name": "PanLoad",
+                "UseAnimation": "False",
+                "Margin": "40,50"
+              },
+              "children": [
+                {
+                  "type": "PLoading",
+                  "attrs": {
+                    "Text": "{DynamicResource Download.Version.LegacyFabric.LoadingList}",
+                    "Margin": "20,20,20,17",
+                    "Name": "Load",
+                    "HorizontalAlignment": "Center",
+                    "VerticalAlignment": "Center"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

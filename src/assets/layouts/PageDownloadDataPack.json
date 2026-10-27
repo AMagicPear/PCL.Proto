@@ -1,0 +1,138 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageDownloadDataPack",
+    "PanScroll": "{Binding ElementName=Content}"
+  },
+  "children": [
+    {
+      "type": "PageComp",
+      "attrs": {
+        "Name": "Content",
+        "PageType": "DataPack"
+      },
+      "children": [
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "",
+            "Content": "{DynamicResource Common.Option.All}",
+            "IsSelected": "True"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.WorldGen}",
+            "Tag": "/worldgen"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Technology}",
+            "Tag": "6951/technology"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.GameMechanics}",
+            "Tag": "/game-mechanics"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Transportation}",
+            "Tag": "/transportation"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Storage}",
+            "Tag": "/storage"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Magic}",
+            "Tag": "6952/magic"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Adventure}",
+            "Tag": "6948/adventure"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.DataPack.Fantasy}",
+            "Tag": "6949/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Decoration}",
+            "Tag": "/decoration"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Mobs}",
+            "Tag": "/mobs"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Utility}",
+            "Tag": "6953/utility"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Equipment}",
+            "Tag": "/equipment"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Optimization}",
+            "Tag": "/optimization"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Server}",
+            "Tag": "/social"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Library}",
+            "Tag": "6950/library"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Mod.ModRelated}",
+            "Tag": "6946/"
+          }
+        }
+      ]
+    }
+  ]
+}

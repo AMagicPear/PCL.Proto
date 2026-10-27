@@ -1,0 +1,132 @@
+/* Shared page spacing follows the reference while controls remain native Vue components. */
+.pcl-page {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.subview:has(> .pcl-page) {
+  padding: 0;
+  display: block;
+}
+.pcl-page .mybutton {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font: inherit;
+}
+.pcl-page input,
+.pcl-page select {
+  font: inherit;
+  accent-color: var(--color-tint);
+}
+.pcl-page input[type='range'] {
+  width: 100%;
+  min-width: 0;
+}
+.pcl-page .input-wrapper,
+.pcl-page .dropdown-wrapper {
+  min-width: 0;
+}
+.pcl-page .input-wrapper input,
+.pcl-page .dropdown-wrapper select {
+  height: 28px;
+  padding: 0 8px;
+}
+.pcl-page .hint-container {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.pcl-page img {
+  object-fit: contain;
+  max-width: 100%;
+}
+.pcl-page .mycard-title {
+  font-size: 13px;
+}
+.pcl-page [data-control='BannerInternationalization'] {
+  border-radius: 8px;
+  padding: 20px;
+  background: var(--color-background-soft);
+  box-shadow: var(--box-shadow);
+}
+.pcl-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.pcl-divider {
+  height: 2px;
+  background: var(--color-tint-light);
+}
+.pcl-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pcl-empty {
+  padding: 25px;
+  color: var(--color-text-grey);
+  text-align: center;
+}
+.pcl-form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+.pcl-form-row > :last-child {
+  flex: 1;
+  min-width: 0;
+}
+:where(button, a, input, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-tint);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.pcl-page .mycard-content {
+  font-size: 13px;
+}
+.pcl-page [style*='grid-template-columns: auto auto'] {
+  justify-content: start;
+}
+.pcl-selection-toolbar {
+  position: sticky;
+  bottom: 15px;
+  margin: 15px auto;
+  width: fit-content;
+  max-width: calc(100% - 50px);
+  z-index: 2;
+}
+.pcl-selection-toolbar p {
+  padding: 9px;
+  text-align: center;
+}
+.pcl-selection-toolbar .mycard-content > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0 5px 5px;
+}
+.pcl-unavailable {
+  margin: 40px;
+  padding: 20px;
+}
+.pcl-unavailable h2 {
+  font-size: 19px;
+  color: var(--color-tint);
+}
+.pcl-unavailable p {
+  margin: 15px 0;
+  white-space: pre-line;
+}

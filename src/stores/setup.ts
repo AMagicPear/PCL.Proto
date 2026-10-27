@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 export interface ISetupOption {
   key: string
   text: string
+  title?: string
 }
 
 export type SetupItemType = 'select' | 'input'

@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import IconDownload from '../icons/header/IconDownload.vue'
-import IconSetup from '../icons/header/IconSetup.vue'
-import IconWeb from '@/assets/icons/IconWeb.svg'
-import IconTimeUp from '@/assets/icons/IconTimeUp.svg'
+import PSvgIcon from './PSvgIcon.vue'
 import type { ISearchHit } from '@/api/modrinthApi'
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -25,33 +22,43 @@ const dateText = computed(() => {
 })
 
 const navigateToProject = () => {
+  if (!props.clickable) return
   router.push({ name: 'resource', query: { id: props.data.project_id, version: 'all' } })
 }
 </script>
 
 <template>
-  <li class="comp-item" @click="navigateToProject" :class="{ clickable }">
-    <i class="comp-icon"><img :src="data.icon_url" /></i>
+  <article
+    class="comp-item"
+    @click="navigateToProject"
+    :class="{ clickable }"
+    :role="clickable ? 'button' : undefined"
+    :tabindex="clickable ? 0 : undefined"
+    @keydown.enter="navigateToProject"
+    @keydown.space.prevent="navigateToProject"
+  >
+    <i class="comp-icon"><img :src="data.icon_url" alt="" loading="lazy" /></i>
     <div class="lab-title-row">
-      <span class="lab-title">{{ data.title }}</span
-      >&nbsp;&nbsp;|&nbsp;&nbsp;<span>{{ data.title }}</span>
+      <span class="lab-title">{{ data.title }}</span>
     </div>
     <div class="lab-desc" :title="data.description">
-      <span class="desc-tag" v-for="category in data.categories">{{ category }}</span
+      <span class="desc-tag" v-for="category in data.categories" :key="category">{{
+        category
+      }}</span
       >{{ data.description }}
     </div>
-    <p class="inline-icon"><IconSetup />{{ data.categories[0] }}</p>
-    <p class="inline-icon icon-download"><IconDownload />{{ downloadsText }}</p>
-    <p class="inline-icon"><IconTimeUp />{{ dateText }}</p>
-    <p class="inline-icon"><IconWeb />Modrinth</p>
-  </li>
+    <p class="inline-icon"><PSvgIcon name="lucide/box" />{{ data.categories[0] }}</p>
+    <p class="inline-icon icon-download"><PSvgIcon name="lucide/download" />{{ downloadsText }}</p>
+    <p class="inline-icon"><PSvgIcon name="lucide/clock" />{{ dateText }}</p>
+    <p class="inline-icon"><PSvgIcon name="lucide/globe" />Modrinth</p>
+  </article>
 </template>
 
 <style lang="css" scoped>
 .comp-item {
   display: grid;
   grid-template-columns: 50px 2fr 1fr 1fr 1fr;
-  grid-template-rows: 5fr 4fr 4fr;
+  grid-template-rows: 20px 18px 16px;
   gap: 0 10px;
   border-radius: 4px;
   padding: 6px;
@@ -89,7 +96,7 @@ const navigateToProject = () => {
 }
 
 .lab-title {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--color-text-black);
 }
 

@@ -1,0 +1,525 @@
+{
+  "type": "PPageLeft",
+  "attrs": {
+    "Class": "PCL.PageInstanceLeft",
+    "AnimatedControl": "{Binding ElementName=PanItem, Mode=OneWay}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "HorizontalScrollBarVisibility": "Disabled",
+        "VerticalScrollBarVisibility": "Auto",
+        "Style": "{StaticResource ScrollViewerFullMargin}"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Margin": "0,12,0,0",
+            "Name": "PanItem"
+          },
+          "children": [
+            {
+              "type": "TextBlock",
+              "attrs": {
+                "Text": "{DynamicResource Instance.Left.Game}",
+                "Margin": "13,6,5,4",
+                "Opacity": "0.6",
+                "FontSize": "12"
+              }
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemOverall",
+                "IsScaleAnimationEnabled": "False",
+                "Checked": "True",
+                "Type": "RadioBox",
+                "Check": "PageCheck",
+                "Tag": "0",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Overview}",
+                "SvgIcon": "lucide/layout-dashboard"
+              }
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemSetup",
+                "IsScaleAnimationEnabled": "False",
+                "Tag": "1",
+                "MinPaddingRight": "35",
+                "Check": "PageCheck",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Settings}",
+                "Type": "RadioBox",
+                "SvgIcon": "lucide/settings"
+              },
+              "children": [
+                {
+                  "type": "PListItem.Buttons",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "Array",
+                      "attrs": {
+                        "Type": "{x:Type local:MyIconButton}"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconButton",
+                          "attrs": {
+                            "Tag": "1",
+                            "ToolTip": "{DynamicResource Common.Action.Initialize}",
+                            "ToolTipService.Placement": "Right",
+                            "ToolTipService.InitialShowDelay": "200",
+                            "ToolTipService.VerticalOffset": "-1",
+                            "Click": "Reset",
+                            "SvgIcon": "lucide/rotate-ccw",
+                            "LogoScale": "0.9"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemInstall",
+                "IsScaleAnimationEnabled": "False",
+                "Type": "RadioBox",
+                "Tag": "10",
+                "Check": "PageCheck",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Install}",
+                "LogoScale": "0.87",
+                "SvgIcon": "lucide/wrench"
+              },
+              "children": [
+                {
+                  "type": "PListItem.Buttons",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "Array",
+                      "attrs": {
+                        "Type": "{x:Type local:MyIconButton}"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconButton",
+                          "attrs": {
+                            "Tag": "10",
+                            "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                            "ToolTipService.Placement": "Right",
+                            "ToolTipService.InitialShowDelay": "200",
+                            "ToolTipService.VerticalOffset": "-1",
+                            "LogoScale": "0.85",
+                            "Click": "RefreshButton_Click",
+                            "SvgIcon": "lucide/refresh-cw"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemExport",
+                "IsScaleAnimationEnabled": "False",
+                "Type": "RadioBox",
+                "Tag": "2",
+                "Check": "PageCheck",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Export}",
+                "SvgIcon": "lucide/package"
+              },
+              "children": [
+                {
+                  "type": "PListItem.Buttons",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "Array",
+                      "attrs": {
+                        "Type": "{x:Type local:MyIconButton}"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconButton",
+                          "attrs": {
+                            "Tag": "2",
+                            "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                            "ToolTipService.Placement": "Right",
+                            "ToolTipService.InitialShowDelay": "200",
+                            "ToolTipService.VerticalOffset": "-1",
+                            "Click": "RefreshButton_Click",
+                            "LogoScale": "0.85",
+                            "SvgIcon": "lucide/refresh-cw"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "attrs": {
+                "Name": "TextResource",
+                "Text": "{DynamicResource Instance.Left.Resources}",
+                "Margin": "13,6,5,4",
+                "Opacity": "0.6",
+                "FontSize": "12"
+              }
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemWorld",
+                "LogoScale": "0.95",
+                "IsScaleAnimationEnabled": "False",
+                "Type": "RadioBox",
+                "Check": "PageCheck",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Saves}",
+                "Tag": "3",
+                "SvgIcon": "lucide/globe"
+              },
+              "children": [
+                {
+                  "type": "PListItem.Buttons",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "Array",
+                      "attrs": {
+                        "Type": "{x:Type local:MyIconButton}"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconButton",
+                          "attrs": {
+                            "Tag": "3",
+                            "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                            "ToolTipService.Placement": "Right",
+                            "ToolTipService.InitialShowDelay": "200",
+                            "ToolTipService.VerticalOffset": "-1",
+                            "Click": "RefreshButton_Click",
+                            "LogoScale": "0.85",
+                            "SvgIcon": "lucide/refresh-cw"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemScreenshot",
+                "LogoScale": "0.95",
+                "IsScaleAnimationEnabled": "False",
+                "Type": "RadioBox",
+                "Check": "PageCheck",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Screenshots}",
+                "Tag": "4",
+                "SvgIcon": "lucide/image"
+              },
+              "children": [
+                {
+                  "type": "PListItem.Buttons",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "Array",
+                      "attrs": {
+                        "Type": "{x:Type local:MyIconButton}"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconButton",
+                          "attrs": {
+                            "Tag": "4",
+                            "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                            "ToolTipService.Placement": "Right",
+                            "ToolTipService.InitialShowDelay": "200",
+                            "ToolTipService.VerticalOffset": "-1",
+                            "Click": "RefreshButton_Click",
+                            "LogoScale": "0.85",
+                            "SvgIcon": "lucide/refresh-cw"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemMod",
+                "IsScaleAnimationEnabled": "False",
+                "Type": "RadioBox",
+                "Tag": "5",
+                "Check": "PageCheck",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Mod}",
+                "SvgIcon": "lucide/puzzle"
+              },
+              "children": [
+                {
+                  "type": "PListItem.Buttons",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "Array",
+                      "attrs": {
+                        "Type": "{x:Type local:MyIconButton}"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconButton",
+                          "attrs": {
+                            "Tag": "5",
+                            "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                            "ToolTipService.Placement": "Right",
+                            "ToolTipService.InitialShowDelay": "200",
+                            "ToolTipService.VerticalOffset": "-1",
+                            "Click": "RefreshButton_Click",
+                            "LogoScale": "0.85",
+                            "SvgIcon": "lucide/refresh-cw"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemModDisabled",
+                "IsScaleAnimationEnabled": "False",
+                "Type": "RadioBox",
+                "Tag": "6",
+                "Check": "PageCheck",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Mod}",
+                "SvgIcon": "lucide/puzzle"
+              }
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemResourcePack",
+                "LogoScale": "0.85",
+                "IsScaleAnimationEnabled": "False",
+                "Check": "PageCheck",
+                "Type": "RadioBox",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.ResourcePacks}",
+                "Tag": "7",
+                "SvgIcon": "lucide/layers"
+              },
+              "children": [
+                {
+                  "type": "PListItem.Buttons",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "Array",
+                      "attrs": {
+                        "Type": "{x:Type local:MyIconButton}"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconButton",
+                          "attrs": {
+                            "Tag": "7",
+                            "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                            "ToolTipService.Placement": "Right",
+                            "ToolTipService.InitialShowDelay": "200",
+                            "ToolTipService.VerticalOffset": "-1",
+                            "Click": "RefreshButton_Click",
+                            "LogoScale": "0.85",
+                            "SvgIcon": "lucide/refresh-cw"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemShader",
+                "LogoScale": "1.15",
+                "IsScaleAnimationEnabled": "False",
+                "Type": "RadioBox",
+                "Check": "PageCheck",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Shaders}",
+                "Tag": "8",
+                "SvgIcon": "lucide/sparkles"
+              },
+              "children": [
+                {
+                  "type": "PListItem.Buttons",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "Array",
+                      "attrs": {
+                        "Type": "{x:Type local:MyIconButton}"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconButton",
+                          "attrs": {
+                            "Tag": "8",
+                            "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                            "ToolTipService.Placement": "Right",
+                            "ToolTipService.InitialShowDelay": "200",
+                            "ToolTipService.VerticalOffset": "-1",
+                            "Click": "RefreshButton_Click",
+                            "LogoScale": "0.85",
+                            "SvgIcon": "lucide/refresh-cw"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemSchematic",
+                "LogoScale": "0.85",
+                "IsScaleAnimationEnabled": "False",
+                "Type": "RadioBox",
+                "Check": "PageCheck",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Schematics}",
+                "Tag": "9",
+                "SvgIcon": "lucide/file-box"
+              },
+              "children": [
+                {
+                  "type": "PListItem.Buttons",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "Array",
+                      "attrs": {
+                        "Type": "{x:Type local:MyIconButton}"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconButton",
+                          "attrs": {
+                            "Tag": "9",
+                            "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                            "ToolTipService.Placement": "Right",
+                            "ToolTipService.InitialShowDelay": "200",
+                            "ToolTipService.VerticalOffset": "-1",
+                            "Click": "RefreshButton_Click",
+                            "LogoScale": "0.85",
+                            "SvgIcon": "lucide/refresh-cw"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PListItem",
+              "attrs": {
+                "Name": "ItemServer",
+                "LogoScale": "0.85",
+                "IsScaleAnimationEnabled": "False",
+                "Type": "RadioBox",
+                "Check": "PageCheck",
+                "MinPaddingRight": "35",
+                "Height": "36",
+                "VerticalAlignment": "Top",
+                "Title": "{DynamicResource Instance.Left.Servers}",
+                "Tag": "11",
+                "SvgIcon": "lucide/server"
+              },
+              "children": [
+                {
+                  "type": "PListItem.Buttons",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "Array",
+                      "attrs": {
+                        "Type": "{x:Type local:MyIconButton}"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconButton",
+                          "attrs": {
+                            "Tag": "11",
+                            "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                            "ToolTipService.Placement": "Right",
+                            "ToolTipService.InitialShowDelay": "200",
+                            "ToolTipService.VerticalOffset": "-1",
+                            "Click": "RefreshButton_Click",
+                            "LogoScale": "0.85",
+                            "SvgIcon": "lucide/refresh-cw"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

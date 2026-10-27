@@ -1,0 +1,55 @@
+<script setup lang="ts">
+import { PMsgLogin } from '@/components/widget/PMsgLogin'
+import PButton from '@/components/widget/PButton.vue'
+import PPath from '@/components/widget/PPath.vue'
+import paths from '@/assets/vector-paths.json'
+const loginShape = paths['05803c336117c503'].data
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { pclText } from '@/api/pclLocale'
+import sideTip from '@/composables/sideTip'
+const router = useRouter()
+const { locale } = useI18n()
+const text = (key: string) => pclText(key, locale.value)
+defineExpose({ showLoginDialog: PMsgLogin })
+function login() {
+  sideTip.show('正版验证尚未接入 PCL.Proto。')
+}
+function open(url: string) {
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+</script>
+<template>
+  <section class="ms-login">
+    <PPath :data="loginShape" class="login-avatar" /><PButton type="tint" :click="login">{{
+      text('Launch.Account.Microsoft.Start')
+    }}</PButton
+    ><PButton inline :click="() => open('https://www.minecraft.net')">{{
+      text('Launch.Account.Microsoft.Website')
+    }}</PButton
+    ><PButton
+      inline
+      :click="() => open('https://www.minecraft.net/store/minecraft-java-bedrock-edition-pc')"
+      >{{ text('Launch.Account.Microsoft.Purchase') }}</PButton
+    ><PButton inline :click="() => router.push('/account')">{{
+      text('Launch.Account.Back')
+    }}</PButton>
+  </section>
+</template>
+<style scoped>
+.ms-login {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+.ms-login > button {
+  width: 100%;
+}
+.login-avatar {
+  width: 40px;
+  height: 40px;
+  opacity: 0.7;
+}
+</style>

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 
 export const defaultWidths = {
-  home: 286,
+  home: 300,
   download: 139,
   link: 120,
   setup: 120,

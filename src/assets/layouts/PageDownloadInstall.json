@@ -1,0 +1,1516 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageDownloadInstall"
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "attrs": {},
+      "children": [
+        {
+          "type": "Grid",
+          "attrs": {
+            "Name": "PanAllBack"
+          },
+          "children": [
+            {
+              "type": "PScrollViewer",
+              "attrs": {
+                "VerticalScrollBarVisibility": "Auto",
+                "HorizontalScrollBarVisibility": "Disabled",
+                "Name": "PanBack"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "25,10,25,25",
+                    "Name": "PanInner"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Grid.Row": "1",
+                        "Name": "PanMinecraft",
+                        "Grid.IsSharedSizeScope": "True",
+                        "Margin": "0,0,0,-10"
+                      },
+                      "children": [
+                        {
+                          "type": "StackPanel.RenderTransform",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "TranslateTransform",
+                              "attrs": {}
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Grid.Row": "1",
+                        "Name": "PanSelect",
+                        "Visibility": "Collapsed",
+                        "Opacity": "0",
+                        "IsHitTestVisible": "False",
+                        "Margin": "0,0,0,45"
+                      },
+                      "children": [
+                        {
+                          "type": "StackPanel.RenderTransform",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "TranslateTransform",
+                              "attrs": {
+                                "X": "40"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Margin": "0,15,0,3",
+                            "UseAnimation": "False",
+                            "Height": "62"
+                          },
+                          "children": [
+                            {
+                              "type": "PIconButton",
+                              "attrs": {
+                                "HorizontalAlignment": "Left",
+                                "Theme": "Black",
+                                "Opacity": "0.6",
+                                "Name": "BtnBack",
+                                "Margin": "13,0,0,0",
+                                "Height": "26",
+                                "Width": "26",
+                                "LogoScale": "0.87",
+                                "SvgIcon": "lucide/arrow-left"
+                              }
+                            },
+                            {
+                              "type": "PImage",
+                              "attrs": {
+                                "Name": "ImgLogo",
+                                "Margin": "52,0,0,0",
+                                "VerticalAlignment": "Center",
+                                "HorizontalAlignment": "Left",
+                                "Height": "32",
+                                "RenderOptions.BitmapScalingMode": "HighQuality"
+                              }
+                            },
+                            {
+                              "type": "PTextBox",
+                              "attrs": {
+                                "Margin": "93,0,16,0",
+                                "Padding": "-1,0",
+                                "MinHeight": "30",
+                                "FontSize": "15",
+                                "VerticalAlignment": "Center",
+                                "Name": "TextSelectName",
+                                "MaxLength": "70",
+                                "HasBackground": "False"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PHint",
+                          "attrs": {
+                            "Text": "{DynamicResource Download.Install.Warning.FabricApi}",
+                            "Margin": "0,10,0,0",
+                            "Name": "HintFabricAPI",
+                            "Theme": "Red"
+                          }
+                        },
+                        {
+                          "type": "PHint",
+                          "attrs": {
+                            "Text": "{DynamicResource Download.Install.Warning.LegacyFabricApi}",
+                            "Margin": "0,10,0,0",
+                            "Name": "HintLegacyFabricAPI",
+                            "Theme": "Red"
+                          }
+                        },
+                        {
+                          "type": "PHint",
+                          "attrs": {
+                            "Text": "{DynamicResource Download.Install.Warning.OptiFabric}",
+                            "Margin": "0,10,0,0",
+                            "Name": "HintOptiFabric",
+                            "Theme": "Red"
+                          }
+                        },
+                        {
+                          "type": "PHint",
+                          "attrs": {
+                            "Text": "{DynamicResource Download.Install.Warning.OptiFabricOld}",
+                            "Margin": "0,10,0,0",
+                            "Name": "HintOptiFabricOld",
+                            "Theme": "Yellow"
+                          }
+                        },
+                        {
+                          "type": "PHint",
+                          "attrs": {
+                            "Text": "{DynamicResource Download.Install.Warning.LegacyOptiFabric}",
+                            "Margin": "0,10,0,0",
+                            "Name": "HintLegacyOptiFabric",
+                            "Theme": "Yellow"
+                          }
+                        },
+                        {
+                          "type": "PHint",
+                          "attrs": {
+                            "Text": "{DynamicResource Download.Install.Warning.ModOptiFine}",
+                            "Margin": "0,10,0,0",
+                            "Name": "HintModOptiFine",
+                            "Theme": "Yellow"
+                          }
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.Forge}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardForge",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,15",
+                                "VerticalAlignment": "Top",
+                                "Name": "PanForge"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanForgeInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgForge",
+                                    "Margin": "0,0,7,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "18",
+                                    "RenderOptions.BitmapScalingMode": "Linear",
+                                    "Source": "pack://application:,,,/images/Blocks/Anvil.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabForge",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnForgeClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnForgeClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.Cleanroom}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardCleanroom",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,15",
+                                "VerticalAlignment": "Top",
+                                "Name": "PanCleanroom"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanCleanroomInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgCleanroom",
+                                    "Margin": "0,0,7,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "18",
+                                    "RenderOptions.BitmapScalingMode": "Linear",
+                                    "Source": "pack://application:,,,/images/Blocks/Cleanroom.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabCleanroom",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnCleanroomClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnCleanroomClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.NeoForge}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardNeoForge",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,15",
+                                "VerticalAlignment": "Top",
+                                "Name": "PanNeoForge"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanNeoForgeInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgNeoForge",
+                                    "Margin": "0,0,7,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "18",
+                                    "RenderOptions.BitmapScalingMode": "Linear",
+                                    "Source": "pack://application:,,,/images/Blocks/NeoForge.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabNeoForge",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnNeoForgeClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnNeoForgeClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.Fabric}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardFabric",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,0",
+                                "VerticalAlignment": "Top",
+                                "Name": "PanFabric"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanFabricInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgFabric",
+                                    "Margin": "0,0,7,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "18",
+                                    "RenderOptions.BitmapScalingMode": "Linear",
+                                    "Source": "pack://application:,,,/images/Blocks/Fabric.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabFabric",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnFabricClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnFabricClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.LegacyFabric}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardLegacyFabric",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,0",
+                                "VerticalAlignment": "Top",
+                                "Name": "PanLegacyFabric"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanLegacyFabricInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgLegacyFabric",
+                                    "Margin": "0,0,7,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "18",
+                                    "RenderOptions.BitmapScalingMode": "Linear",
+                                    "Source": "pack://application:,,,/images/Blocks/Fabric.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabLegacyFabric",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnLegacyFabricClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnLegacyFabricClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.FabricApi}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardFabricApi",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,15",
+                                "VerticalAlignment": "Top",
+                                "Name": "PanFabricApi"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanFabricApiInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgFabricApi",
+                                    "Margin": "0,0,7,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "18",
+                                    "RenderOptions.BitmapScalingMode": "Linear",
+                                    "Source": "pack://application:,,,/images/Blocks/Fabric.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabFabricApi",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnFabricApiClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnFabricApiClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.LegacyFabricApi}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardLegacyFabricApi",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,15",
+                                "VerticalAlignment": "Top",
+                                "Name": "PanLegacyFabricApi"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanLegacyFabricApiInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgLegacyFabricApi",
+                                    "Margin": "0,0,7,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "18",
+                                    "RenderOptions.BitmapScalingMode": "Linear",
+                                    "Source": "pack://application:,,,/images/Blocks/Fabric.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabLegacyFabricApi",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnLegacyFabricApiClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnLegacyFabricApiClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.LabyMod}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardLabyMod",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,0",
+                                "VerticalAlignment": "Top",
+                                "Name": "PanLabyMod"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanLabyModInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgLabyMod",
+                                    "Margin": "0,0,7,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "18",
+                                    "RenderOptions.BitmapScalingMode": "Linear",
+                                    "Source": "pack://application:,,,/images/Blocks/LabyMod.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabLabyMod",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnLabyModClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnLabyModClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.OptiFine}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardOptiFine",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,15",
+                                "VerticalAlignment": "Top"
+                              },
+                              "children": [
+                                {
+                                  "type": "StackPanel",
+                                  "attrs": {
+                                    "Name": "PanOptiFine"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanOptiFineInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgOptiFine",
+                                    "Margin": "0,0,7,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "18",
+                                    "RenderOptions.BitmapScalingMode": "Linear",
+                                    "Source": "pack://application:,,,/images/Blocks/GrassPath.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabOptiFine",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnOptiFineClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnOptiFineClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.OptiFabric}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardOptiFabric",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,15",
+                                "VerticalAlignment": "Top",
+                                "Name": "PanOptiFabric"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanOptiFabricInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgOptiFabric",
+                                    "Margin": "0,0,7,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "18",
+                                    "RenderOptions.BitmapScalingMode": "HighQuality",
+                                    "Source": "pack://application:,,,/images/Blocks/OptiFabric.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabOptiFabric",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnOptiFabricClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnOptiFabricClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCard",
+                          "attrs": {
+                            "Title": "{DynamicResource Common.Installation.LiteLoader}",
+                            "Height": "40",
+                            "Margin": "0,12,0,0",
+                            "Name": "CardLiteLoader",
+                            "IsSwapped": "True",
+                            "CanSwap": "True",
+                            "SwapLogoRight": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "StackPanel",
+                              "attrs": {
+                                "Margin": "20,40,18,15",
+                                "VerticalAlignment": "Top",
+                                "Name": "PanLiteLoader"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "PanLiteLoaderInfo",
+                                "Height": "18",
+                                "Margin": "132,11,15,0",
+                                "VerticalAlignment": "Top",
+                                "Tag": "True"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RenderTransform",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "1*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Image",
+                                  "attrs": {
+                                    "Name": "ImgLiteLoader",
+                                    "Margin": "-1,0,6,0",
+                                    "SnapsToDevicePixels": "True",
+                                    "Height": "20",
+                                    "RenderOptions.BitmapScalingMode": "Linear",
+                                    "Source": "pack://application:,,,/images/Blocks/Egg.png"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Name": "LabLiteLoader",
+                                    "VerticalAlignment": "Center",
+                                    "TextTrimming": "CharacterEllipsis",
+                                    "Grid.Column": "1"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Name": "BtnLiteLoaderClear",
+                                "Height": "30",
+                                "Width": "30",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,5,32,0",
+                                "Background": "{StaticResource ColorBrushSemiTransparent}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path",
+                                  "attrs": {
+                                    "Name": "BtnLiteLoaderClearInner",
+                                    "Height": "10",
+                                    "Width": "10",
+                                    "Stretch": "Uniform",
+                                    "Fill": "{StaticResource ColorBrushGray1}",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Data": "F1 M2,0 L0,2 8,10 0,18 2,20 10,12 18,20 20,18 12,10 20,2 18,0 10,8 2,0Z"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PExtraTextButton",
+              "attrs": {
+                "Name": "BtnStart",
+                "Text": "{DynamicResource Download.Install.StartDownload}",
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Bottom",
+                "LogoScale": "0.95",
+                "SvgIcon": "lucide/download"
+              }
+            }
+          ]
+        },
+        {
+          "type": "PCard",
+          "attrs": {
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "Margin": "40,0",
+            "SnapsToDevicePixels": "True",
+            "Name": "PanLoad",
+            "UseAnimation": "False"
+          },
+          "children": [
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Margin": "20,20,20,17",
+                "Name": "LoadMinecraft",
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadOptiFine",
+                "HasAnimation": "False"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadForge",
+                "HasAnimation": "False"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadNeoForge",
+                "HasAnimation": "False"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadCleanroom",
+                "HasAnimation": "False"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadLiteLoader",
+                "HasAnimation": "False"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadFabric",
+                "HasAnimation": "False"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadLegacyFabric",
+                "HasAnimation": "False"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadFabricApi",
+                "HasAnimation": "False"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadLegacyFabricApi",
+                "HasAnimation": "False"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadLabyMod",
+                "HasAnimation": "False"
+              }
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Visibility": "Collapsed",
+                "Name": "LoadOptiFabric",
+                "HasAnimation": "False"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

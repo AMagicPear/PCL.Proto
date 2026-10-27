@@ -1,0 +1,292 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageInstanceCompJarInJar",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "attrs": {},
+      "children": [
+        {
+          "type": "PScrollViewer",
+          "attrs": {
+            "VerticalScrollBarVisibility": "Auto",
+            "HorizontalScrollBarVisibility": "Disabled",
+            "Name": "PanBack"
+          },
+          "children": [
+            {
+              "type": "StackPanel",
+              "attrs": {
+                "Name": "PanMain",
+                "Margin": "25,10,25,10"
+              },
+              "children": [
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Margin": "0,15,0,15",
+                    "Name": "PanManage"
+                  },
+                  "children": [
+                    {
+                      "type": "WrapPanel",
+                      "attrs": {
+                        "Margin": "15,8,0,15"
+                      },
+                      "children": [
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnBack",
+                            "MinWidth": "110",
+                            "Text": "{DynamicResource Instance.Resource.BackToParent}",
+                            "Padding": "13,7",
+                            "Margin": "0,7,15,0",
+                            "HorizontalAlignment": "Left",
+                            "ColorType": "Highlight"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnRefresh",
+                            "MinWidth": "110",
+                            "Text": "{DynamicResource Common.Action.Refresh}",
+                            "Padding": "13,7",
+                            "Margin": "0,7,15,0",
+                            "HorizontalAlignment": "Left"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "Margin": "0,7,15,0",
+                            "TextWrapping": "Wrap",
+                            "Foreground": "{DynamicResource ColorBrush2}",
+                            "Text": "{DynamicResource Instance.Resource.Mod.JarInJar.Message}"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "PSearchBox",
+                  "attrs": {
+                    "Margin": "0,0,0,15",
+                    "Name": "SearchBox",
+                    "HintText": "{DynamicResource Instance.Resource.Mod.JarInJar.Search.Hint}"
+                  }
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Name": "CardWarnings",
+                    "Margin": "0,0,0,15"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Margin": "15,10,15,12"
+                      },
+                      "children": [
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Text": "{DynamicResource Instance.Resource.Mod.JarInJar.Section.Warnings}",
+                            "FontSize": "16",
+                            "FontWeight": "Bold",
+                            "Foreground": "{DynamicResource ColorBrush3}"
+                          }
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Name": "PanWarnList",
+                            "Margin": "0,8,0,0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Name": "CardConflicts",
+                    "Margin": "0,0,0,15"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Margin": "15,10,15,12"
+                      },
+                      "children": [
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Text": "{DynamicResource Instance.Resource.Mod.JarInJar.Section.Conflicts}",
+                            "ToolTip": "{DynamicResource Instance.Resource.Mod.JarInJar.Conflict.Tooltip}",
+                            "FontSize": "16",
+                            "FontWeight": "Bold",
+                            "Foreground": "{DynamicResource ColorBrush3}"
+                          }
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Name": "PanConflictList",
+                            "Margin": "0,8,0,0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Name": "SectionRelations"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Text": "{DynamicResource Instance.Resource.Mod.JarInJar.Section.Relations}",
+                        "FontSize": "16",
+                        "FontWeight": "Bold",
+                        "Foreground": "{DynamicResource ColorBrush3}",
+                        "Margin": "2,0,0,8"
+                      }
+                    },
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanRelationList"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Name": "SectionBundled"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Text": "{DynamicResource Instance.Resource.Mod.JarInJar.Section.Bundled}",
+                        "FontSize": "16",
+                        "FontWeight": "Bold",
+                        "Foreground": "{DynamicResource ColorBrush3}",
+                        "Margin": "2,4,0,8"
+                      }
+                    },
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanBundledList"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "PCard",
+          "attrs": {
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "Margin": "40",
+            "Name": "PanEmpty",
+            "Visibility": "Collapsed"
+          },
+          "children": [
+            {
+              "type": "StackPanel",
+              "attrs": {
+                "Margin": "20,17"
+              },
+              "children": [
+                {
+                  "type": "TextBlock",
+                  "attrs": {
+                    "Margin": "0,0,0,9",
+                    "HorizontalAlignment": "Center",
+                    "Text": "{DynamicResource Instance.Resource.Mod.JarInJar.Empty.Title}",
+                    "FontSize": "19",
+                    "UseLayoutRounding": "True",
+                    "SnapsToDevicePixels": "True",
+                    "Foreground": "{DynamicResource ColorBrush3}"
+                  }
+                },
+                {
+                  "type": "Rectangle",
+                  "attrs": {
+                    "HorizontalAlignment": "Stretch",
+                    "Height": "2",
+                    "Fill": "{DynamicResource ColorBrush3}"
+                  }
+                },
+                {
+                  "type": "TextBlock",
+                  "attrs": {
+                    "Margin": "10,10,10,0",
+                    "Text": "{DynamicResource Instance.Resource.Mod.JarInJar.Empty.Message}",
+                    "TextWrapping": "Wrap",
+                    "HorizontalAlignment": "Center"
+                  }
+                },
+                {
+                  "type": "PButton",
+                  "attrs": {
+                    "Height": "35",
+                    "Name": "BtnEmptyBack",
+                    "MinWidth": "130",
+                    "Text": "{DynamicResource Instance.Resource.BackToParent}",
+                    "Margin": "5,20,5,5",
+                    "Padding": "12,0",
+                    "HorizontalAlignment": "Center",
+                    "ColorType": "Highlight"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "PCard",
+          "attrs": {
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "Margin": "40,0",
+            "SnapsToDevicePixels": "True",
+            "Name": "PanLoad",
+            "UseAnimation": "False"
+          },
+          "children": [
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Text": "{DynamicResource Instance.Resource.Loading}",
+                "Margin": "20,20,20,17",
+                "Name": "Load",
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

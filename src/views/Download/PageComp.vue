@@ -1,128 +1,204 @@
-<script lang="ts">
-type ProjectType = 'mod' | 'modpack' | 'resourcepack' | 'shader' | 'world'
-
-const apiSupports: Record<'modrinth' | 'curseforge', ProjectType[]> = {
-  modrinth: ['mod', 'modpack', 'resourcepack', 'shader'],
-  curseforge: ['mod', 'modpack', 'resourcepack', 'shader', 'world'],
-}
-</script>
-
 <script setup lang="ts">
 import modrinthApi, { type ISearchHit } from '@/api/modrinthApi'
-import SetupItem from '@/components/widget/SetupItem.vue'
-import PCard from '@/components/widget/PCard.vue'
 import PCompItem from '@/components/widget/PCompItem.vue'
-import PLoading from '@/components/widget/PLoading.vue'
+import PCard from '@/components/widget/PCard.vue'
+import PComboBox from '@/components/widget/PComboBox.vue'
+import PButton from '@/components/widget/PButton.vue'
+import PTextBox from '@/components/widget/PTextBox.vue'
 import PSearchBox from '@/components/widget/PSearchBox.vue'
-import { ref, watch } from 'vue'
+import PSvgIcon from '@/components/widget/PSvgIcon.vue'
+import PHint from '@/components/widget/PHint.vue'
+import PLoading from '@/components/widget/PLoading.vue'
+import categories from '@/assets/download-categories.json'
+import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { pclText } from '@/api/pclLocale'
 
-const hits = ref<ISearchHit[] | null | undefined>(undefined)
-const route = useRoute()
-const { t } = useI18n()
-
-// [TODO] 支持更多API平台如Curseforge
-const handleSearch = async (query?: string) => {
-  hits.value = undefined
-  let data = await modrinthApi.searchProjects({
-    query,
-    facets: [['project_type:' + route.meta.project_type]],
-  })
-  hits.value = data.hits
-}
-
-const placeholders: Record<ProjectType, string> = {
-  mod: t('download.search_for') + ' ' + t('download.nav.mod'),
-  modpack: t('download.search_for') + ' ' + t('download.nav.mod_pack'),
-  resourcepack: t('download.search_for') + ' ' + t('download.nav.resource_pack'),
-  shader: t('download.search_for') + ' ' + t('download.nav.shader_pack'),
-  world: t('download.search_for') + ' ' + t('download.nav.world'),
-}
-
-watch(
-  () => route.meta.project_type,
-  (newType, oldType) => {
-    if (newType !== oldType) {
-      handleSearch()
-    }
-  },
-  { immediate: true },
+const props = defineProps<{
+  projectType: 'mod' | 'modpack' | 'resourcepack' | 'shader' | 'datapack' | 'world'
+}>()
+const { locale } = useI18n()
+const text = (key: string) => pclText(key, locale.value)
+const values = reactive({ source: '0', sort: '0', loader: '', version: '', query: '', tag: '' })
+const hits = ref<ISearchHit[]>([])
+const error = ref('')
+const loading = ref(false)
+const page = ref(0)
+const total = ref(0)
+let request = 0
+const limit = 20
+const tagOptions = computed(() =>
+  categories[props.projectType].map((item) => ({ key: item.tag, text: text(item.text) })),
 )
+const loaderOptions = computed(() =>
+  (props.projectType === 'shader'
+    ? ['', 'iris', 'optifine', 'canvas', 'vanilla']
+    : ['', 'forge', 'neoforge', 'fabric', 'quilt']
+  ).map((value) => ({ key: value, text: value || text('Common.Option.All') })),
+)
+async function search() {
+  const current = ++request
+  error.value = ''
+  loading.value = true
+  try {
+    if (values.source === '1') throw new Error('当前尚未接入 CurseForge，请将来源切换为 Modrinth。')
+    if (props.projectType === 'world') throw new Error('世界资源需要 CurseForge，当前尚未接入。')
+    const facets = [
+      [`project_type:${props.projectType === 'datapack' ? 'mod' : props.projectType}`],
+    ]
+    if (props.projectType === 'datapack') facets.push(['categories:datapack'])
+    if (values.loader) facets.push([`categories:${values.loader}`])
+    if (values.version.trim()) facets.push([`versions:${values.version.trim()}`])
+    if (values.tag) {
+      const slug = values.tag.split('/')[1]
+      if (!slug) throw new Error('该分类当前仅支持 CurseForge，请选择其他分类。')
+      facets.push([`categories:${slug}`])
+    }
+    const sort =
+      (['relevance', 'downloads', 'follows', 'newest', 'updated'] as const)[Number(values.sort)] ||
+      'relevance'
+    const data = await modrinthApi.searchProjects({
+      query: values.query,
+      facets,
+      index: sort,
+      offset: page.value * limit,
+      limit,
+    })
+    if (current !== request) return
+    hits.value = data.hits
+    total.value = data.total_hits
+  } catch (err) {
+    if (current !== request) return
+    hits.value = []
+    total.value = 0
+    error.value = err instanceof Error ? err.message : `未能获取资源列表，请重试。${String(err)}`
+  } finally {
+    if (current === request) loading.value = false
+  }
+}
+function reset() {
+  Object.assign(values, { source: '0', sort: '0', loader: '', version: '', query: '', tag: '' })
+  page.value = 0
+  void search()
+}
+function firstSearch() {
+  page.value = 0
+  void search()
+}
+function turn(next: number) {
+  page.value = Math.max(0, next)
+  void search()
+}
+watch(() => props.projectType, reset, { immediate: true })
 </script>
-
 <template>
-  <PSearchBox
-    @search="handleSearch"
-    :placeholder="placeholders[route.meta.project_type as ProjectType]"
-  />
-  <PCard hide-title>
-    <div class="page-comp-options">
-      <SetupItem
-        label="来源"
-        type="select"
+  <section class="pcl-page comp-page">
+    <PSearchBox
+      v-model="values.query"
+      :placeholder="text('Download.Comp.Search.Hint')"
+      @search="firstSearch"
+    />
+    <div class="filters">
+      <label>{{ text('Download.Comp.Filter.Source') }}</label>
+      <PComboBox
+        v-model="values.source"
         :options="[
-          { key: 'all', text: '全部' },
-          { key: 'modrinth', text: 'Modrinth' },
-          { key: 'curseforge', text: 'CurseForge' },
+          { key: '0', text: 'Modrinth' },
+          { key: '1', text: 'CurseForge' },
         ]"
-      ></SetupItem>
-      <SetupItem label="标签" type="select" :options="[{ key: 'all', text: '全部' }]"></SetupItem>
-      <SetupItem
-        label="排序方式"
-        type="select"
-        :options="[
-          { key: 'default', text: '默认' },
-          { key: 'relevance', text: '相关性' },
-          { key: 'downloads', text: '下载量' },
-          { key: 'followers', text: '关注量' },
-          { key: 'newest', text: '最新发布' },
-          { key: 'updated', text: '最近更新' },
-        ]"
-      ></SetupItem>
+        @update:model-value="firstSearch"
+      />
+      <label>{{ text('Download.Comp.Filter.Tag') }}</label>
+      <PComboBox v-model="values.tag" :options="tagOptions" @update:model-value="firstSearch" />
+      <label>{{ text('Download.Comp.Filter.Sort') }}</label>
+      <PComboBox
+        v-model="values.sort"
+        :options="
+          ['Relevance', 'Downloads', 'Follows', 'Latest', 'Updated'].map((item, index) => ({
+            key: String(index),
+            text: text(`Download.Comp.Sort.${item}`),
+          }))
+        "
+        @update:model-value="firstSearch"
+      />
+      <label>{{ text('Download.Comp.Filter.Version') }}</label>
+      <PTextBox
+        v-model="values.version"
+        :placeholder="text('Common.Option.All')"
+        @change="firstSearch"
+        @keydown.enter="firstSearch"
+      />
+      <template v-if="['mod', 'modpack', 'shader'].includes(projectType)">
+        <label>{{ text('Download.Comp.Filter.Loader') }}</label>
+        <PComboBox
+          v-model="values.loader"
+          :options="loaderOptions"
+          @update:model-value="firstSearch"
+        />
+      </template>
+      <PButton inline :click="reset" :title="text('Common.Action.Reset')"
+        ><PSvgIcon name="lucide/rotate-ccw"
+      /></PButton>
     </div>
-    <div class="page-comp-options">
-      <SetupItem label="版本" type="select" :options="[{ key: 'any', text: '任意' }]"></SetupItem>
-      <SetupItem
-        label="加载器"
-        type="select"
-        :options="[
-          { key: 'any', text: '任意' },
-          { key: 'forge', text: 'Forge' },
-          { key: 'neoforge', text: 'NeoForge' },
-          { key: 'fabric', text: 'Fabric' },
-          { key: 'quilt', text: 'Quilt' },
-        ]"
-      ></SetupItem>
-    </div>
-  </PCard>
-  <PCard hide-title v-if="hits && hits.length > 0" ref="projectCard" v-card-drop-animate>
-    <PCompItem v-for="project in hits" :data="project" clickable />
-  </PCard>
-  <div class="loading-page" v-else-if="!hits">
-    <PLoading :state="hits === null ? 'error' : 'loading'" />
-  </div>
+    <PCard v-if="loading" hide-title
+      ><PLoading :card="false" :loading-text="text('Download.Version.LoadingList')"
+    /></PCard>
+    <PHint v-else-if="error" severity="error"
+      >{{ error }} <PButton inline :click="search">{{ '重试' }}</PButton></PHint
+    >
+    <template v-else>
+      <PCard hide-title
+        ><div class="projects">
+          <PCompItem v-for="project in hits" :key="project.project_id" :data="project" clickable />
+          <p v-if="!hits.length" class="pcl-empty">没有找到相关资源</p>
+        </div></PCard
+      >
+      <PCard hide-title
+        ><nav class="pages" aria-label="分页">
+          <PButton inline :disabled="!page" :click="() => turn(0)" aria-label="首页"
+            ><PSvgIcon name="lucide/chevrons-left"
+          /></PButton>
+          <PButton inline :disabled="!page" :click="() => turn(page - 1)" aria-label="上一页"
+            ><PSvgIcon name="lucide/chevron-left"
+          /></PButton>
+          <span>{{ page + 1 }}</span>
+          <PButton
+            inline
+            :disabled="(page + 1) * limit >= total"
+            :click="() => turn(page + 1)"
+            aria-label="下一页"
+            ><PSvgIcon name="lucide/chevron-right"
+          /></PButton></nav
+      ></PCard>
+    </template>
+  </section>
 </template>
-
-<style scoped lang="scss">
-.page-comp-options {
+<style scoped>
+.comp-page {
+  padding: 25px;
   display: flex;
-  gap: 1rem;
-  flex-direction: row;
+  flex-direction: column;
+  gap: 15px;
+}
+.filters {
+  display: grid;
+  grid-template-columns: auto minmax(80px, 1fr) auto minmax(80px, 1fr);
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-
-  :deep(.setupitem-with-text-container) {
-    &:nth-child(1) {
-      flex: 2;
-    }
-    &:nth-child(2) {
-      flex: 2;
-    }
-    &:nth-child(3) {
-      flex: 4;
-    }
+  gap: 10px 12px;
+}
+.projects {
+  padding: 12px 14px;
+}
+.pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 10px;
+}
+@media (max-width: 700px) {
+  .filters {
+    grid-template-columns: auto minmax(80px, 1fr);
   }
 }
 </style>

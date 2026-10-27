@@ -1,0 +1,1062 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageSetupAbout",
+    "DataContext": "{Binding Source={x:Static app:Basics.Metadata}}",
+    "PanScroll": "{Binding ElementName=PanBack}",
+    "RenderOptions.BitmapScalingMode": "LowQuality"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "Name": "PanBack",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "VerticalScrollBarVisibility": "Auto"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanMain",
+            "Margin": "25,10",
+            "Grid.IsSharedSizeScope": "True"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,15",
+                "Title": "{DynamicResource Setup.About.Title}"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "21,40,21,16"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.RowDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "45"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "45"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "45"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "40"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {}
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "150"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "PListItem",
+                      "attrs": {
+                        "Grid.Row": "0",
+                        "Grid.Column": "1",
+                        "Margin": "-5,0,15,0",
+                        "Info": "{DynamicResource Setup.About.OriginalAuthor.Info}",
+                        "IsHitTestVisible": "False",
+                        "Title": "{DynamicResource Setup.About.OriginalAuthor.Name}"
+                      }
+                    },
+                    {
+                      "type": "PListItem",
+                      "attrs": {
+                        "Grid.Row": "1",
+                        "Grid.Column": "1",
+                        "Margin": "-5,0,15,0",
+                        "Info": "{DynamicResource Setup.About.Community.Info}",
+                        "IsHitTestVisible": "False",
+                        "Title": "{DynamicResource Setup.About.Community.Name}"
+                      }
+                    },
+                    {
+                      "type": "PListItem",
+                      "attrs": {
+                        "Name": "ItemAboutPcl",
+                        "Grid.Row": "2",
+                        "Grid.Column": "1",
+                        "Margin": "-5,0,15,0",
+                        "Info": "{DynamicResource Setup.About.Version.Info}",
+                        "IsHitTestVisible": "False",
+                        "Title": "{Binding Name}"
+                      }
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Name": "ImgPCLLogo",
+                        "Grid.Row": "2",
+                        "Margin": "3",
+                        "MouseLeftButtonDown": "ImgPCLLogo_Click",
+                        "Source": "/Plain Craft Launcher 2;component/Images/Heads/Logo-CE.png"
+                      },
+                      "children": [
+                        {
+                          "type": "Image.Clip",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "EllipseGeometry",
+                              "attrs": {
+                                "Center": "17 17",
+                                "RadiusX": "17",
+                                "RadiusY": "17"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Grid.Row": "0",
+                        "Margin": "3",
+                        "Source": "/Plain Craft Launcher 2;component/Images/Heads/LTCat.jpg"
+                      },
+                      "children": [
+                        {
+                          "type": "Image.Clip",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "EllipseGeometry",
+                              "attrs": {
+                                "Center": "17 17",
+                                "RadiusX": "17",
+                                "RadiusY": "17"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Name": "ImgPCLCommunity",
+                        "Grid.Row": "1",
+                        "MouseLeftButtonDown": "ImgPCLCommunity_Click",
+                        "Margin": "3",
+                        "Source": "/Plain Craft Launcher 2;component/Images/Heads/PCL-Community.png"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "0",
+                        "Grid.Column": "2",
+                        "Height": "35",
+                        "CustomEventService.EventData": "https://ifdian.net/a/LTCat",
+                        "CustomEventService.EventType": "OpenUrl",
+                        "Text": "{DynamicResource Setup.About.SponsorOriginalAuthor}"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "1",
+                        "Grid.Column": "2",
+                        "Height": "35",
+                        "CustomEventService.EventData": "https://github.com/PCL-Community",
+                        "CustomEventService.EventType": "OpenUrl",
+                        "Text": "{DynamicResource Setup.About.GitHubHome}"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "2",
+                        "Grid.Column": "2",
+                        "Height": "35",
+                        "CustomEventService.EventData": "https://github.com/PCL-Community/PCL2-CE",
+                        "CustomEventService.EventType": "OpenUrl",
+                        "Text": "{DynamicResource Setup.About.SourceCode}"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Setup.About.SpecialThanks.Title}"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "21,40,21,16"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.RowDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "45"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Name": "RowMcmod",
+                            "Height": "45"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "45"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "45"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "45"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "45"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "45"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "40"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {}
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "150"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "PListItem",
+                      "attrs": {
+                        "Grid.Row": "0",
+                        "Grid.Column": "1",
+                        "Margin": "-5,0,15,0",
+                        "Info": "{DynamicResource Setup.About.SpecialThanks.Info.Bmclapi}",
+                        "IsHitTestVisible": "False",
+                        "Title": "{DynamicResource Setup.About.SpecialThanks.Name.Bangbang93}"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "0",
+                        "Grid.Column": "2",
+                        "Height": "35",
+                        "CustomEventService.EventData": "https://afdian.com/a/bangbang93",
+                        "CustomEventService.EventType": "OpenUrl",
+                        "Text": "{DynamicResource Setup.About.SpecialThanks.SponsorMirror}"
+                      }
+                    },
+                    {
+                      "type": "PListItem",
+                      "attrs": {
+                        "Name": "ItemMcmod",
+                        "Grid.Row": "1",
+                        "Grid.Column": "1",
+                        "Grid.ColumnSpan": "2",
+                        "Margin": "-5,0,0,0",
+                        "Info": "{DynamicResource Setup.About.SpecialThanks.Info.Mcmod}",
+                        "IsHitTestVisible": "False",
+                        "Title": "{DynamicResource Setup.About.SpecialThanks.Name.Mcmod}"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Name": "BtnMcmod",
+                        "Grid.Row": "1",
+                        "Grid.Column": "2",
+                        "Height": "35",
+                        "CustomEventService.EventData": "https://www.mcmod.cn",
+                        "CustomEventService.EventType": "OpenUrl",
+                        "Text": "{DynamicResource Setup.About.SpecialThanks.OpenMcmod}"
+                      }
+                    },
+                    {
+                      "type": "PListItem",
+                      "attrs": {
+                        "Grid.Row": "2",
+                        "Grid.Column": "1",
+                        "Grid.ColumnSpan": "2",
+                        "Margin": "-5,0,0,0",
+                        "Info": "{DynamicResource Setup.About.SpecialThanks.Info.Cloud}",
+                        "IsHitTestVisible": "False",
+                        "Title": "{DynamicResource Setup.About.SpecialThanks.Name.Pysio}"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "2",
+                        "Grid.Column": "2",
+                        "Height": "35",
+                        "CustomEventService.EventData": "https://www.pysio.online",
+                        "CustomEventService.EventType": "OpenUrl",
+                        "Text": "{DynamicResource Setup.About.SpecialThanks.GoBlog}"
+                      }
+                    },
+                    {
+                      "type": "PListItem",
+                      "attrs": {
+                        "Grid.Row": "3",
+                        "Grid.Column": "1",
+                        "Grid.ColumnSpan": "2",
+                        "Margin": "-5,0,0,0",
+                        "Info": "{DynamicResource Setup.About.SpecialThanks.Info.Cloud}",
+                        "IsHitTestVisible": "False",
+                        "Title": "{DynamicResource Setup.About.SpecialThanks.Name.Yunmoan}"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "3",
+                        "Grid.Column": "2",
+                        "Height": "35",
+                        "CustomEventService.EventData": "https://www.zyghit.cn",
+                        "CustomEventService.EventType": "OpenUrl",
+                        "Text": "{DynamicResource Setup.About.SpecialThanks.OpenWebsite}"
+                      }
+                    },
+                    {
+                      "type": "PListItem",
+                      "attrs": {
+                        "Grid.Row": "4",
+                        "Grid.Column": "1",
+                        "Grid.ColumnSpan": "2",
+                        "Margin": "-5,0,0,0",
+                        "Info": "{DynamicResource Setup.About.SpecialThanks.Info.LinkModule}",
+                        "IsHitTestVisible": "False",
+                        "Title": "{DynamicResource Setup.About.SpecialThanks.Name.EasyTier}"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "4",
+                        "Grid.Column": "2",
+                        "Height": "35",
+                        "CustomEventService.EventData": "https://easytier.cn",
+                        "CustomEventService.EventType": "OpenUrl",
+                        "Text": "{DynamicResource Setup.About.SpecialThanks.OpenWebsite}"
+                      }
+                    },
+                    {
+                      "type": "PListItem",
+                      "attrs": {
+                        "Grid.Row": "5",
+                        "Grid.Column": "1",
+                        "Grid.ColumnSpan": "2",
+                        "Margin": "-5,0,0,0",
+                        "Info": "{DynamicResource Setup.About.SpecialThanks.Info.Mcim}",
+                        "IsHitTestVisible": "False",
+                        "Title": "{DynamicResource Setup.About.SpecialThanks.Name.Z0z0r4}"
+                      }
+                    },
+                    {
+                      "type": "PListItem",
+                      "attrs": {
+                        "Grid.Row": "6",
+                        "Grid.Column": "1",
+                        "Grid.ColumnSpan": "2",
+                        "Margin": "-5,0,0,0",
+                        "Info": "{DynamicResource Setup.About.SpecialThanks.Info.IconDesign}",
+                        "IsHitTestVisible": "False",
+                        "Title": "{DynamicResource Setup.About.SpecialThanks.Name.Emperormummy}"
+                      }
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Grid.Row": "0",
+                        "Margin": "3",
+                        "Source": "/Plain Craft Launcher 2;component/Images/Heads/bangbang93.png"
+                      },
+                      "children": [
+                        {
+                          "type": "Image.Clip",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "EllipseGeometry",
+                              "attrs": {
+                                "Center": "17 17",
+                                "RadiusX": "17",
+                                "RadiusY": "17"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Name": "ImgMcmod",
+                        "Grid.Row": "1",
+                        "Margin": "3",
+                        "Source": "/Plain Craft Launcher 2;component/Images/Heads/wiki.png"
+                      },
+                      "children": [
+                        {
+                          "type": "Image.Clip",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "EllipseGeometry",
+                              "attrs": {
+                                "Center": "17 17",
+                                "RadiusX": "17",
+                                "RadiusY": "17"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Grid.Row": "2",
+                        "Margin": "3",
+                        "Source": "/Plain Craft Launcher 2;component/Images/Heads/Pysio.jpg"
+                      },
+                      "children": [
+                        {
+                          "type": "Image.Clip",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "EllipseGeometry",
+                              "attrs": {
+                                "Center": "17 17",
+                                "RadiusX": "17",
+                                "RadiusY": "17"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Grid.Row": "3",
+                        "Margin": "3",
+                        "Source": "/Plain Craft Launcher 2;component/Images/Heads/Yunmoan.jpg"
+                      },
+                      "children": [
+                        {
+                          "type": "Image.Clip",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "EllipseGeometry",
+                              "attrs": {
+                                "Center": "17 17",
+                                "RadiusX": "17",
+                                "RadiusY": "17"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Grid.Row": "4",
+                        "Margin": "3",
+                        "Source": "/Plain Craft Launcher 2;component/Images/Heads/EasyTier.png"
+                      },
+                      "children": [
+                        {
+                          "type": "Image.Clip",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "EllipseGeometry",
+                              "attrs": {
+                                "Center": "17 17",
+                                "RadiusX": "17",
+                                "RadiusY": "17"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Grid.Row": "5",
+                        "Margin": "3",
+                        "Source": "/Plain Craft Launcher 2;component/Images/Heads/z0z0r4.png"
+                      },
+                      "children": [
+                        {
+                          "type": "Image.Clip",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "EllipseGeometry",
+                              "attrs": {
+                                "Center": "17 17",
+                                "RadiusX": "17",
+                                "RadiusY": "17"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Grid.Row": "6",
+                        "Margin": "3",
+                        "Source": "/Plain Craft Launcher 2;component/Images/Heads/Emperormummy.png"
+                      },
+                      "children": [
+                        {
+                          "type": "Image.Clip",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "EllipseGeometry",
+                              "attrs": {
+                                "Center": "17 17",
+                                "RadiusX": "17",
+                                "RadiusY": "17"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "DataContext": "{Binding RelativeSource={RelativeSource AncestorType=local:PageSetupAbout}}",
+                "Title": "{DynamicResource Setup.About.Contributors.Title}"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "17,42,15,20"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.RowDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "5"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "ItemsControl",
+                      "attrs": {
+                        "ItemsSource": "{Binding Contributors}"
+                      },
+                      "children": [
+                        {
+                          "type": "ItemsControl.ItemsPanel",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ItemsPanelTemplate",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "WrapPanel",
+                                  "attrs": {
+                                    "Orientation": "Horizontal"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "ItemsControl.ItemTemplate",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "DataTemplate",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "StackPanel",
+                                  "attrs": {
+                                    "Width": "72",
+                                    "Margin": "4,8",
+                                    "HorizontalAlignment": "Center",
+                                    "Orientation": "Vertical"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "PImage",
+                                      "attrs": {
+                                        "Width": "36",
+                                        "Height": "36",
+                                        "CornerRadius": "18",
+                                        "RenderOptions.BitmapScalingMode": "HighQuality",
+                                        "Source": "{Binding AvatarUrl}"
+                                      }
+                                    },
+                                    {
+                                      "type": "PTextButton",
+                                      "attrs": {
+                                        "MaxWidth": "90",
+                                        "Margin": "0,8,0,0",
+                                        "HorizontalAlignment": "Center",
+                                        "FontSize": "14",
+                                        "CustomEventService.EventData": "{Binding HtmlUrl}",
+                                        "CustomEventService.EventType": "OpenUrl",
+                                        "Text": "{Binding Login}",
+                                        "ToolTip": "{Binding Login}"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "PTextButton",
+                      "attrs": {
+                        "Grid.Row": "2",
+                        "HorizontalAlignment": "Center",
+                        "CustomEventService.EventData": "https://github.com/PCL-Community/PCL2-CE/graphs/contributors",
+                        "CustomEventService.EventType": "OpenUrl",
+                        "Text": "{DynamicResource Setup.About.Contributors.ViewMore}"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "CanSwap": "True",
+                "Title": "{DynamicResource Setup.About.Legal.Title}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,39,23,20"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "0,6,0,4",
+                        "FontWeight": "Bold",
+                        "Text": "{DynamicResource Setup.About.Legal.PrivacyNotice}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "0,0,0,2",
+                        "LineHeight": "17",
+                        "Text": "{DynamicResource Setup.About.Legal.PrivacyText}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "0,12,0,4",
+                        "FontWeight": "Bold",
+                        "Text": "{DynamicResource Setup.About.Legal.OtherInfo}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "0,0,0,2",
+                        "LineHeight": "17",
+                        "Text": "{DynamicResource Setup.About.Legal.CopyrightText}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Height": "35",
+                        "Margin": "0,12,0,0",
+                        "HorizontalAlignment": "Left",
+                        "Orientation": "Horizontal"
+                      },
+                      "children": [
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Margin": "0,0,20,0",
+                            "ColorType": "Highlight",
+                            "CustomEventService.EventData": "https://github.com/PCL-Community/PCL2-CE",
+                            "CustomEventService.EventType": "OpenUrl",
+                            "Padding": "13,0",
+                            "Text": "{DynamicResource Setup.About.Legal.CommunitySource}"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Margin": "0,0,20,0",
+                            "CustomEventService.EventData": "https://www.pclc.cc/privacy/personal-info-brief.html",
+                            "CustomEventService.EventType": "OpenUrl",
+                            "Padding": "13,0",
+                            "Text": "{DynamicResource Setup.About.Legal.CommunityLobbyPrivacy}"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Margin": "0,0,20,0",
+                            "CustomEventService.EventData": "https://account.naids.com/policy",
+                            "CustomEventService.EventType": "OpenUrl",
+                            "Padding": "13,0",
+                            "Text": "{DynamicResource Setup.About.Legal.NatayarkTerms}"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "CanSwap": "True",
+                "IsSwapped": "True",
+                "Title": "{DynamicResource Setup.About.UpstreamLegal.Title}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,39,23,20"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "0,6,0,4",
+                        "FontWeight": "Bold",
+                        "Text": "{DynamicResource Setup.About.Legal.PrivacyNotice}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "0,0,0,2",
+                        "LineHeight": "17",
+                        "Text": "{DynamicResource Setup.About.UpstreamLegal.PrivacyText}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "0,12,0,4",
+                        "FontWeight": "Bold",
+                        "Text": "{DynamicResource Setup.About.Legal.OtherInfo}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "0,0,0,2",
+                        "LineHeight": "17",
+                        "Text": "{DynamicResource Setup.About.UpstreamLegal.CopyrightText}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Height": "35",
+                        "Margin": "0,12,0,0",
+                        "HorizontalAlignment": "Left",
+                        "Orientation": "Horizontal"
+                      },
+                      "children": [
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Width": "160",
+                            "Margin": "0,0,20,0",
+                            "ColorType": "Highlight",
+                            "CustomEventService.EventData": "https://shimo.im/docs/rGrd8pY8xWkt6ryW",
+                            "CustomEventService.EventType": "OpenUrl",
+                            "Padding": "13,0",
+                            "Text": "{DynamicResource Setup.About.UpstreamLegal.TermsAndDisclaimer}"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Width": "120",
+                            "Margin": "0,0,20,0",
+                            "CustomEventService.EventData": "https://github.com/Meloong-Git/PCL",
+                            "CustomEventService.EventType": "OpenUrl",
+                            "Padding": "13,0",
+                            "Text": "{DynamicResource Setup.About.UpstreamLegal.OpenSource}"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "CanSwap": "True",
+                "IsSwapped": "True",
+                "Title": "{DynamicResource Setup.About.Licenses.Title}"
+              },
+              "children": [
+                {
+                  "type": "ItemsControl",
+                  "attrs": {
+                    "Margin": "25,42,23,4",
+                    "ItemsSource": "{Binding Licenses}"
+                  },
+                  "children": [
+                    {
+                      "type": "ItemsControl.ItemTemplate",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "DataTemplate",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "Grid",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto",
+                                        "SharedSizeGroup": "LicenseName"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "20"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {}
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid.RowDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "RowDefinition",
+                                      "attrs": {
+                                        "Height": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "RowDefinition",
+                                      "attrs": {
+                                        "Height": "60"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Grid.Row": "0",
+                                    "Grid.Column": "0",
+                                    "FontWeight": "Bold",
+                                    "Text": "{Binding Name}",
+                                    "TextWrapping": "Wrap"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Grid.Row": "0",
+                                    "Grid.Column": "2",
+                                    "Grid.ColumnSpan": "2",
+                                    "Text": "{Binding Information}",
+                                    "TextWrapping": "Wrap"
+                                  }
+                                },
+                                {
+                                  "type": "PButton",
+                                  "attrs": {
+                                    "Grid.Row": "1",
+                                    "Grid.Column": "2",
+                                    "MinWidth": "140",
+                                    "Margin": "0,7,20,18",
+                                    "HorizontalAlignment": "Left",
+                                    "CustomEventService.EventData": "{Binding WebsiteUri}",
+                                    "CustomEventService.EventType": "OpenUrl",
+                                    "Padding": "13,0",
+                                    "Text": "{DynamicResource Setup.About.Licenses.ViewWebsite}",
+                                    "Visibility": "{Binding WebsiteUri, Converter={StaticResource NullToVisibilityConverter}}"
+                                  }
+                                },
+                                {
+                                  "type": "PButton",
+                                  "attrs": {
+                                    "Grid.Row": "1",
+                                    "Grid.Column": "3",
+                                    "MinWidth": "140",
+                                    "Margin": "0,7,20,18",
+                                    "HorizontalAlignment": "Left",
+                                    "CustomEventService.EventData": "{Binding LicenseUri}",
+                                    "CustomEventService.EventType": "OpenUrl",
+                                    "Padding": "13,0",
+                                    "Text": "{DynamicResource Setup.About.Licenses.ViewLicense}",
+                                    "Visibility": "{Binding LicenseUri, Converter={StaticResource NullToVisibilityConverter}}"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

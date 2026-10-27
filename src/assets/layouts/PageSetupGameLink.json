@@ -1,0 +1,365 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageSetupGameLink",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanMain",
+            "Margin": "25,10"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,15",
+                "Title": "EasyTier"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,25,15",
+                    "Orientation": "Vertical"
+                  },
+                  "children": [
+                    {
+                      "type": "PHint",
+                      "attrs": {
+                        "Text": "{DynamicResource Setup.GameLink.RestartRequired}",
+                        "Theme": "Yellow",
+                        "Margin": "0,0,0,10"
+                      }
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "TextBlock"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "8"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "8"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "4"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameLink.Username}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextLinkUsername",
+                            "Grid.Row": "0",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "LinkUsername",
+                            "Grid.Column": "2",
+                            "TextChanged": "TextBoxChange",
+                            "ToolTip": "{DynamicResource Setup.GameLink.Username.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "2",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameLink.Protocol.Preference}"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "ComboPreferProtocol",
+                            "Tag": "LinkProtocolPreference",
+                            "Grid.Row": "2",
+                            "SelectionChanged": "LinkProtocolPerferenceChange",
+                            "Grid.Column": "2"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameLink.Protocol.Tcp}",
+                                "ToolTip": "{DynamicResource Setup.GameLink.Protocol.Tcp.ToolTip}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameLink.Protocol.Udp}",
+                                "ToolTip": "{DynamicResource Setup.GameLink.Protocol.Udp.ToolTip}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Name": "CheckLatencyFirstMode",
+                            "Tag": "LinkLatencyFirstMode",
+                            "Grid.Row": "4",
+                            "Grid.ColumnSpan": "3",
+                            "Text": "{DynamicResource Setup.GameLink.LatencyFirstMode}",
+                            "Change": "CheckBoxChange",
+                            "ToolTip": "{DynamicResource Setup.GameLink.LatencyFirstMode.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Name": "CheckTryPunchSym",
+                            "Tag": "LinkTryPunchSym",
+                            "Grid.Row": "5",
+                            "Grid.ColumnSpan": "3",
+                            "Text": "{DynamicResource Setup.GameLink.PortGuessNat}",
+                            "Change": "CheckBoxChange",
+                            "ToolTip": "{DynamicResource Setup.GameLink.PortGuessNat.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Name": "CheckEnableIPv6",
+                            "Tag": "LinkEnableIPv6",
+                            "Grid.Row": "6",
+                            "Grid.ColumnSpan": "3",
+                            "Text": "{DynamicResource Setup.GameLink.EnableIPv6}",
+                            "Change": "CheckBoxChange",
+                            "ToolTip": "{DynamicResource Setup.GameLink.EnableIPv6.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Name": "CheckEnableCliOutput",
+                            "Tag": "LinkEnableCliOutput",
+                            "Grid.Row": "7",
+                            "Grid.ColumnSpan": "3",
+                            "Text": "{DynamicResource Setup.GameLink.CliDebugOutput}",
+                            "Change": "CheckBoxChange",
+                            "ToolTip": "{DynamicResource Setup.GameLink.CliDebugOutput.ToolTip}"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "10",
+                "Title": "{DynamicResource Setup.GameLink.NetworkTest.Title}",
+                "Visibility": "Collapsed"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,25,15",
+                    "Orientation": "Vertical"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "8"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "8"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "30"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Name": "TextUdpNatType",
+                            "Text": "{DynamicResource Setup.GameLink.NetworkTest.UdpNatType.NotTested}",
+                            "Grid.Row": "0"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Name": "TextTcpNatType",
+                            "Text": "{DynamicResource Setup.GameLink.NetworkTest.TcpNatType.NotTested}",
+                            "Grid.Row": "1"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Name": "TextIpv6Status",
+                            "Text": "{DynamicResource Setup.GameLink.NetworkTest.Ipv6Status.NotTested}",
+                            "Grid.Row": "2"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnNetTest",
+                            "Text": "{DynamicResource Setup.GameLink.NetworkTest.Start}",
+                            "Grid.Row": "4",
+                            "ColorType": "Highlight",
+                            "Click": "BtnNetTest_Click",
+                            "VerticalAlignment": "Stretch",
+                            "HorizontalAlignment": "Stretch"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

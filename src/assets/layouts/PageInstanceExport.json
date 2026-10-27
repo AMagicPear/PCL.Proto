@@ -1,0 +1,889 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageInstanceExport",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "attrs": {
+        "Name": "PanAllBack",
+        "AllowDrop": "True"
+      },
+      "children": [
+        {
+          "type": "Grid.Resources",
+          "attrs": {},
+          "children": [
+            {
+              "type": "Style",
+              "attrs": {
+                "TargetType": "local:MyCheckBox"
+              },
+              "children": [
+                {
+                  "type": "Setter",
+                  "attrs": {
+                    "Property": "Height",
+                    "Value": "26"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "PScrollViewer",
+          "attrs": {
+            "VerticalScrollBarVisibility": "Auto",
+            "HorizontalScrollBarVisibility": "Disabled",
+            "Name": "PanBack"
+          },
+          "children": [
+            {
+              "type": "StackPanel",
+              "attrs": {
+                "Margin": "25,10,25,65"
+              },
+              "children": [
+                {
+                  "type": "PHint",
+                  "attrs": {
+                    "Margin": "0,15,0,0",
+                    "Text": "{DynamicResource Instance.Export.ModrinthWarning}",
+                    "Theme": "Yellow",
+                    "Name": "HintOptiFine"
+                  }
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Margin": "0,15"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Margin": "22,15,25,15"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "0.3*"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "Grid.Column": "0",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Export.PackName}",
+                            "Margin": "0,0,20,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "Grid.Column": "1",
+                            "Name": "TextExportName",
+                            "MaxLength": "100"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "Grid.Column": "2",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Export.PackVersion}",
+                            "Margin": "30,0,20,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "Grid.Column": "3",
+                            "Name": "TextExportVersion",
+                            "Tag": "VersionArgumentTitle",
+                            "MaxLength": "100"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Margin": "0,0,0,15",
+                    "Name": "CardOptions",
+                    "MinHeight": "39"
+                  },
+                  "children": [
+                    {
+                      "type": "PIconTextButton",
+                      "attrs": {
+                        "Name": "BtnOverrideCancel",
+                        "Height": "24",
+                        "HorizontalAlignment": "Right",
+                        "VerticalAlignment": "Center",
+                        "Margin": "0,0,5,0",
+                        "IsHitTestVisible": "False",
+                        "Opacity": "0.5",
+                        "Text": "{DynamicResource Common.Action.Reset}",
+                        "SvgIcon": "lucide/rotate-ccw",
+                        "LogoScale": "0.9"
+                      }
+                    },
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Margin": "25,38,15,15",
+                        "Name": "PanOptions"
+                      },
+                      "children": [
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "IsEnabled": "False",
+                            "Name": "CheckOptionsBasic"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.Game}",
+                                    "DefaultChecked": "True"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Name": "CheckOptionsOptions",
+                            "Margin": "30,0,0,0"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.GameSettings}",
+                                    "Description": "{DynamicResource Instance.Export.Option.GameSettings.Desc}",
+                                    "Rules": "options.txt|configureddefaults/",
+                                    "DefaultChecked": "True"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Margin": "30,0,0,0"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.GameProfile}",
+                                    "Description": "{DynamicResource Instance.Export.Option.GameProfile.Desc}",
+                                    "Rules": "hotbar.nbt|command_history.txt",
+                                    "DefaultChecked": "False"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Margin": "30,0,0,0"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.OptiFine}",
+                                    "Rules": "optionsof.txt|optionsshaders.txt",
+                                    "DefaultChecked": "True",
+                                    "RequireOptiFine": "True"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Name": "CheckOptionsMod"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.Mod}",
+                                    "Description": "{DynamicResource Instance.Export.Option.Mod.Desc}",
+                                    "Rules": "mods/|!mods/*.disabled|!mods/*.old|!mods/.connector/|coremods/|lib/|!mods/mcef-libraries/|!mods/mcef-cache/",
+                                    "DefaultChecked": "True",
+                                    "RequireModLoader": "True"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Margin": "30,0,0,0",
+                            "Visibility": "{Binding Checked, ElementName=CheckOptionsMod, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox",
+                              "attrs": {
+                                "Height": "26"
+                              },
+                              "children": [
+                                {
+                                  "type": "PCheckBox.Tag",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ExportOption",
+                                      "attrs": {
+                                        "Title": "{DynamicResource Instance.Export.Option.DisabledMod}",
+                                        "Rules": "mods/*.disabled|mods/*.old"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "PCheckBox",
+                              "attrs": {
+                                "Height": "26"
+                              },
+                              "children": [
+                                {
+                                  "type": "PCheckBox.Tag",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ExportOption",
+                                      "attrs": {
+                                        "Title": "{DynamicResource Instance.Export.Option.ImportantData}",
+                                        "Description": "{DynamicResource Instance.Export.Option.ImportantData.Desc}",
+                                        "Rules": "addons/|multiblocked/|modpack-update-checker/|global_packs/|global_resource_packs/|global_data_packs/|optional_data_packs/|maps/|icon.png|mods-resourcepacks/|matmos/|resource_assorts/|resource_assorts.json|patchouli_books/|datapacks/|kubejs*/|!kubejs*/probe/|!kubejs*/exported/|!kubejs*/jsconfig.json|!kubejs*/README.txt|openloader/|worldshape/|resources/|scripts/|structures/|fontfiles/|oresources/|packmenu/|craftpresence/|pointblanks/|template*/|!template*/playerdata/|!template*/stats/",
+                                        "DefaultChecked": "True"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "PCheckBox",
+                              "attrs": {
+                                "Height": "26"
+                              },
+                              "children": [
+                                {
+                                  "type": "PCheckBox.Tag",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ExportOption",
+                                      "attrs": {
+                                        "Title": "{DynamicResource Instance.Export.Option.ModSettings}",
+                                        "Rules": "config/|!config/accountsx/|!config/jei/world/|!config/worldedit/|config/worldedit/worldedit.properties|!config/spark/|config/spark/config.json|defaultconfigs/|journeymap/config/|journeymap/server/|TrashSlotSaveState.json|customfov.txt|gg.essential.mod/|essential/|!essential/*/|!essential/*.jar*|!essential/screenshot-checksum-caches.json|!essential/microsoft_accounts.json|paragliderSettings.nbt|local/client_config.json|local/ftbl.json|local/client/sidebar_buttons.json|local/client/ftbutilities.cfg|local/client/ftblib.cfg|local/client/xencraft.cfg|liteloader.properties|default_reference.xml|CustomSkinLoader/CustomSkinLoader.json",
+                                        "DefaultChecked": "True"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "PCheckBox",
+                              "attrs": {
+                                "Height": "26"
+                              },
+                              "children": [
+                                {
+                                  "type": "PCheckBox.Tag",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ExportOption",
+                                      "attrs": {
+                                        "Title": "{DynamicResource Instance.Export.Option.Maps}",
+                                        "Description": "{DynamicResource Instance.Export.Option.Maps.Desc}",
+                                        "Rules": "journeymap/data/|xaero/|XaeroWaypoints/|XaeroWorldMap/",
+                                        "DefaultChecked": "False"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "PCheckBox",
+                              "attrs": {
+                                "Height": "26"
+                              },
+                              "children": [
+                                {
+                                  "type": "PCheckBox.Tag",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ExportOption",
+                                      "attrs": {
+                                        "Title": "{DynamicResource Instance.Export.Option.Jei}",
+                                        "Description": "{DynamicResource Instance.Export.Option.Jei.Desc}",
+                                        "Rules": "config/jei/world/",
+                                        "DefaultChecked": "False"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "PCheckBox",
+                              "attrs": {
+                                "Height": "26"
+                              },
+                              "children": [
+                                {
+                                  "type": "PCheckBox.Tag",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ExportOption",
+                                      "attrs": {
+                                        "Title": "{DynamicResource Instance.Export.Option.Emi}",
+                                        "Description": "{DynamicResource Instance.Export.Option.Emi.Desc}",
+                                        "Rules": "emi.json",
+                                        "DefaultChecked": "False"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "PCheckBox",
+                              "attrs": {
+                                "Height": "26"
+                              },
+                              "children": [
+                                {
+                                  "type": "PCheckBox.Tag",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ExportOption",
+                                      "attrs": {
+                                        "Title": "{DynamicResource Instance.Export.Option.Patchouli}",
+                                        "Description": "{DynamicResource Instance.Export.Option.Patchouli.Desc}",
+                                        "Rules": "patchouli_data.json",
+                                        "DefaultChecked": "False"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Name": "CheckOptionsResourcePacks"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.ResourcePacks}",
+                                    "Description": "{DynamicResource Instance.Export.Option.ResourcePacks.Desc}",
+                                    "ShowRules": "resourcepacks/|texturepacks/",
+                                    "DefaultChecked": "True"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Margin": "30,0,0,0",
+                            "Name": "PanOptionsResourcePacks",
+                            "Visibility": "{Binding Checked, ElementName=CheckOptionsResourcePacks, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Name": "CheckOptionsShaderPacks"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.ShaderPacks}",
+                                    "ShowRules": "shaderpacks/",
+                                    "DefaultChecked": "True",
+                                    "RequireModLoaderOrOptiFine": "True"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Margin": "30,0,0,0",
+                            "Name": "PanOptionsShaderPacks",
+                            "Visibility": "{Binding Checked, ElementName=CheckOptionsShaderPacks, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.Screenshots}",
+                                    "Rules": "screenshots/",
+                                    "DefaultChecked": "False"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.Structures}",
+                                    "Description": "{DynamicResource Instance.Export.Option.Structures.Desc}",
+                                    "Rules": "schematics/",
+                                    "DefaultChecked": "False"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.Replay}",
+                                    "Description": "{DynamicResource Instance.Export.Option.Replay.Desc}",
+                                    "Rules": "replay_recordings/|replay_videos/",
+                                    "RequireModLoader": "True",
+                                    "DefaultChecked": "False"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Name": "CheckOptionsSaves"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.Saves}",
+                                    "Description": "{DynamicResource Instance.Export.Option.Saves.Desc}",
+                                    "ShowRules": "saves/",
+                                    "DefaultChecked": "False"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Margin": "30,0,0,0",
+                            "Name": "PanOptionsSaves",
+                            "Visibility": "{Binding Checked, ElementName=CheckOptionsSaves, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.Servers}",
+                                    "Rules": "servers.dat",
+                                    "DefaultChecked": "False"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Name": "CheckOptionsOtherFolders",
+                            "Change": "CheckOptionsOtherFolders_Change"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.OtherFolders}",
+                                    "Description": "{DynamicResource Instance.Export.Option.OtherFolders.Desc}",
+                                    "DefaultChecked": "False"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Margin": "30,0,0,0",
+                            "Name": "PanOptionsOtherFolders",
+                            "Visibility": "{Binding Checked, ElementName=CheckOptionsOtherFolders, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Name": "CheckOptionsPcl"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox.Tag",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ExportOption",
+                                  "attrs": {
+                                    "Title": "{DynamicResource Instance.Export.Option.Launcher}",
+                                    "Description": "{DynamicResource Instance.Export.Option.Launcher.Desc}",
+                                    "DefaultChecked": "False"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Margin": "30,0,0,0",
+                            "Visibility": "{Binding Checked, ElementName=CheckOptionsPcl, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          },
+                          "children": [
+                            {
+                              "type": "PCheckBox",
+                              "attrs": {
+                                "Height": "26",
+                                "Name": "CheckOptionsPclCustom"
+                              },
+                              "children": [
+                                {
+                                  "type": "PCheckBox.Tag",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ExportOption",
+                                      "attrs": {
+                                        "Title": "{DynamicResource Instance.Export.Option.LauncherCustom}",
+                                        "Description": "{DynamicResource Instance.Export.Option.LauncherCustom.Desc}",
+                                        "DefaultChecked": "True"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Instance.Export.Advanced.Title}",
+                    "Margin": "0,0,0,15",
+                    "CanSwap": "True",
+                    "IsSwapped": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Margin": "25,37,23,20"
+                      },
+                      "children": [
+                        {
+                          "type": "PHint",
+                          "attrs": {
+                            "Text": "{DynamicResource Instance.Export.Advanced.BundleHint}",
+                            "Theme": "Yellow",
+                            "Margin": "0,2,0,8",
+                            "Visibility": "{Binding Checked, ElementName=CheckAdvancedInclude, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Text": "{DynamicResource Instance.Export.Advanced.BundleFiles}",
+                            "Name": "CheckAdvancedInclude",
+                            "Change": "CheckAdvancedInclude_Change",
+                            "ToolTip": "{DynamicResource Instance.Export.Advanced.BundleFiles.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "26",
+                            "Text": "{DynamicResource Instance.Export.Advanced.Modrinth}",
+                            "Name": "CheckAdvancedModrinth",
+                            "Change": "CheckAdvancedModrinth_Change",
+                            "ToolTip": "{DynamicResource Instance.Export.Advanced.Modrinth.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PHint",
+                          "attrs": {
+                            "Theme": "Blue",
+                            "RelativeSetup": "HintExportConfig",
+                            "CanClose": "True",
+                            "Margin": "0,20,0,2",
+                            "Text": "{DynamicResource Instance.Export.Advanced.ConfigHint}"
+                          }
+                        },
+                        {
+                          "type": "Grid",
+                          "attrs": {
+                            "Height": "35",
+                            "Margin": "0,12,0,0"
+                          },
+                          "children": [
+                            {
+                              "type": "Grid.ColumnDefinitions",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ColumnDefinition",
+                                  "attrs": {
+                                    "Width": "Auto",
+                                    "SharedSizeGroup": "Button"
+                                  }
+                                },
+                                {
+                                  "type": "ColumnDefinition",
+                                  "attrs": {
+                                    "Width": "Auto",
+                                    "SharedSizeGroup": "Button"
+                                  }
+                                },
+                                {
+                                  "type": "ColumnDefinition",
+                                  "attrs": {
+                                    "Width": "Auto",
+                                    "SharedSizeGroup": "Button"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Grid.Column": "0",
+                                "Name": "BtnAdvancedImport",
+                                "MinWidth": "140",
+                                "Text": "{DynamicResource Instance.Export.Advanced.ImportConfig}",
+                                "Padding": "13,0",
+                                "Margin": "0,0,20,0",
+                                "ColorType": "Highlight"
+                              }
+                            },
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Grid.Column": "1",
+                                "Name": "BtnAdvancedExport",
+                                "MinWidth": "140",
+                                "Text": "{DynamicResource Instance.Export.Advanced.ExportConfig}",
+                                "Padding": "13,0",
+                                "Margin": "0,0,20,0"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "PExtraTextButton",
+          "attrs": {
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Bottom",
+            "Name": "BtnExport",
+            "Text": "{DynamicResource Instance.Export.StartExport}",
+            "LogoScale": "1.1",
+            "SvgIcon": "lucide/package"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageSpeedRight",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanMain",
+            "Margin": "25,25,25,10",
+            "Grid.IsSharedSizeScope": "True"
+          }
+        }
+      ]
+    }
+  ]
+}

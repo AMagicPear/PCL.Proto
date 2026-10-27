@@ -1,0 +1,150 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageInstanceModDisabled"
+  },
+  "children": [
+    {
+      "type": "PCard",
+      "attrs": {
+        "HorizontalAlignment": "Center",
+        "VerticalAlignment": "Center",
+        "Margin": "40",
+        "Name": "PanMain"
+      },
+      "children": [
+        {
+          "type": "Grid",
+          "attrs": {
+            "Margin": "20,17"
+          },
+          "children": [
+            {
+              "type": "Grid.RowDefinitions",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "RowDefinition",
+                  "attrs": {
+                    "Height": "Auto"
+                  }
+                },
+                {
+                  "type": "RowDefinition",
+                  "attrs": {
+                    "Height": "Auto"
+                  }
+                },
+                {
+                  "type": "RowDefinition",
+                  "attrs": {
+                    "Height": "Auto"
+                  }
+                },
+                {
+                  "type": "RowDefinition",
+                  "attrs": {
+                    "Height": "Auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Grid.ColumnDefinitions",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "ColumnDefinition",
+                  "attrs": {
+                    "Width": "1*"
+                  }
+                },
+                {
+                  "type": "ColumnDefinition",
+                  "attrs": {
+                    "Width": "Auto"
+                  }
+                },
+                {
+                  "type": "ColumnDefinition",
+                  "attrs": {
+                    "Width": "Auto"
+                  }
+                },
+                {
+                  "type": "ColumnDefinition",
+                  "attrs": {
+                    "Width": "1*"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "attrs": {
+                "Grid.Row": "0",
+                "Grid.ColumnSpan": "4",
+                "Margin": "0,0,0,9",
+                "HorizontalAlignment": "Center",
+                "Text": "{DynamicResource Instance.Resource.Mod.Disabled.Title}",
+                "FontSize": "19",
+                "UseLayoutRounding": "True",
+                "SnapsToDevicePixels": "True",
+                "Foreground": "{DynamicResource ColorBrush3}"
+              }
+            },
+            {
+              "type": "Rectangle",
+              "attrs": {
+                "Grid.Row": "1",
+                "Grid.ColumnSpan": "4",
+                "HorizontalAlignment": "Stretch",
+                "Height": "2",
+                "Fill": "{DynamicResource ColorBrush3}"
+              }
+            },
+            {
+              "type": "TextBlock",
+              "attrs": {
+                "Grid.Row": "2",
+                "Grid.ColumnSpan": "4",
+                "Margin": "10,15,10,5",
+                "Text": "{DynamicResource Instance.Resource.Mod.Disabled.Message}",
+                "TextWrapping": "Wrap"
+              }
+            },
+            {
+              "type": "PButton",
+              "attrs": {
+                "Grid.Row": "3",
+                "Grid.Column": "1",
+                "Height": "35",
+                "HorizontalAlignment": "Center",
+                "Name": "BtnDownload",
+                "MinWidth": "140",
+                "Text": "{DynamicResource Instance.Resource.Mod.Disabled.GoDownload}",
+                "Margin": "10,10,10,0",
+                "Padding": "13,0",
+                "ColorType": "Highlight"
+              }
+            },
+            {
+              "type": "PButton",
+              "attrs": {
+                "Grid.Row": "3",
+                "Grid.Column": "2",
+                "Height": "35",
+                "HorizontalAlignment": "Center",
+                "Name": "BtnVersion",
+                "MinWidth": "140",
+                "Text": "{DynamicResource Instance.Resource.Mod.Disabled.SelectInstance}",
+                "Margin": "10,10,10,0",
+                "Padding": "13,0"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

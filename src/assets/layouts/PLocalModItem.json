@@ -1,0 +1,222 @@
+{
+  "type": "Grid",
+  "attrs": {
+    "Class": "PCL.MyLocalCompItem",
+    "Name": "PanBack",
+    "Height": "44",
+    "Background": "{StaticResource ColorBrushSemiTransparent}",
+    "RenderTransformOrigin": "0.5,0.5",
+    "SnapsToDevicePixels": "True"
+  },
+  "children": [
+    {
+      "type": "Grid.ColumnDefinitions",
+      "attrs": {},
+      "children": [
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "6"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "34"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "7"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "Auto"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "1*"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Name": "ColumnPaddingRight",
+            "Width": "4"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Grid.RowDefinitions",
+      "attrs": {},
+      "children": [
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "1*"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "20"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "18"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "1*"
+          }
+        }
+      ]
+    },
+    {
+      "type": "PImage",
+      "attrs": {
+        "Name": "PathLogo",
+        "Grid.Row": "1",
+        "Grid.RowSpan": "2",
+        "Grid.Column": "1",
+        "Width": "34",
+        "Height": "34",
+        "HorizontalAlignment": "Right",
+        "VerticalAlignment": "Center",
+        "CornerRadius": "6",
+        "FallbackSource": "pack://application:,,,/images/Icons/NoIcon.png",
+        "IsHitTestVisible": "False",
+        "RenderOptions.BitmapScalingMode": "HighQuality",
+        "SnapsToDevicePixels": "True"
+      }
+    },
+    {
+      "type": "Grid",
+      "attrs": {
+        "Name": "PanTitle",
+        "Grid.Row": "1",
+        "Grid.Column": "3",
+        "Grid.ColumnSpan": "2",
+        "Margin": "0,1,0,0",
+        "VerticalAlignment": "Center",
+        "SnapsToDevicePixels": "False",
+        "UseLayoutRounding": "False"
+      },
+      "children": [
+        {
+          "type": "Grid.ColumnDefinitions",
+          "attrs": {},
+          "children": [
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Name": "ColumnTitle",
+                "Width": "Auto"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Name": "ColumnSubtitle",
+                "Width": "Auto"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "Auto"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Name": "ColumnExtend",
+                "Width": "1*"
+              }
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Name": "LabTitle",
+            "FontSize": "14",
+            "IsHitTestVisible": "False",
+            "TextTrimming": "CharacterEllipsis"
+          }
+        },
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Name": "LabSubtitle",
+            "Grid.Column": "1",
+            "HorizontalAlignment": "Left",
+            "VerticalAlignment": "Center",
+            "FontSize": "12",
+            "Foreground": "{DynamicResource ColorBrushGray1}",
+            "IsHitTestVisible": "False",
+            "Opacity": "0.4",
+            "TextTrimming": "CharacterEllipsis",
+            "Visibility": "Collapsed"
+          }
+        },
+        {
+          "type": "PIconButton",
+          "attrs": {
+            "Name": "BtnUpdate",
+            "Grid.Column": "2",
+            "Width": "21",
+            "Height": "21",
+            "Margin": "-2,-1.6,0,0",
+            "SvgIcon": "lucide/upload",
+            "Opacity": "0.4",
+            "Theme": "Black",
+            "ToolTipService.InitialShowDelay": "100",
+            "ToolTipService.Placement": "Right",
+            "ToolTipService.VerticalOffset": "-9",
+            "Visibility": "Collapsed"
+          }
+        }
+      ]
+    },
+    {
+      "type": "StackPanel",
+      "attrs": {
+        "Name": "PanTags",
+        "Grid.Row": "2",
+        "Grid.Column": "3",
+        "Margin": "-1,0,1,0",
+        "VerticalAlignment": "Center",
+        "IsHitTestVisible": "False",
+        "Orientation": "Horizontal",
+        "Visibility": "Collapsed"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Name": "LabInfo",
+        "Grid.Row": "2",
+        "Grid.Column": "4",
+        "Margin": "0,0,3,1",
+        "VerticalAlignment": "Center",
+        "FontSize": "12",
+        "Foreground": "{DynamicResource ColorBrushGray4}",
+        "IsHitTestVisible": "False",
+        "SnapsToDevicePixels": "False",
+        "TextTrimming": "CharacterEllipsis",
+        "UseLayoutRounding": "False"
+      }
+    }
+  ]
+}

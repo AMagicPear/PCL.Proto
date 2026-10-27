@@ -1,0 +1,190 @@
+{
+  "PageDownloadLeft": {
+    "ItemInstall": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemMod": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemPack": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemDataPack": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemResourcePack": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemShader": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemWorld": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemFavorites": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemClient": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemOptiFine": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemForge": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemNeoForge": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemCleanroom": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemFabric": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemLegacyFabric": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemLabyMod": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemLiteLoader": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    }
+  },
+  "PageInstanceLeft": {
+    "ItemSetup": {
+      "title": "{DynamicResource Common.Action.Initialize}",
+      "icon": "lucide/rotate-ccw",
+      "kind": "initialize"
+    },
+    "ItemInstall": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemExport": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemWorld": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemScreenshot": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemMod": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemResourcePack": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemShader": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemSchematic": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemServer": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    }
+  },
+  "PageSetupLeft": {
+    "ItemLaunch": {
+      "title": "{DynamicResource Common.Action.Initialize}",
+      "icon": "lucide/rotate-ccw",
+      "kind": "initialize"
+    },
+    "ItemJava": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    },
+    "ItemGameManage": {
+      "title": "{DynamicResource Common.Action.Initialize}",
+      "icon": "lucide/rotate-ccw",
+      "kind": "initialize"
+    },
+    "ItemGameLink": {
+      "title": "{DynamicResource Common.Action.Initialize}",
+      "icon": "lucide/rotate-ccw",
+      "kind": "initialize"
+    },
+    "ItemUI": {
+      "title": "{DynamicResource Common.Action.Initialize}",
+      "icon": "lucide/rotate-ccw",
+      "kind": "initialize"
+    },
+    "ItemLauncherLanguage": {
+      "title": "{DynamicResource Common.Action.Initialize}",
+      "icon": "lucide/rotate-ccw",
+      "kind": "initialize"
+    },
+    "ItemLauncherMisc": {
+      "title": "{DynamicResource Common.Action.Initialize}",
+      "icon": "lucide/rotate-ccw",
+      "kind": "initialize"
+    },
+    "ItemFeedback": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    }
+  },
+  "PageToolsLeft": {
+    "ItemGameLink": {
+      "title": "{DynamicResource Common.Action.Refresh}",
+      "icon": "lucide/refresh-cw",
+      "kind": "refresh"
+    }
+  }
+}

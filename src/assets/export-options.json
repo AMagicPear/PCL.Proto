@@ -1,0 +1,222 @@
+[
+  {
+    "id": "CheckOptionsBasic",
+    "title": "{DynamicResource Instance.Export.Option.Game}",
+    "description": "",
+    "checked": true,
+    "disabled": true,
+    "indent": false,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsOptions",
+    "title": "{DynamicResource Instance.Export.Option.GameSettings}",
+    "description": "{DynamicResource Instance.Export.Option.GameSettings.Desc}",
+    "checked": true,
+    "disabled": false,
+    "indent": true,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsGameProfile",
+    "title": "{DynamicResource Instance.Export.Option.GameProfile}",
+    "description": "{DynamicResource Instance.Export.Option.GameProfile.Desc}",
+    "checked": false,
+    "disabled": false,
+    "indent": true,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsOptiFine",
+    "title": "{DynamicResource Instance.Export.Option.OptiFine}",
+    "description": "",
+    "checked": true,
+    "disabled": false,
+    "indent": true,
+    "parent": null,
+    "require": "optifine"
+  },
+  {
+    "id": "CheckOptionsMod",
+    "title": "{DynamicResource Instance.Export.Option.Mod}",
+    "description": "{DynamicResource Instance.Export.Option.Mod.Desc}",
+    "checked": true,
+    "disabled": false,
+    "indent": false,
+    "parent": null,
+    "require": "mod"
+  },
+  {
+    "id": "CheckOptionsDisabledMod",
+    "title": "{DynamicResource Instance.Export.Option.DisabledMod}",
+    "description": "",
+    "checked": false,
+    "disabled": false,
+    "indent": true,
+    "parent": "CheckOptionsMod",
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsImportantData",
+    "title": "{DynamicResource Instance.Export.Option.ImportantData}",
+    "description": "{DynamicResource Instance.Export.Option.ImportantData.Desc}",
+    "checked": true,
+    "disabled": false,
+    "indent": true,
+    "parent": "CheckOptionsMod",
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsModSettings",
+    "title": "{DynamicResource Instance.Export.Option.ModSettings}",
+    "description": "",
+    "checked": true,
+    "disabled": false,
+    "indent": true,
+    "parent": "CheckOptionsMod",
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsMaps",
+    "title": "{DynamicResource Instance.Export.Option.Maps}",
+    "description": "{DynamicResource Instance.Export.Option.Maps.Desc}",
+    "checked": false,
+    "disabled": false,
+    "indent": true,
+    "parent": "CheckOptionsMod",
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsJei",
+    "title": "{DynamicResource Instance.Export.Option.Jei}",
+    "description": "{DynamicResource Instance.Export.Option.Jei.Desc}",
+    "checked": false,
+    "disabled": false,
+    "indent": true,
+    "parent": "CheckOptionsMod",
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsEmi",
+    "title": "{DynamicResource Instance.Export.Option.Emi}",
+    "description": "{DynamicResource Instance.Export.Option.Emi.Desc}",
+    "checked": false,
+    "disabled": false,
+    "indent": true,
+    "parent": "CheckOptionsMod",
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsPatchouli",
+    "title": "{DynamicResource Instance.Export.Option.Patchouli}",
+    "description": "{DynamicResource Instance.Export.Option.Patchouli.Desc}",
+    "checked": false,
+    "disabled": false,
+    "indent": true,
+    "parent": "CheckOptionsMod",
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsResourcePacks",
+    "title": "{DynamicResource Instance.Export.Option.ResourcePacks}",
+    "description": "{DynamicResource Instance.Export.Option.ResourcePacks.Desc}",
+    "checked": true,
+    "disabled": false,
+    "indent": false,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsShaderPacks",
+    "title": "{DynamicResource Instance.Export.Option.ShaderPacks}",
+    "description": "",
+    "checked": true,
+    "disabled": false,
+    "indent": false,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsScreenshots",
+    "title": "{DynamicResource Instance.Export.Option.Screenshots}",
+    "description": "",
+    "checked": false,
+    "disabled": false,
+    "indent": false,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsStructures",
+    "title": "{DynamicResource Instance.Export.Option.Structures}",
+    "description": "{DynamicResource Instance.Export.Option.Structures.Desc}",
+    "checked": false,
+    "disabled": false,
+    "indent": false,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsReplay",
+    "title": "{DynamicResource Instance.Export.Option.Replay}",
+    "description": "{DynamicResource Instance.Export.Option.Replay.Desc}",
+    "checked": false,
+    "disabled": false,
+    "indent": false,
+    "parent": null,
+    "require": "mod"
+  },
+  {
+    "id": "CheckOptionsSaves",
+    "title": "{DynamicResource Instance.Export.Option.Saves}",
+    "description": "{DynamicResource Instance.Export.Option.Saves.Desc}",
+    "checked": false,
+    "disabled": false,
+    "indent": false,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsServers",
+    "title": "{DynamicResource Instance.Export.Option.Servers}",
+    "description": "",
+    "checked": false,
+    "disabled": false,
+    "indent": false,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsOtherFolders",
+    "title": "{DynamicResource Instance.Export.Option.OtherFolders}",
+    "description": "{DynamicResource Instance.Export.Option.OtherFolders.Desc}",
+    "checked": false,
+    "disabled": false,
+    "indent": false,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsPcl",
+    "title": "{DynamicResource Instance.Export.Option.Launcher}",
+    "description": "{DynamicResource Instance.Export.Option.Launcher.Desc}",
+    "checked": false,
+    "disabled": false,
+    "indent": false,
+    "parent": null,
+    "require": ""
+  },
+  {
+    "id": "CheckOptionsPclCustom",
+    "title": "{DynamicResource Instance.Export.Option.LauncherCustom}",
+    "description": "{DynamicResource Instance.Export.Option.LauncherCustom.Desc}",
+    "checked": true,
+    "disabled": false,
+    "indent": true,
+    "parent": "CheckOptionsPcl",
+    "require": ""
+  }
+]

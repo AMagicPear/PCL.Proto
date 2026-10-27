@@ -43,11 +43,13 @@ const useTerracottaStore = defineStore('terracotta', {
     autoUpdateTimerId: null as number | null, // 自动更新定时器 ID 用于停止自动更新
   }),
   actions: {
-    update() {
-      invoke('get_terracotta_state').then((state: any) => {
+    async update() {
+      try {
+        const state = await invoke<Partial<typeof this.$state>>('get_terracotta_state')
         this.$patch(state)
-        console.info('[terracotta] state updated', state)
-      })
+      } catch (err) {
+        console.error('[terracotta] state update failed', err)
+      }
     },
     startAutoUpdate() {
       if (this.autoUpdateTimerId) {

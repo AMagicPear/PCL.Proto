@@ -1,0 +1,99 @@
+{
+  "type": "PPageLeft",
+  "attrs": {
+    "Class": "PCL.PageToolsLeft"
+  },
+  "children": [
+    {
+      "type": "StackPanel",
+      "attrs": {
+        "Orientation": "Vertical",
+        "Name": "PanItem",
+        "Margin": "0,12,0,0"
+      },
+      "children": [
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Text": "{DynamicResource Tools.Left.Multiplayer}",
+            "Margin": "13,5,5,3",
+            "Opacity": "0.6",
+            "FontSize": "12",
+            "Name": "TextGameLinkCategory"
+          }
+        },
+        {
+          "type": "PListItem",
+          "attrs": {
+            "Name": "ItemGameLink",
+            "IsScaleAnimationEnabled": "False",
+            "Type": "RadioBox",
+            "Tag": "1",
+            "Check": "PageCheck",
+            "MinPaddingRight": "35",
+            "Height": "36",
+            "VerticalAlignment": "Top",
+            "Title": "{DynamicResource Tools.Left.Lobby}",
+            "LogoScale": "0.85",
+            "SvgIcon": "lucide/link-2"
+          },
+          "children": [
+            {
+              "type": "PListItem.Buttons",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "Array",
+                  "attrs": {
+                    "Type": "{x:Type local:MyIconButton}"
+                  },
+                  "children": [
+                    {
+                      "type": "PIconButton",
+                      "attrs": {
+                        "Tag": "1",
+                        "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                        "ToolTipService.Placement": "Right",
+                        "ToolTipService.InitialShowDelay": "200",
+                        "ToolTipService.VerticalOffset": "-1",
+                        "LogoScale": "0.85",
+                        "Click": "Refresh",
+                        "SvgIcon": "lucide/refresh-cw"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Text": "{DynamicResource Tools.Left.Utilities}",
+            "Margin": "13,5,5,3",
+            "Opacity": "0.6",
+            "FontSize": "12",
+            "Name": "TextToolsCategory"
+          }
+        },
+        {
+          "type": "PListItem",
+          "attrs": {
+            "Name": "ItemTest",
+            "IsScaleAnimationEnabled": "False",
+            "Type": "RadioBox",
+            "Tag": "3",
+            "MinPaddingRight": "35",
+            "Height": "36",
+            "VerticalAlignment": "Top",
+            "Title": "{DynamicResource Tools.Left.Utilities.Title}",
+            "Check": "PageCheck",
+            "LogoScale": "0.9",
+            "SvgIcon": "lucide/tool-case"
+          }
+        }
+      ]
+    }
+  ]
+}

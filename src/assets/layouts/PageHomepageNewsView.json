@@ -1,0 +1,268 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageHomepageNewsView",
+    "MinWidth": "150"
+  },
+  "children": [
+    {
+      "type": "PPageRight.DataContext",
+      "attrs": {},
+      "children": [
+        {
+          "type": "NewsViewModel",
+          "attrs": {}
+        }
+      ]
+    },
+    {
+      "type": "Grid",
+      "attrs": {},
+      "children": [
+        {
+          "type": "ItemsControl",
+          "attrs": {
+            "ItemsSource": "{Binding NewsItems}"
+          },
+          "children": [
+            {
+              "type": "ItemsControl.ItemsPanel",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "ItemsPanelTemplate",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "WaterfallPanel",
+                      "attrs": {
+                        "Margin": "0,0,0,10",
+                        "ColumnSpacing": "14",
+                        "LayoutMode": "AutoFit",
+                        "MaxItemWidth": "240",
+                        "RowSpacing": "14",
+                        "VirtualizingPanel.CacheLengthUnit": "Item",
+                        "VirtualizingPanel.IsVirtualizing": "True",
+                        "VirtualizingPanel.VirtualizationMode": "Recycling"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ItemsControl.ItemTemplate",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "DataTemplate",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "PCard",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid",
+                          "attrs": {
+                            "Margin": "12"
+                          },
+                          "children": [
+                            {
+                              "type": "Grid.RowDefinitions",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "RowDefinition",
+                                  "attrs": {
+                                    "Height": "Auto"
+                                  }
+                                },
+                                {
+                                  "type": "RowDefinition",
+                                  "attrs": {
+                                    "Height": "Auto"
+                                  }
+                                },
+                                {
+                                  "type": "RowDefinition",
+                                  "attrs": {
+                                    "Height": "Auto"
+                                  }
+                                },
+                                {
+                                  "type": "RowDefinition",
+                                  "attrs": {
+                                    "Height": "Auto"
+                                  }
+                                },
+                                {
+                                  "type": "RowDefinition",
+                                  "attrs": {
+                                    "Height": "Auto"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "PImage",
+                              "attrs": {
+                                "HorizontalAlignment": "Stretch",
+                                "CornerRadius": "6",
+                                "SnapsToDevicePixels": "True",
+                                "Source": "{Binding Image}",
+                                "Stretch": "UniformToFill",
+                                "ToolTip": "{Binding ImageAltText}",
+                                "UseLayoutRounding": "True"
+                              }
+                            },
+                            {
+                              "type": "Border",
+                              "attrs": {
+                                "Grid.Row": "1",
+                                "Margin": "0,5,0,0",
+                                "Background": "{DynamicResource ColorBrushBackground}",
+                                "ClipToBounds": "True",
+                                "CornerRadius": "6",
+                                "Padding": "5,3"
+                              },
+                              "children": [
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "FontSize": "16",
+                                    "FontWeight": "Bold",
+                                    "Foreground": "{DynamicResource ColorBrush1}",
+                                    "Text": "{Binding Title}",
+                                    "TextWrapping": "Wrap"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Grid.Row": "2",
+                                "Margin": "0,5,0,0"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.ColumnDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "*"
+                                      }
+                                    },
+                                    {
+                                      "type": "ColumnDefinition",
+                                      "attrs": {
+                                        "Width": "Auto"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Grid.Column": "0",
+                                    "Foreground": "{DynamicResource ColorBrushGray2}",
+                                    "Text": "{Binding Author}"
+                                  }
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "attrs": {
+                                    "Grid.Column": "1",
+                                    "Foreground": "{DynamicResource ColorBrushGray2}",
+                                    "Text": "{Binding PublishDate, Converter={StaticResource LocalizationFormatConverter}, ConverterParameter=g}"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "TextBlock",
+                              "attrs": {
+                                "Grid.Row": "3",
+                                "Margin": "0,5,0,0",
+                                "Foreground": "{DynamicResource ColorBrushGray4}",
+                                "Text": "{Binding Description}",
+                                "TextWrapping": "Wrap"
+                              }
+                            },
+                            {
+                              "type": "PTextButton",
+                              "attrs": {
+                                "Grid.Row": "4",
+                                "Margin": "0,5,5,0",
+                                "HorizontalAlignment": "Right",
+                                "Foreground": "{DynamicResource ColorBrushGray2}",
+                                "Text": "{DynamicResource Launch.Homepage.News.ViewDetail}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Interaction.Triggers",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "EventTrigger",
+                                      "attrs": {
+                                        "EventName": "Click"
+                                      },
+                                      "children": [
+                                        {
+                                          "type": "InvokeCommandAction",
+                                          "attrs": {
+                                            "Command": "{Binding DataContext.OpenReadCommand,                                                      RelativeSource={RelativeSource AncestorType=local:MyPageRight}}",
+                                            "CommandParameter": "{Binding Url}"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Foreground": "{DynamicResource ColorBrushRedLight}",
+            "Text": "{Binding ErrorMessage}",
+            "Visibility": "{Binding ErrorMessage, Converter={StaticResource NullToVisibilityConverter}}"
+          }
+        },
+        {
+          "type": "PCard",
+          "attrs": {
+            "Margin": "32",
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "Visibility": "{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+          },
+          "children": [
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Text": "{DynamicResource Launch.Homepage.News.Loading}",
+                "Name": "Load",
+                "Margin": "20,20,20,17"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

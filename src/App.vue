@@ -6,6 +6,7 @@ import WindowHeader from './components/WindowHeader.vue'
 import Modal from './components/Modal.vue'
 import SideTip from './components/SideTip.vue'
 import { listen } from '@tauri-apps/api/event'
+import { isTauri } from '@tauri-apps/api/core'
 import { useModal } from './composables/useModal'
 import FloatButton from './components/widget/FloatButton.vue'
 import { useFloatButton } from './composables/useFloatButton'
@@ -14,13 +15,14 @@ const sideNavState = useSideNavState()
 const modal = useModal()
 const { floatButtonState } = useFloatButton()
 
-listen<string>('modal-open', (event) => {
-  modal.open({
-    title: '❌后端错误',
-    content: event.payload,
-    buttons: [{ type: 'tint', content: '确认' }],
+if (isTauri())
+  listen<string>('modal-open', (event) => {
+    modal.open({
+      title: '错误',
+      content: event.payload,
+      buttons: [{ type: 'tint', content: '确定' }],
+    })
   })
-})
 </script>
 
 <template>

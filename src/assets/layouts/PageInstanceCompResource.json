@@ -1,0 +1,603 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageInstanceCompResource",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "attrs": {},
+      "children": [
+        {
+          "type": "Grid",
+          "attrs": {
+            "Name": "PanAllBack"
+          },
+          "children": [
+            {
+              "type": "PScrollViewer",
+              "attrs": {
+                "VerticalScrollBarVisibility": "Auto",
+                "HorizontalScrollBarVisibility": "Disabled",
+                "Name": "PanBack"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Name": "PanMain",
+                    "Margin": "25,10,25,10",
+                    "Grid.IsSharedSizeScope": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "PSearchBox",
+                      "attrs": {
+                        "Margin": "0,15",
+                        "HintText": "{DynamicResource Instance.Resource.Search.Hint}",
+                        "Name": "SearchBox"
+                      }
+                    },
+                    {
+                      "type": "PCard",
+                      "attrs": {
+                        "Margin": "0,0,0,15",
+                        "Name": "PanManage"
+                      },
+                      "children": [
+                        {
+                          "type": "WrapPanel",
+                          "attrs": {
+                            "Margin": "15,8,0,15"
+                          },
+                          "children": [
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Name": "BtnManageBack",
+                                "MinWidth": "110",
+                                "Text": "{DynamicResource Instance.Resource.BackToParent}",
+                                "Padding": "13,7",
+                                "Margin": "0,7,15,0",
+                                "HorizontalAlignment": "Left",
+                                "Visibility": "Collapsed"
+                              }
+                            },
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Name": "BtnManageOpen",
+                                "MinWidth": "110",
+                                "Text": "{DynamicResource Common.Action.OpenFolder}",
+                                "Padding": "13,7",
+                                "Margin": "0,7,15,0",
+                                "HorizontalAlignment": "Left",
+                                "ColorType": "Highlight"
+                              }
+                            },
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Name": "BtnManageInstall",
+                                "MinWidth": "110",
+                                "Text": "{DynamicResource Instance.Resource.InstallFromFiles}",
+                                "Padding": "13,7",
+                                "Margin": "0,7,15,0",
+                                "HorizontalAlignment": "Left"
+                              }
+                            },
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Name": "BtnManageDownload",
+                                "MinWidth": "110",
+                                "Text": "{DynamicResource Instance.Resource.DownloadNew}",
+                                "Padding": "13,7",
+                                "Margin": "0,7,15,0",
+                                "HorizontalAlignment": "Left"
+                              }
+                            },
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Name": "BtnManageSelectAll",
+                                "MinWidth": "110",
+                                "Text": "{DynamicResource Instance.Resource.SelectAll}",
+                                "Padding": "13,7",
+                                "Margin": "0,7,15,0",
+                                "HorizontalAlignment": "Left"
+                              }
+                            },
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Name": "BtnManageInfoExport",
+                                "MinWidth": "110",
+                                "Text": "{DynamicResource Instance.Resource.ExportInfo}",
+                                "Padding": "13,7",
+                                "Margin": "0,7,15,0",
+                                "HorizontalAlignment": "Left",
+                                "ToolTip": "{DynamicResource Instance.Resource.ExportInfo.ToolTip}"
+                              }
+                            },
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Name": "BtnManageJarInJar",
+                                "MinWidth": "110",
+                                "Text": "{DynamicResource Instance.Resource.Mod.JarInJar.Entry}",
+                                "Padding": "13,7",
+                                "Margin": "0,7,15,0",
+                                "HorizontalAlignment": "Left",
+                                "ToolTip": "{DynamicResource Instance.Resource.Mod.JarInJar.Entry.ToolTip}"
+                              }
+                            },
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Name": "BtnManageCheck",
+                                "MinWidth": "110",
+                                "Text": "{DynamicResource Instance.Resource.CheckMods}",
+                                "Padding": "13,7",
+                                "Margin": "0,7,15,0",
+                                "HorizontalAlignment": "Left",
+                                "ToolTip": "{DynamicResource Instance.Resource.CheckMods.ToolTip}",
+                                "Visibility": "Collapsed"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "PCard",
+                      "attrs": {
+                        "Name": "PanListBack",
+                        "VerticalAlignment": "Top",
+                        "Opacity": "0",
+                        "Margin": "0,0,0,14",
+                        "Title": " ",
+                        "MinHeight": "55"
+                      },
+                      "children": [
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Name": "PanFilter",
+                            "Margin": "15,13,0,0",
+                            "Orientation": "Horizontal",
+                            "VerticalAlignment": "Top",
+                            "HorizontalAlignment": "Left",
+                            "Height": "28"
+                          },
+                          "children": [
+                            {
+                              "type": "PRadioButton",
+                              "attrs": {
+                                "Tag": "0",
+                                "ColorType": "Highlight",
+                                "VerticalAlignment": "Center",
+                                "Margin": "2,0",
+                                "Text": "{DynamicResource Instance.Resource.Filter.All}",
+                                "Name": "BtnFilterAll",
+                                "Checked": "True"
+                              }
+                            },
+                            {
+                              "type": "PRadioButton",
+                              "attrs": {
+                                "Tag": "1",
+                                "ColorType": "Highlight",
+                                "VerticalAlignment": "Center",
+                                "Margin": "2,0",
+                                "Text": "{DynamicResource Instance.Resource.Filter.Enabled}",
+                                "Name": "BtnFilterEnabled"
+                              }
+                            },
+                            {
+                              "type": "PRadioButton",
+                              "attrs": {
+                                "Tag": "2",
+                                "ColorType": "Highlight",
+                                "VerticalAlignment": "Center",
+                                "Margin": "2,0",
+                                "Text": "{DynamicResource Instance.Resource.Filter.Disabled}",
+                                "Name": "BtnFilterDisabled"
+                              }
+                            },
+                            {
+                              "type": "PRadioButton",
+                              "attrs": {
+                                "Tag": "3",
+                                "ColorType": "Highlight",
+                                "VerticalAlignment": "Center",
+                                "Margin": "2,0",
+                                "Text": "{DynamicResource Instance.Resource.Filter.Updatable}",
+                                "Name": "BtnFilterCanUpdate"
+                              }
+                            },
+                            {
+                              "type": "PRadioButton",
+                              "attrs": {
+                                "Tag": "4",
+                                "ColorType": "Highlight",
+                                "VerticalAlignment": "Center",
+                                "Margin": "2,0",
+                                "Text": "{DynamicResource Instance.Resource.Filter.Error}",
+                                "Name": "BtnFilterError"
+                              }
+                            },
+                            {
+                              "type": "PRadioButton",
+                              "attrs": {
+                                "Tag": "5",
+                                "ColorType": "Highlight",
+                                "VerticalAlignment": "Center",
+                                "Margin": "2,0",
+                                "Text": "{DynamicResource Instance.Resource.Filter.Duplicate}",
+                                "Name": "BtnFilterDuplicate"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Margin": "0,13,15,0",
+                            "Orientation": "Horizontal",
+                            "VerticalAlignment": "Top",
+                            "HorizontalAlignment": "Right",
+                            "Height": "28"
+                          },
+                          "children": [
+                            {
+                              "type": "PIconTextButton",
+                              "attrs": {
+                                "Name": "BtnSort",
+                                "Text": "{DynamicResource Instance.Resource.Sort.Text}",
+                                "SvgIcon": "lucide/arrow-up-down"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Margin": "20,48,18,22",
+                            "Name": "PanList",
+                            "VerticalAlignment": "Top"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center",
+                "Margin": "40",
+                "Name": "PanEmpty"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "20,17"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Name": "TxtEmptyTitle",
+                        "Margin": "0,0,0,9",
+                        "HorizontalAlignment": "Center",
+                        "Text": "{DynamicResource Instance.Resource.Empty.Title}",
+                        "FontSize": "19",
+                        "UseLayoutRounding": "True",
+                        "SnapsToDevicePixels": "True",
+                        "Foreground": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "Rectangle",
+                      "attrs": {
+                        "HorizontalAlignment": "Stretch",
+                        "Height": "2",
+                        "Fill": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Name": "TxtEmptyDescription",
+                        "Margin": "10,10,10,0",
+                        "Text": "{DynamicResource Instance.Resource.Empty.Description}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "WrapPanel",
+                      "attrs": {
+                        "Margin": "10,20,10,5",
+                        "HorizontalAlignment": "Center",
+                        "Orientation": "Horizontal"
+                      },
+                      "children": [
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Height": "35",
+                            "Name": "BtnHintBack",
+                            "MinWidth": "130",
+                            "Text": "{DynamicResource Instance.Resource.BackToParent}",
+                            "Margin": "5,0",
+                            "Padding": "12,0",
+                            "Visibility": "Collapsed"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Height": "35",
+                            "Name": "BtnHintInstall",
+                            "MinWidth": "130",
+                            "Text": "{DynamicResource Instance.Resource.InstallFromFiles}",
+                            "Margin": "5,0",
+                            "Padding": "12,0",
+                            "ColorType": "Highlight"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Height": "35",
+                            "Name": "BtnHintDownload",
+                            "MinWidth": "130",
+                            "Text": "{DynamicResource Instance.Resource.DownloadNew}",
+                            "Margin": "5,0",
+                            "Padding": "12,0"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Height": "35",
+                            "Name": "BtnHintOpen",
+                            "MinWidth": "130",
+                            "Text": "{DynamicResource Common.Action.OpenFolder}",
+                            "Margin": "5,0",
+                            "Padding": "12,0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center",
+                "Margin": "40",
+                "Name": "PanSchematicEmpty",
+                "Visibility": "Collapsed"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "20,17"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "0,0,0,9",
+                        "HorizontalAlignment": "Center",
+                        "Text": "{DynamicResource Instance.Resource.Schematic.Unavailable.Title}",
+                        "FontSize": "19",
+                        "UseLayoutRounding": "True",
+                        "SnapsToDevicePixels": "True",
+                        "Foreground": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "Rectangle",
+                      "attrs": {
+                        "HorizontalAlignment": "Stretch",
+                        "Height": "2",
+                        "Fill": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Margin": "10,10,10,0",
+                        "Text": "{DynamicResource Instance.Resource.Schematic.Unavailable.Message}",
+                        "TextWrapping": "Wrap",
+                        "HorizontalAlignment": "Center"
+                      }
+                    },
+                    {
+                      "type": "WrapPanel",
+                      "attrs": {
+                        "Margin": "10,20,10,5",
+                        "HorizontalAlignment": "Center",
+                        "Orientation": "Horizontal"
+                      },
+                      "children": [
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Height": "35",
+                            "Name": "BtnSchematicDownloadMod",
+                            "MinWidth": "130",
+                            "Text": "{DynamicResource Instance.Resource.Schematic.DownloadMod}",
+                            "Margin": "5,0",
+                            "Padding": "12,0",
+                            "ColorType": "Highlight"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Height": "35",
+                            "Name": "BtnSchematicVersionSelect",
+                            "MinWidth": "130",
+                            "Text": "{DynamicResource Instance.Resource.Mod.Disabled.SelectInstance}",
+                            "Margin": "5,0",
+                            "Padding": "12,0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "PCard",
+          "attrs": {
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "Margin": "40,0",
+            "SnapsToDevicePixels": "True",
+            "Name": "PanLoad",
+            "UseAnimation": "False"
+          },
+          "children": [
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Text": "{DynamicResource Instance.Resource.Loading}",
+                "Margin": "20,20,20,17",
+                "Name": "Load",
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center"
+              }
+            }
+          ]
+        },
+        {
+          "type": "PCard",
+          "attrs": {
+            "Name": "CardSelect",
+            "Visibility": "Collapsed",
+            "Opacity": "0",
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Bottom",
+            "Margin": "25,25,25,0",
+            "UseAnimation": "False"
+          },
+          "children": [
+            {
+              "type": "PCard.RenderTransform",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "TranslateTransform",
+                  "attrs": {
+                    "Name": "TransSelect",
+                    "Y": "-10"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "attrs": {
+                "Name": "LabSelect",
+                "Text": "",
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Top",
+                "Margin": "9",
+                "Foreground": "{DynamicResource ColorBrush2}"
+              }
+            },
+            {
+              "type": "StackPanel",
+              "attrs": {
+                "Orientation": "Horizontal",
+                "Margin": "5,28,5,5"
+              },
+              "children": [
+                {
+                  "type": "PIconTextButton",
+                  "attrs": {
+                    "Name": "BtnSelectUpdate",
+                    "Text": "{DynamicResource Instance.Resource.Update}",
+                    "LogoScale": "1",
+                    "SvgIcon": "lucide/upload"
+                  }
+                },
+                {
+                  "type": "PIconTextButton",
+                  "attrs": {
+                    "Name": "BtnSelectEnable",
+                    "Text": "{DynamicResource Instance.Resource.Enable}",
+                    "LogoScale": "1.05",
+                    "SvgIcon": "lucide/circle-check"
+                  }
+                },
+                {
+                  "type": "PIconTextButton",
+                  "attrs": {
+                    "Name": "BtnSelectDisable",
+                    "Text": "{DynamicResource Instance.Resource.Disable}",
+                    "LogoScale": "1",
+                    "SvgIcon": "lucide/circle-minus"
+                  }
+                },
+                {
+                  "type": "PIconTextButton",
+                  "attrs": {
+                    "Name": "BtnSelectFavorites",
+                    "Text": "{DynamicResource Instance.Resource.Favorite}",
+                    "LogoScale": "1",
+                    "SvgIcon": "lucide/heart"
+                  }
+                },
+                {
+                  "type": "PIconTextButton",
+                  "attrs": {
+                    "Name": "BtnSelectShare",
+                    "Text": "{DynamicResource Instance.Resource.ShareSelected}",
+                    "LogoScale": "1",
+                    "SvgIcon": "lucide/share-2"
+                  }
+                },
+                {
+                  "type": "PIconTextButton",
+                  "attrs": {
+                    "Name": "BtnSelectDelete",
+                    "Text": "{DynamicResource Common.Action.Delete}",
+                    "LogoScale": "0.96",
+                    "SvgIcon": "lucide/trash-2"
+                  }
+                },
+                {
+                  "type": "PIconTextButton",
+                  "attrs": {
+                    "Name": "BtnSelectCancel",
+                    "Text": "{DynamicResource Instance.Resource.CancelSelection}",
+                    "LogoScale": "0.8",
+                    "SvgIcon": "lucide/x"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

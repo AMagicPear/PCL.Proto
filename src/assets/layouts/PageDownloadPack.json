@@ -1,0 +1,154 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageDownloadPack",
+    "PanScroll": "{Binding ElementName=Content}"
+  },
+  "children": [
+    {
+      "type": "PageComp",
+      "attrs": {
+        "Name": "Content",
+        "PageType": "ModPack"
+      },
+      "children": [
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "",
+            "Content": "{DynamicResource Common.Option.All}",
+            "IsSelected": "True"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4484/",
+            "Content": "{DynamicResource Download.Comp.Category.Multiplayer}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "/optimization",
+            "Content": "{DynamicResource Download.Comp.Category.Optimization}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4479/challenging",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.Hardcore}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4483/combat",
+            "Content": "{DynamicResource Download.Comp.Category.Combat}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4478/quests",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.Quests}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4472/technology",
+            "Content": "{DynamicResource Download.Comp.Category.Technology}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4473/magic",
+            "Content": "{DynamicResource Download.Comp.Category.Magic}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4475/adventure",
+            "Content": "{DynamicResource Download.Comp.Category.Adventure}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "/kitchen-sink",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.KitchenSink}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4476/",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.Exploration}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4477/",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.MiniGame}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4471/",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.SciFi}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4736/",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.Skyblock}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "5128/",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.VanillaPlus}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4487/",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.Ftb}",
+            "ToolTip": "{DynamicResource Download.Comp.Category.Modpack.Ftb.ToolTip}",
+            "ToolTipService.HorizontalOffset": "70"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4480/",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.MapBased}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4481/lightweight",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.SmallLight}"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "4482/",
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.ExtraLarge}"
+          }
+        }
+      ]
+    }
+  ]
+}

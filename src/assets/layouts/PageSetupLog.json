@@ -1,0 +1,102 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageSetupLog",
+    "PanScroll": "{Binding ElementName=PanBack}",
+    "RenderOptions.BitmapScalingMode": "LowQuality"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "DockPanel",
+          "attrs": {},
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "DockPanel.Dock": "Top",
+                "Title": "{DynamicResource Setup.Log.Operations}",
+                "Margin": "25,25,25,5"
+              },
+              "children": [
+                {
+                  "type": "WrapPanel",
+                  "attrs": {
+                    "ItemHeight": "35",
+                    "Margin": "25,40,20,20"
+                  },
+                  "children": [
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "MinWidth": "100",
+                        "Text": "{DynamicResource Setup.Log.Export}",
+                        "ColorType": "Highlight",
+                        "Margin": "0,0,15,0",
+                        "Click": "ButtonExport_OnClick"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "MinWidth": "120",
+                        "Text": "{DynamicResource Setup.Log.ExportAll}",
+                        "ColorType": "Normal",
+                        "Margin": "0,0,15,0",
+                        "Click": "ButtonExportAll_OnClick"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "MinWidth": "120",
+                        "Text": "{DynamicResource Setup.Log.OpenDirectory}",
+                        "ColorType": "Normal",
+                        "Margin": "0,0,15,0",
+                        "Click": "ButtonOpenDir_OnClick"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "MinWidth": "120",
+                        "Text": "{DynamicResource Setup.Log.ClearHistory}",
+                        "ColorType": "Red",
+                        "Click": "ButtonClean_OnClick"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Title": "{DynamicResource Setup.Log.AllLogs}",
+                "Margin": "25,10,25,25",
+                "Name": "PanContent"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Name": "PanList",
+                    "Orientation": "Vertical",
+                    "Margin": "20,36,18,18"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

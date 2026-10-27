@@ -1,0 +1,326 @@
+{
+  "type": "PPageLeft",
+  "attrs": {
+    "Class": "PCL.PageSpeedLeft",
+    "Width": "200",
+    "HorizontalAlignment": "Left"
+  },
+  "children": [
+    {
+      "type": "Grid.Resources",
+      "attrs": {},
+      "children": [
+        {
+          "type": "ResourceDictionary",
+          "attrs": {},
+          "children": [
+            {
+              "type": "Style",
+              "attrs": {
+                "TargetType": "TextBlock",
+                "Key": "Split"
+              },
+              "children": [
+                {
+                  "type": "Setter",
+                  "attrs": {
+                    "Property": "UseLayoutRounding",
+                    "Value": "True"
+                  }
+                },
+                {
+                  "type": "Setter",
+                  "attrs": {
+                    "Property": "SnapsToDevicePixels",
+                    "Value": "True"
+                  }
+                },
+                {
+                  "type": "Setter",
+                  "attrs": {
+                    "Property": "Height",
+                    "Value": "2"
+                  }
+                },
+                {
+                  "type": "Setter",
+                  "attrs": {
+                    "Property": "Margin",
+                    "Value": "25,7"
+                  }
+                },
+                {
+                  "type": "Setter",
+                  "attrs": {
+                    "Property": "Background"
+                  },
+                  "children": [
+                    {
+                      "type": "Setter.Value",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "LinearGradientBrush",
+                          "attrs": {
+                            "EndPoint": "1,0.5",
+                            "StartPoint": "0,0.5"
+                          },
+                          "children": [
+                            {
+                              "type": "GradientStop",
+                              "attrs": {
+                                "Color": "{DynamicResource ColorObjectBg1}",
+                                "Offset": "0"
+                              }
+                            },
+                            {
+                              "type": "GradientStop",
+                              "attrs": {
+                                "Color": "{DynamicResource ColorObject3}",
+                                "Offset": "0.02"
+                              }
+                            },
+                            {
+                              "type": "GradientStop",
+                              "attrs": {
+                                "Color": "{DynamicResource ColorObject3}",
+                                "Offset": "0.98"
+                              }
+                            },
+                            {
+                              "type": "GradientStop",
+                              "attrs": {
+                                "Color": "{DynamicResource ColorObjectBg1}",
+                                "Offset": "1"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Grid.RowDefinitions",
+      "attrs": {},
+      "children": [
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "1*"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "0.6*"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "0.6*"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "0.6*"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "1*"
+          }
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Text": "{DynamicResource Speed.Progress.Total}",
+        "Grid.Row": "1",
+        "HorizontalAlignment": "Center",
+        "FontSize": "14",
+        "Foreground": "{DynamicResource ColorBrush3}"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Grid.Row": "2",
+        "Style": "{DynamicResource Split}"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Text": "00.00 %",
+        "Grid.Row": "3",
+        "Name": "LabProgress",
+        "HorizontalAlignment": "Center",
+        "FontSize": "20"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Text": "{DynamicResource Speed.Progress.Speed}",
+        "Grid.Row": "5",
+        "HorizontalAlignment": "Center",
+        "FontSize": "14",
+        "Foreground": "{DynamicResource ColorBrush3}"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Grid.Row": "6",
+        "Style": "{DynamicResource Split}"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Text": "0 B/s",
+        "Grid.Row": "7",
+        "Name": "LabSpeed",
+        "HorizontalAlignment": "Center",
+        "FontSize": "20"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Text": "{DynamicResource Speed.Progress.RemainingFiles}",
+        "Grid.Row": "9",
+        "HorizontalAlignment": "Center",
+        "FontSize": "14",
+        "Foreground": "{DynamicResource ColorBrush3}"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Grid.Row": "10",
+        "Style": "{DynamicResource Split}"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Text": "123456789",
+        "Grid.Row": "11",
+        "Name": "LabFile",
+        "HorizontalAlignment": "Center",
+        "FontSize": "20"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Text": "{DynamicResource Speed.Progress.RemainingThreads}",
+        "Grid.Row": "13",
+        "HorizontalAlignment": "Center",
+        "FontSize": "14",
+        "Foreground": "{DynamicResource ColorBrush3}"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Grid.Row": "14",
+        "Style": "{DynamicResource Split}"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Text": "123456789",
+        "Grid.Row": "15",
+        "Name": "LabThread",
+        "HorizontalAlignment": "Center",
+        "FontSize": "20"
+      }
+    }
+  ]
+}

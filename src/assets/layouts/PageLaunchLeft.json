@@ -1,0 +1,706 @@
+{
+  "type": "PPageLeft",
+  "attrs": {
+    "Class": "PCL.PageLaunchLeft",
+    "Name": "PanBack",
+    "Width": "300"
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "attrs": {
+        "Name": "PanInput",
+        "RenderTransformOrigin": "0.5,0.5"
+      },
+      "children": [
+        {
+          "type": "Grid.RowDefinitions",
+          "attrs": {},
+          "children": [
+            {
+              "type": "RowDefinition",
+              "attrs": {
+                "Height": "Auto"
+              }
+            },
+            {
+              "type": "RowDefinition",
+              "attrs": {}
+            },
+            {
+              "type": "RowDefinition",
+              "attrs": {
+                "Height": "Auto"
+              }
+            },
+            {
+              "type": "RowDefinition",
+              "attrs": {
+                "Height": "Auto"
+              }
+            },
+            {
+              "type": "RowDefinition",
+              "attrs": {
+                "Height": "20"
+              }
+            }
+          ]
+        },
+        {
+          "type": "Grid.ColumnDefinitions",
+          "attrs": {},
+          "children": [
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "Auto"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "20"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "1*"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "Auto"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "10"
+              }
+            }
+          ]
+        },
+        {
+          "type": "Grid.RenderTransform",
+          "attrs": {},
+          "children": [
+            {
+              "type": "ScaleTransform",
+              "attrs": {}
+            }
+          ]
+        },
+        {
+          "type": "PButton",
+          "attrs": {
+            "Grid.Row": "3",
+            "Grid.Column": "2",
+            "Name": "BtnInstance",
+            "Height": "35",
+            "Margin": "0,10,10,0",
+            "Text": "{DynamicResource Launch.Home.SelectInstance}",
+            "IsEnabled": "False",
+            "Click": "BtnInstance_Click"
+          }
+        },
+        {
+          "type": "PButton",
+          "attrs": {
+            "Grid.Row": "3",
+            "Grid.Column": "3",
+            "Name": "BtnMore",
+            "Visibility": "Collapsed",
+            "Height": "35",
+            "Click": "BtnMore_Click",
+            "Margin": "0,10,10,0",
+            "TextPadding": "36",
+            "Text": "{DynamicResource Launch.Home.InstanceSettings}"
+          }
+        },
+        {
+          "type": "Grid",
+          "attrs": {
+            "Grid.ColumnSpan": "5",
+            "Grid.Row": "1",
+            "Margin": "20,0",
+            "VerticalAlignment": "Center",
+            "Name": "PanLogin"
+          }
+        },
+        {
+          "type": "Grid",
+          "attrs": {
+            "Grid.ColumnSpan": "5",
+            "Grid.Row": "2",
+            "RenderTransformOrigin": "0.5,0.5"
+          },
+          "children": [
+            {
+              "type": "Grid.RenderTransform",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "TransformGroup",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "ScaleTransform",
+                      "attrs": {
+                        "Name": "AprilScaleTrans"
+                      }
+                    },
+                    {
+                      "type": "TranslateTransform",
+                      "attrs": {
+                        "Name": "AprilPosTrans"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PButton",
+              "attrs": {
+                "Name": "BtnLaunch",
+                "Height": "54",
+                "Margin": "20,0",
+                "Text": "{DynamicResource Launch.Home.Button.Loading}",
+                "ColorType": "Highlight",
+                "Click": "BtnLaunch_Click",
+                "Padding": "30,0,30,15",
+                "IsEnabled": "False"
+              }
+            },
+            {
+              "type": "TextBlock",
+              "attrs": {
+                "Name": "LabVersion",
+                "Text": "{DynamicResource Launch.Home.VersionList.Loading}",
+                "Margin": "35,0,35,10",
+                "IsHitTestVisible": "False",
+                "VerticalAlignment": "Bottom",
+                "HorizontalAlignment": "Center",
+                "TextTrimming": "CharacterEllipsis",
+                "FontSize": "11",
+                "Foreground": "{DynamicResource ColorBrushGray3}",
+                "RenderTransformOrigin": "0.5,-0.2"
+              },
+              "children": [
+                {
+                  "type": "TextBlock.RenderTransform",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "ScaleTransform",
+                      "attrs": {
+                        "ScaleX": "{Binding RealRenderTransform.ScaleX, ElementName=BtnLaunch, Mode=OneWay}",
+                        "ScaleY": "{Binding RealRenderTransform.ScaleY, ElementName=BtnLaunch, Mode=OneWay}"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Grid",
+      "attrs": {
+        "Name": "PanLaunching",
+        "RenderTransformOrigin": "0.5,0.5",
+        "Visibility": "Collapsed",
+        "Opacity": "0"
+      },
+      "children": [
+        {
+          "type": "Grid.RenderTransform",
+          "attrs": {},
+          "children": [
+            {
+              "type": "ScaleTransform",
+              "attrs": {
+                "ScaleX": "0.8",
+                "ScaleY": "0.8"
+              }
+            }
+          ]
+        },
+        {
+          "type": "Grid.RowDefinitions",
+          "attrs": {},
+          "children": [
+            {
+              "type": "RowDefinition",
+              "attrs": {}
+            },
+            {
+              "type": "RowDefinition",
+              "attrs": {
+                "Height": "Auto"
+              }
+            },
+            {
+              "type": "RowDefinition",
+              "attrs": {
+                "Height": "Auto"
+              }
+            },
+            {
+              "type": "RowDefinition",
+              "attrs": {}
+            },
+            {
+              "type": "RowDefinition",
+              "attrs": {
+                "Height": "Auto"
+              }
+            }
+          ]
+        },
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Grid.Row": "1",
+            "RenderTransformOrigin": "0.5,0.5",
+            "Margin": "0,-7,0,0"
+          },
+          "children": [
+            {
+              "type": "StackPanel.BitmapEffect",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "DropShadowBitmapEffect",
+                  "attrs": {
+                    "Color": "{StaticResource ColorObjectGray2}",
+                    "ShadowDepth": "1.5",
+                    "Direction": "270",
+                    "Opacity": "0.15",
+                    "Softness": "0.15"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Name": "LoadLaunching",
+                "AutoRun": "False",
+                "Height": "50",
+                "Margin": "0,10,0,5"
+              }
+            },
+            {
+              "type": "TextBlock",
+              "attrs": {
+                "Name": "LabLaunchingTitle",
+                "Margin": "15,10,15,0",
+                "Text": "{DynamicResource Launch.Status.Title.Launching}",
+                "HorizontalAlignment": "Center",
+                "FontSize": "20",
+                "Foreground": "{DynamicResource ColorBrush3}"
+              },
+              "children": [
+                {
+                  "type": "TextBlock.RenderTransform",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "SkewTransform",
+                      "attrs": {
+                        "AngleX": "-3"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "attrs": {
+                "Name": "LabLaunchingName",
+                "Margin": "40,5,40,0",
+                "FontSize": "13.5",
+                "Text": "Forge 1.12.2-15.8.0.1560",
+                "HorizontalAlignment": "Center",
+                "Foreground": "{DynamicResource ColorBrush3}",
+                "RenderTransformOrigin": "0.5,0.5"
+              },
+              "children": [
+                {
+                  "type": "TextBlock.RenderTransform",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "SkewTransform",
+                      "attrs": {
+                        "AngleX": "-3"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Grid",
+              "attrs": {
+                "Height": "4",
+                "Margin": "30,12,30,27",
+                "SnapsToDevicePixels": "True"
+              },
+              "children": [
+                {
+                  "type": "Grid.ColumnDefinitions",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "ColumnDefinition",
+                      "attrs": {
+                        "Name": "ProgressLaunchingFinished",
+                        "Width": "69.28*"
+                      }
+                    },
+                    {
+                      "type": "ColumnDefinition",
+                      "attrs": {
+                        "Name": "ProgressLaunchingUnfinished",
+                        "Width": "30.72*"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "Rectangle",
+                  "attrs": {
+                    "Grid.Column": "0"
+                  },
+                  "children": [
+                    {
+                      "type": "Rectangle.Fill",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "LinearGradientBrush",
+                          "attrs": {
+                            "EndPoint": "1,0",
+                            "StartPoint": "0,0"
+                          },
+                          "children": [
+                            {
+                              "type": "GradientStop",
+                              "attrs": {
+                                "Color": "{DynamicResource ColorObject4}",
+                                "Offset": "0"
+                              }
+                            },
+                            {
+                              "type": "GradientStop",
+                              "attrs": {
+                                "Color": "{DynamicResource ColorObject3}",
+                                "Offset": "0.6"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "Rectangle",
+                  "attrs": {
+                    "Grid.Column": "1",
+                    "Fill": "{DynamicResource ColorBrush6}",
+                    "Opacity": "0.6"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Grid",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "Name": "PanLaunchingInfo",
+                "SizeChanged": "PanLaunchingInfo_SizeChangedW"
+              },
+              "children": [
+                {
+                  "type": "Grid.ColumnDefinitions",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "ColumnDefinition",
+                      "attrs": {}
+                    },
+                    {
+                      "type": "ColumnDefinition",
+                      "attrs": {
+                        "Width": "Auto"
+                      }
+                    },
+                    {
+                      "type": "ColumnDefinition",
+                      "attrs": {
+                        "Width": "15"
+                      }
+                    },
+                    {
+                      "type": "ColumnDefinition",
+                      "attrs": {
+                        "Width": "Auto"
+                      }
+                    },
+                    {
+                      "type": "ColumnDefinition",
+                      "attrs": {}
+                    }
+                  ]
+                },
+                {
+                  "type": "Grid.RowDefinitions",
+                  "attrs": {},
+                  "children": [
+                    {
+                      "type": "RowDefinition",
+                      "attrs": {
+                        "Height": "Auto"
+                      }
+                    },
+                    {
+                      "type": "RowDefinition",
+                      "attrs": {
+                        "Height": "Auto"
+                      }
+                    },
+                    {
+                      "type": "RowDefinition",
+                      "attrs": {
+                        "Height": "Auto"
+                      }
+                    },
+                    {
+                      "type": "RowDefinition",
+                      "attrs": {
+                        "Height": "Auto"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "TextBlock",
+                  "attrs": {
+                    "FontSize": "12.5",
+                    "Margin": "0,0,0,5",
+                    "Text": "{DynamicResource Launch.Status.CurrentStep}",
+                    "Grid.Row": "0",
+                    "Grid.Column": "1",
+                    "HorizontalAlignment": "Right",
+                    "Opacity": "0.5"
+                  }
+                },
+                {
+                  "type": "TextBlock",
+                  "attrs": {
+                    "FontSize": "12.5",
+                    "Margin": "0,0,0,5",
+                    "Text": "{DynamicResource Launch.Status.DownloadLibs}",
+                    "Grid.Row": "0",
+                    "Grid.Column": "3",
+                    "HorizontalAlignment": "Left",
+                    "Name": "LabLaunchingStage"
+                  }
+                },
+                {
+                  "type": "TextBlock",
+                  "attrs": {
+                    "FontSize": "12.5",
+                    "Margin": "0,0,0,5",
+                    "Text": "{DynamicResource Launch.Status.LoginMethod}",
+                    "Grid.Row": "1",
+                    "Grid.Column": "1",
+                    "HorizontalAlignment": "Right",
+                    "Opacity": "0.5"
+                  }
+                },
+                {
+                  "type": "TextBlock",
+                  "attrs": {
+                    "FontSize": "12.5",
+                    "Margin": "0,0,0,5",
+                    "Text": "{DynamicResource Launch.Status.MicrosoftLogin}",
+                    "Grid.Row": "1",
+                    "Grid.Column": "3",
+                    "HorizontalAlignment": "Left",
+                    "MaxWidth": "160",
+                    "TextWrapping": "WrapWithOverflow",
+                    "Name": "LabLaunchingMethod"
+                  }
+                },
+                {
+                  "type": "TextBlock",
+                  "attrs": {
+                    "FontSize": "12.5",
+                    "Margin": "0,0,0,5",
+                    "Text": "{DynamicResource Launch.Status.LaunchProgress}",
+                    "Grid.Row": "2",
+                    "Grid.Column": "1",
+                    "HorizontalAlignment": "Right",
+                    "Opacity": "0.5",
+                    "Name": "LabLaunchingProgressLeft"
+                  }
+                },
+                {
+                  "type": "TextBlock",
+                  "attrs": {
+                    "FontSize": "12.5",
+                    "Margin": "0,0,0,5",
+                    "Text": "69.28 %",
+                    "Grid.Row": "2",
+                    "Grid.Column": "3",
+                    "HorizontalAlignment": "Left",
+                    "Name": "LabLaunchingProgress"
+                  }
+                },
+                {
+                  "type": "TextBlock",
+                  "attrs": {
+                    "FontSize": "12.5",
+                    "Margin": "0,0,0,5",
+                    "Text": "{DynamicResource Launch.Status.DownloadSpeed}",
+                    "Grid.Row": "3",
+                    "Grid.Column": "1",
+                    "HorizontalAlignment": "Right",
+                    "Opacity": "0",
+                    "Name": "LabLaunchingDownloadLeft",
+                    "Visibility": "Collapsed"
+                  }
+                },
+                {
+                  "type": "TextBlock",
+                  "attrs": {
+                    "FontSize": "12.5",
+                    "Margin": "0,0,0,5",
+                    "Text": "5.2 M/s",
+                    "Grid.Row": "3",
+                    "Grid.Column": "3",
+                    "HorizontalAlignment": "Left",
+                    "Name": "LabLaunchingDownload",
+                    "Opacity": "0",
+                    "Visibility": "Collapsed"
+                  }
+                },
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Name": "PanLaunchingHint",
+                    "HorizontalAlignment": "Center",
+                    "Grid.Row": "2",
+                    "Grid.ColumnSpan": "5",
+                    "Grid.RowSpan": "2",
+                    "Width": "260",
+                    "Visibility": "Collapsed",
+                    "Margin": "0,16,0,2",
+                    "Opacity": "0"
+                  },
+                  "children": [
+                    {
+                      "type": "Border",
+                      "attrs": {
+                        "Margin": "0,8,0,0",
+                        "BorderThickness": "1",
+                        "CornerRadius": "3",
+                        "BorderBrush": "{DynamicResource ColorBrushGray1}",
+                        "Opacity": "0.5"
+                      },
+                      "children": [
+                        {
+                          "type": "Border.Clip",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "CombinedGeometry",
+                              "attrs": {
+                                "GeometryCombineMode": "Exclude"
+                              },
+                              "children": [
+                                {
+                                  "type": "CombinedGeometry.Geometry1",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "RectangleGeometry",
+                                      "attrs": {
+                                        "Rect": "0,0,1000,1000"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "CombinedGeometry.Geometry2",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "RectangleGeometry",
+                                      "attrs": {
+                                        "Rect": "94,0,72,10"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "FontSize": "12.5",
+                        "Text": "{DynamicResource Launch.Status.Trivia}",
+                        "HorizontalAlignment": "Center",
+                        "VerticalAlignment": "Top",
+                        "Opacity": "0.5"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Name": "LabLaunchingHint",
+                        "FontSize": "12.5",
+                        "Text": "{DynamicResource Launch.Status.Trivia.Placeholder}",
+                        "Margin": "11,21,11,10",
+                        "TextWrapping": "Wrap",
+                        "HorizontalAlignment": "Center",
+                        "MaxHeight": "54",
+                        "TextTrimming": "CharacterEllipsis"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "PButton",
+          "attrs": {
+            "Grid.Row": "4",
+            "Name": "BtnCancel",
+            "Height": "35",
+            "Margin": "20,0,20,20",
+            "VerticalAlignment": "Bottom",
+            "Click": "BtnCancel_Click",
+            "Text": "{DynamicResource Common.Action.Cancel}"
+          }
+        }
+      ]
+    }
+  ]
+}

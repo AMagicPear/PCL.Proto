@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import PButton from './PButton.vue'
 import PCard from './PCard.vue'
 import IconSearch from '@/assets/icons/IconSearch.svg'
 defineProps<{ placeholder?: string }>()
 const emit = defineEmits(['search'])
-const query = ref<string>()
+const query = defineModel<string>({ default: '' })
 </script>
 
 <template>
@@ -30,6 +29,7 @@ const query = ref<string>()
   flex-direction: row;
   justify-content: space-between;
   gap: 10px;
+  padding: 12px 15px;
 }
 
 .search-icon {

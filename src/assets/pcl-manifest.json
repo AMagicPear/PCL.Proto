@@ -1,0 +1,288 @@
+{
+  "repository": "PCL-Community/PCL2-CE",
+  "revision": "d68819990da092ed7e582b94b950874fa30baffe",
+  "pages": {
+    "PCompItem": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/Comp/MyCompItem.xaml",
+      "sha256": "6f03809754167a0fee0ef2332059c4077b2b4311f63cb7d7475123103166b374"
+    },
+    "PageComp": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/Comp/PageComp.xaml",
+      "sha256": "b41b6eb59acd6552e47e3d31b50a74ac8627c545d759a4125ebffc6703fc29e8"
+    },
+    "PageDownloadCompDetail": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/Comp/PageDownloadCompDetail.xaml",
+      "sha256": "ff250f822592e08a17b9626dc032cff7f3956afdbf40b3c016b7d5dc09df1d22"
+    },
+    "PageDownloadDataPack": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/Comp/PageDownloadDataPack.xaml",
+      "sha256": "43a1ff41196ec5d1aeaf0868a77a8a4a8bbf43c89be6fe08eeadda2c4f27518c"
+    },
+    "PageDownloadMod": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/Comp/PageDownloadMod.xaml",
+      "sha256": "5fdd0bd2a05342e45a077c8d4aed5ed27770fad0784371a89201daa9b2a53532"
+    },
+    "PageDownloadPack": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/Comp/PageDownloadPack.xaml",
+      "sha256": "48257c0b8f2287749cffab1c8242ee80c16c621858e51571d822efc89582e25e"
+    },
+    "PageDownloadResourcePack": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/Comp/PageDownloadResourcePack.xaml",
+      "sha256": "39f73db871456c0bf115827c19a2c42bba0082840382db87bf7a4bd1626ac81b"
+    },
+    "PageDownloadShader": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/Comp/PageDownloadShader.xaml",
+      "sha256": "cb4b8d0c11daf53cc130766592b8e7b766405a3cec0ac5d2eff0d5b435a8fd70"
+    },
+    "PageDownloadWorld": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/Comp/PageDownloadWorld.xaml",
+      "sha256": "5bfdad94e2d1925911745b88f89ee1fa4d61716dca1fb169b5886b4baaa6fa89"
+    },
+    "PageDownloadCleanroom": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadCleanroom.xaml",
+      "sha256": "ba5c0eba289c8dca53099fd375fde60c1f3c66229e36195b934e0242d0611985"
+    },
+    "PageDownloadClient": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadClient.xaml",
+      "sha256": "698ec0298ace55dfd116edadd748ec45931c832005bc33c6853fcc0b7e2ef607"
+    },
+    "PageDownloadCompFavorites": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadCompFavorites.xaml",
+      "sha256": "0ab3cda3530c660fb52a122b6b6fc05e998e1516e01a6c0433a7dc22484ff783"
+    },
+    "PageDownloadFabric": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadFabric.xaml",
+      "sha256": "4997e93e26cd3b50eccec935d406a901211f977a637d43329e5a68b8027411be"
+    },
+    "PageDownloadForge": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadForge.xaml",
+      "sha256": "557751d1fdf5cf79f8a7000fc64e739c111aa178c9a3bcc31c3824cf84ee9285"
+    },
+    "PageDownloadInstall": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadInstall.xaml",
+      "sha256": "ca75b9624e08d34d81733083dea426d2c57ec38fed59148a6615023e0a748074"
+    },
+    "PageDownloadLabyMod": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadLabyMod.xaml",
+      "sha256": "5bce784c1dc8f74cc61f4d4f5cfe31e11a1ccc3324eb480bdfd55a91025bac4a"
+    },
+    "PageDownloadLeft": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadLeft.xaml",
+      "sha256": "d11af29d09cdaeed8a9bd13018b164dd06a689904d5f68141820c99a6b1a3bd6"
+    },
+    "PageDownloadLegacyFabric": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadLegacyFabric.xaml",
+      "sha256": "25281273784bc3ba8fb44092d8b9246fa41441c1a796c0861b70ec87cd678a41"
+    },
+    "PageDownloadLiteLoader": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadLiteLoader.xaml",
+      "sha256": "ca75e51ab3ff25fa6dde7b0e9225bab46d6d0d7e2a5c7b5517128065ae9c6cbf"
+    },
+    "PageDownloadNeoForge": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadNeoForge.xaml",
+      "sha256": "d9bbcbf94d4a27d945f76bff3da7d8713997993001bccf0ebaa91e5fd1adea3f"
+    },
+    "PageDownloadOptiFine": {
+      "path": "Plain Craft Launcher 2/Pages/PageDownload/PageDownloadOptiFine.xaml",
+      "sha256": "e5d28ba68c6ef1b70bc9f8f449114acc6dacf9bf63c83b68408c7ac8dc5ce72e"
+    },
+    "PageHelpDetail": {
+      "path": "Plain Craft Launcher 2/Pages/PageHelpDetail.xaml",
+      "sha256": "3b2adc35377695f425f9b3f938682805bb0cadfe47b18f83967570f1beb4e96c"
+    },
+    "PageHomepageNewsView": {
+      "path": "Plain Craft Launcher 2/Pages/PageHomepage/PageHomepageNewsView.xaml",
+      "sha256": "7b3a268295b207db3cf0324eaa0c518bc68f0ba1a11c92be804e9b8b92ab4277"
+    },
+    "PLocalModItem": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/MyLocalModItem.xaml",
+      "sha256": "c3b54a5b2043dbb476b73dbe207753f25a39a71a89b9f52b0f47a1b0a3c02157"
+    },
+    "PageInstanceCompJarInJar": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceCompJarInJar.xaml",
+      "sha256": "05f7b841a1cfe3c2c05929ba845c5d5bcd0f09b42bf3f043ed68ba8751463a1b"
+    },
+    "PageInstanceCompResource": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceCompResource.xaml",
+      "sha256": "6ae38215075ea7ca5d05e3cc2d1fdbfb020c98040c9155ed3efbad20bf4d37c2"
+    },
+    "PageInstanceExport": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceExport.xaml",
+      "sha256": "37b2192d3da980f7ba5e629550371221dba16ab6768b0d8ba3d2ff28483f4703"
+    },
+    "PageInstanceInstall": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceInstall.xaml",
+      "sha256": "3c82c7c743f169aa0c778bc9987196bf7b48faccc06dd7c06d3e869beac30ba9"
+    },
+    "PageInstanceLeft": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceLeft.xaml",
+      "sha256": "a72b5d63adc9e327878b254da3d6cba4d3e31134b6fc03cb3cf46844444536be"
+    },
+    "PageInstanceModDisabled": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceModDisabled.xaml",
+      "sha256": "208719351ee233d8c69ba0bd73bbcd90c367aca61891c5ba44c90f6a175a6d70"
+    },
+    "PageInstanceOverall": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceOverall.xaml",
+      "sha256": "b479ac4d40c1c1604a00005d10712f3509c93aa983a9a1db0b666be692fb37ab"
+    },
+    "PageInstanceSavesDatapack": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceSaves/PageInstanceSavesDatapack.xaml",
+      "sha256": "ce90aedd39faeff5f0f2398147192f34aae5fe455d67ded89ee2870cb0825ffa"
+    },
+    "PageInstanceSavesInfo": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceSaves/PageInstanceSavesInfo.xaml",
+      "sha256": "f2741d053630df8191ce8bd4b025062670e7d28903bc55adbaa8dedf86413ef3"
+    },
+    "PageInstanceSavesLeft": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceSaves/PageInstanceSavesLeft.xaml",
+      "sha256": "2d75a192a54693c2f9afb047f8f1ae3dde3cf806b9a6101f8470694e0ef22cc3"
+    },
+    "PageInstanceSaves": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceSaves.xaml",
+      "sha256": "2350b30f9d49175458ad3f2d4712ab1f7dcc52d2471992a85f354368d61b147a"
+    },
+    "PageInstanceScreenshot": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceScreenshot.xaml",
+      "sha256": "a617cb03e86a8697b6e58b3e7c22c410f8ce19766e4e052e7688ccccbd64e69b"
+    },
+    "PageInstanceServer": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceServer.xaml",
+      "sha256": "e3d35ba3429ae3ca040bd7c343ea6c9ba040178e142aac459661aaf1c7b323b3"
+    },
+    "PageInstanceSetup": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/PageInstanceSetup.xaml",
+      "sha256": "344a9e10962887acb5db45325082f6cdd5a7ae8807fb67e8b3b8c59f40c2ef8c"
+    },
+    "ServerCard": {
+      "path": "Plain Craft Launcher 2/Pages/PageInstance/ServerCard.xaml",
+      "sha256": "c8283033ee07149cdf24079a61883c9d963215bda7614a027cbeb0e0c5cfdc6e"
+    },
+    "PMsgLogin": {
+      "path": "Plain Craft Launcher 2/Pages/PageLaunch/MyMsgLogin.xaml",
+      "sha256": "9b62b0f17a1322d98964e0cebfb14f15c9d1bcdf6e4726b854cc953aee98ef96"
+    },
+    "PSkin": {
+      "path": "Plain Craft Launcher 2/Pages/PageLaunch/MySkin.xaml",
+      "sha256": "b9675f08cc1f9471efc378608120f4743e1f360e95060847bcd1595d408da22d"
+    },
+    "PageLaunchLeft": {
+      "path": "Plain Craft Launcher 2/Pages/PageLaunch/PageLaunchLeft.xaml",
+      "sha256": "8ebbe62e1e70a1f33745fa4021b1609b6b26cc2690d2366e5ec0542a1bef60cf"
+    },
+    "PageLaunchRight": {
+      "path": "Plain Craft Launcher 2/Pages/PageLaunch/PageLaunchRight.xaml",
+      "sha256": "2d4fc8c4696de23e8c4cb0cc664aa23462ca739de543136e738b3a13c3465871"
+    },
+    "PageLoginAuth": {
+      "path": "Plain Craft Launcher 2/Pages/PageLaunch/PageLoginAuth.xaml",
+      "sha256": "acc2951c01db8fcd1cff6a1b173c5aea3c4d21fe74ea1bbce276195566143e90"
+    },
+    "PageLoginMs": {
+      "path": "Plain Craft Launcher 2/Pages/PageLaunch/PageLoginMs.xaml",
+      "sha256": "4db3ef8069e67fd05f75d13fdd8caa0850463bcc2e4c70bd50faac9159cdd0d7"
+    },
+    "PageLoginOffline": {
+      "path": "Plain Craft Launcher 2/Pages/PageLaunch/PageLoginOffline.xaml",
+      "sha256": "d1f4fc71063ce22244711c7cc76aa580fcf946a404febc1df976b71b7111ff70"
+    },
+    "PageLoginProfile": {
+      "path": "Plain Craft Launcher 2/Pages/PageLaunch/PageLoginProfile.xaml",
+      "sha256": "657480bcdb4803d43c5832c3ec9ab916bdd241c8044ba04e4c05abbc3ee91a21"
+    },
+    "PageLoginProfileSkin": {
+      "path": "Plain Craft Launcher 2/Pages/PageLaunch/PageLoginProfileSkin.xaml",
+      "sha256": "f989a368db4929894c2b70edf88d9a29be4027cdef21cc17853c684fb5908003"
+    },
+    "PageLogLeft": {
+      "path": "Plain Craft Launcher 2/Pages/PageLogLeft.xaml",
+      "sha256": "aefeff0019383c3f10ab859d2a5a476fbca6c77cbbd79f146ee01869dc362d84"
+    },
+    "PageLogRight": {
+      "path": "Plain Craft Launcher 2/Pages/PageLogRight.xaml",
+      "sha256": "8aaed39cb45e1df684d1b3c4cacb405e2017096b01a1a157c04ea8b9ff1d0ef4"
+    },
+    "PageSelectLeft": {
+      "path": "Plain Craft Launcher 2/Pages/PageSelectLeft.xaml",
+      "sha256": "36a554555fa4f53fe8dd0d273a5516934d683a2dc5d65a94b7cfa3d1e09971d0"
+    },
+    "PageSelectRight": {
+      "path": "Plain Craft Launcher 2/Pages/PageSelectRight.xaml",
+      "sha256": "7dc7805c58fc3725df3e71299fb354f3a628a35750fe51473688b1afd884310c"
+    },
+    "PageSetupAbout": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupAbout.xaml",
+      "sha256": "d8101a1bf9d403840da0ef7f6dced34b2290371517171b5bb775421cba07d28b"
+    },
+    "PageSetupFeedback": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupFeedback.xaml",
+      "sha256": "c91db6b518909f79f7f8dd239ac7d120a85b92e79be7eaa192f64e7990fb4d37"
+    },
+    "PageSetupGameLink": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupGameLink.xaml",
+      "sha256": "1c2b581e709975d0166e26fcf95ce6e802024850588a0e4979e132493fdb5099"
+    },
+    "PageSetupGameManage": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupGameManage.xaml",
+      "sha256": "a8c9203a74f12e9b1a11c33f929ae1c6a603270aae39e45f900de7cc513199df"
+    },
+    "PageSetupJava": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupJava.xaml",
+      "sha256": "0d4f6d637fd8b70331e299d983e9db05f93c389c867ac19fd698c08f3777ed00"
+    },
+    "PageSetupLaunch": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupLaunch.xaml",
+      "sha256": "6f51f75ac9adad9f595624bf83d5719041f4c3dff643e0be7bb26393cc36153a"
+    },
+    "PageSetupLauncherLanguage": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupLauncherLanguage.xaml",
+      "sha256": "e2f6aa6217b6fe3f3fbf3a27c972f2faf23178ff61990631b9430c8ff641671c"
+    },
+    "PageSetupLauncherMisc": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupLauncherMisc.xaml",
+      "sha256": "1546c45da167d8039a73998bf94756c164811e3849fd51d92f026d89c37d0dcf"
+    },
+    "PageSetupLeft": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupLeft.xaml",
+      "sha256": "00a32752d69360f337655de5dd60c0a27b97555908c63de360dcad9d80397b97"
+    },
+    "PageSetupLog": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupLog.xaml",
+      "sha256": "f516b57b6100f78f6aa074481d3f5bc87e1015f5e8fbefe3cc5e5631fc4115c0"
+    },
+    "PageSetupUI": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUI.xaml",
+      "sha256": "a1de4c7b87be3d3ebf3a109130fea4f5f50ac62ae911c6e8f41f774b56d68afd"
+    },
+    "PageSetupUpdate": {
+      "path": "Plain Craft Launcher 2/Pages/PageSetup/PageSetupUpdate.xaml",
+      "sha256": "d192d02ced123456c5d94df77e2b8184ffc385b408cec1d7d854a992fe3b6206"
+    },
+    "PageSpeedLeft": {
+      "path": "Plain Craft Launcher 2/Pages/PageSpeedLeft.xaml",
+      "sha256": "f59041e62fb08598623c9cf42cd0d02548bba823796d75aa50f3549a735fd71c"
+    },
+    "PageSpeedRight": {
+      "path": "Plain Craft Launcher 2/Pages/PageSpeedRight.xaml",
+      "sha256": "408f0c5ca867abea85c922fed5b9fa8702441e21ce7a001791acf63b5c3bbd96"
+    },
+    "PageToolsGameLink": {
+      "path": "Plain Craft Launcher 2/Pages/PageTools/PageToolsGameLink.xaml",
+      "sha256": "4f44c3cdc178d87ebec25ab436f2bf61843c7360f4dd8f8fb4ca133ea27c0435"
+    },
+    "PageToolsLeft": {
+      "path": "Plain Craft Launcher 2/Pages/PageTools/PageToolsLeft.xaml",
+      "sha256": "1bd5d6ec58ba44d4419da1bb3233cfd6b94c7e43c5a1366cbe9ff01f4ccb9444"
+    },
+    "PageToolsTest": {
+      "path": "Plain Craft Launcher 2/Pages/PageTools/PageToolsTest.xaml",
+      "sha256": "35a0985a414bc74660d9efb856f6383718f955edaa69bf6ca1035ae0be73ea68"
+    },
+    "FormMain": {
+      "path": "Plain Craft Launcher 2/FormMain.xaml",
+      "sha256": "f0e13f2317dc6f697cc50774639033ed3217810b2722db2afafae9e38d0e62e9"
+    }
+  },
+  "svgCount": 87,
+  "geometryCount": 26
+}

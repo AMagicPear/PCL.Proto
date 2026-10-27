@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import IconClose from '@/assets/icons/TitleClose.svg'
+import PSvgIcon from './PSvgIcon.vue'
 
 export type Severity = 'info' | 'warning' | 'error'
 withDefaults(defineProps<{ severity: Severity; closable?: boolean }>(), {
@@ -14,12 +14,20 @@ const visibility = ref(true)
 <template>
   <div class="hint-container" :class="severity" v-if="visibility">
     <div><slot></slot></div>
-    <i class="button-animated" v-if="closable" @click="visibility = false"> <icon-close /></i>
+    <button
+      type="button"
+      aria-label="关闭提示"
+      class="button-animated"
+      v-if="closable"
+      @click="visibility = false"
+    >
+      <PSvgIcon name="lucide/x" :size="14" />
+    </button>
   </div>
 </template>
 
 <style lang="css" scoped>
-i.button-animated {
+button.button-animated {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,13 +69,22 @@ i.button-animated {
   color: #ff9626;
 }
 
-i.button-animated {
+button.button-animated {
   scale: 0.8;
   color: var(--light-blue);
   transition: 0.4s;
 }
 
-i.button-animated:hover {
+button.button-animated:hover {
   color: var(--color-titlebar);
+}
+</style>
+
+<style scoped>
+button.button-animated {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 3px;
 }
 </style>

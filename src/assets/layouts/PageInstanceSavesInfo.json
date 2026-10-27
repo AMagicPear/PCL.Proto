@@ -1,0 +1,144 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageInstanceSavesInfo",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Margin": "25,10,25,10",
+            "Name": "PanMain"
+          },
+          "children": [
+            {
+              "type": "PHint",
+              "attrs": {
+                "Name": "Hintversion1_9",
+                "Theme": "Yellow",
+                "Visibility": "Collapsed",
+                "Margin": "0,5,0,0"
+              }
+            },
+            {
+              "type": "PHint",
+              "attrs": {
+                "Name": "Hintversion1_8",
+                "Theme": "Yellow",
+                "Visibility": "Collapsed",
+                "Margin": "0,5,0,0"
+              }
+            },
+            {
+              "type": "PHint",
+              "attrs": {
+                "Name": "Hintversion1_3",
+                "Theme": "Yellow",
+                "Visibility": "Collapsed",
+                "Margin": "0,5,0,0"
+              }
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,15,0,0",
+                "Title": "{DynamicResource Instance.Saves.Info.Details.Title}",
+                "Name": "PanContent"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "15,35,15,15",
+                    "Name": "PanList"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "SharedSizeGroup": "TextBlock",
+                            "Width": "Auto"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "24"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,15,0,0",
+                "Title": "{DynamicResource Instance.Saves.Info.Settings.Title}",
+                "Name": "PanSettings",
+                "Visibility": "Collapsed"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "15,35,15,15",
+                    "Name": "PanSettingsList"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "SharedSizeGroup": "TextBlock",
+                            "Width": "Auto"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "24"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

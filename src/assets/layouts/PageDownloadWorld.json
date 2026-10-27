@@ -1,0 +1,76 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageDownloadWorld",
+    "PanScroll": "{Binding ElementName=Content}"
+  },
+  "children": [
+    {
+      "type": "PageComp",
+      "attrs": {
+        "Name": "Content",
+        "PageType": "World",
+        "SupportModrinth": "False"
+      },
+      "children": [
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "",
+            "Content": "{DynamicResource Common.Option.All}",
+            "IsSelected": "True"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.World.Adventure}",
+            "Tag": "248/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.World.Creative}",
+            "Tag": "249/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Modpack.MiniGame}",
+            "Tag": "250/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.World.Parkour}",
+            "Tag": "251/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.World.Puzzle}",
+            "Tag": "252/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.World.Survival}",
+            "Tag": "253/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.World.ModWorld}",
+            "Tag": "4464/"
+          }
+        }
+      ]
+    }
+  ]
+}

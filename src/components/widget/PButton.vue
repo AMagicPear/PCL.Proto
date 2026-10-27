@@ -26,6 +26,7 @@ const hoverBg = {
 
 <template>
   <motion.button
+    type="button"
     :class="['mybutton', inline && 'inline', type ?? 'default']"
     :title="tooltip"
     :disabled="disabled"
@@ -57,6 +58,7 @@ const hoverBg = {
 }
 
 .inline {
+  border: 0;
   padding-block: 5px;
   padding-inline: 10px;
 }

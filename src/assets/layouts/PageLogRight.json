@@ -1,0 +1,196 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageLogRight"
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "attrs": {},
+      "children": [
+        {
+          "type": "Grid",
+          "attrs": {
+            "Name": "PanAllBack"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "16,16,16,100",
+                "Name": "PanLogCard"
+              },
+              "children": [
+                {
+                  "type": "PScrollViewer",
+                  "attrs": {
+                    "Margin": "12,40,12,20",
+                    "VerticalScrollBarVisibility": "Auto",
+                    "HorizontalScrollBarVisibility": "Disabled",
+                    "Name": "PanBack"
+                  },
+                  "children": [
+                    {
+                      "type": "RichTextBox",
+                      "attrs": {
+                        "Name": "PanLog",
+                        "FontSize": "14",
+                        "FontFamily": "Consolas",
+                        "HorizontalAlignment": "Stretch",
+                        "VerticalAlignment": "Stretch",
+                        "BorderThickness": "0",
+                        "Background": "Transparent",
+                        "IsReadOnly": "True",
+                        "VirtualizingPanel.IsVirtualizing": "True",
+                        "VirtualizingPanel.VirtualizationMode": "Recycling",
+                        "VirtualizingPanel.IsContainerVirtualizable": "True",
+                        "VirtualizingPanel.IsVirtualizingWhenGrouping": "True",
+                        "VirtualizingPanel.ScrollUnit": "Pixel"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "PCard",
+          "attrs": {
+            "Name": "CardOperation",
+            "Visibility": "Visible",
+            "Opacity": "0",
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Bottom",
+            "Margin": "0,15,0,10",
+            "UseAnimation": "False",
+            "HasMouseAnimation": "True"
+          },
+          "children": [
+            {
+              "type": "StackPanel",
+              "attrs": {
+                "Margin": "0,6,0,6"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Name": "OperationsContainer",
+                    "Orientation": "Horizontal",
+                    "Margin": "10,8,10,8",
+                    "HorizontalAlignment": "Center"
+                  },
+                  "children": [
+                    {
+                      "type": "PCheckBox",
+                      "attrs": {
+                        "Name": "CheckAutoScroll",
+                        "Margin": "5,0,5,0",
+                        "Text": "{DynamicResource LogPage.Action.Scroll}",
+                        "Checked": "True"
+                      }
+                    },
+                    {
+                      "type": "PIconTextButton",
+                      "attrs": {
+                        "Name": "BtnOperationExport",
+                        "Margin": "5,0,0,0",
+                        "Text": "{DynamicResource LogPage.Action.Export}",
+                        "Click": "BtnOperationExport_Click",
+                        "LogoScale": "1",
+                        "SvgIcon": "lucide/save"
+                      }
+                    },
+                    {
+                      "type": "PIconTextButton",
+                      "attrs": {
+                        "Name": "BtnOperationClear",
+                        "Margin": "5,0,0,0",
+                        "Text": "{DynamicResource LogPage.Action.Clear}",
+                        "Click": "BtnOperationClear_Click",
+                        "LogoScale": "1.1",
+                        "SvgIcon": "lucide/trash-2"
+                      }
+                    },
+                    {
+                      "type": "PIconTextButton",
+                      "attrs": {
+                        "Name": "BtnOperationKill",
+                        "Margin": "5,0,0,0",
+                        "Text": "{DynamicResource LogPage.Action.KillProcess}",
+                        "Click": "BtnOperationKill_Click",
+                        "LogoScale": "0.85",
+                        "SvgIcon": "lucide/x"
+                      }
+                    },
+                    {
+                      "type": "PIconTextButton",
+                      "attrs": {
+                        "Name": "BtnOperationExportStackDump",
+                        "Margin": "5,0,0,0",
+                        "Text": "{DynamicResource LogPage.Action.ExportStack}",
+                        "Click": "BtnOperationExportStackDump_Click",
+                        "LogoScale": "0.85",
+                        "SvgIcon": "lucide/package"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "VerticalAlignment": "Center",
+                    "Margin": "12,0,12,4"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "*"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Column": "0",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource LogPage.MaxLines.Title}",
+                        "Margin": "0,0,25,0"
+                      }
+                    },
+                    {
+                      "type": "PSlider",
+                      "attrs": {
+                        "Name": "SliderMaxLog",
+                        "Grid.Column": "1",
+                        "HorizontalAlignment": "Stretch",
+                        "Change": "SliderMaxLog_ValueChanged",
+                        "Tag": "SystemMaxLog",
+                        "MaxValue": "29",
+                        "Value": "13",
+                        "ToolTip": "{DynamicResource LogPage.MaxLines.ToolTip}"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

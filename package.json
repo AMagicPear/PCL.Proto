@@ -5,21 +5,23 @@
     "name": "AMagicPear",
     "email": "AMagicPear@outlook.com"
   },
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "node scripts/check-icons.js && tauri dev",
     "build": "node scripts/check-icons.js && tauri build",
     "ui:dev": "vite",
-    "ui:build": "run-p type-check \"ui:build-only {@}\" --",
+    "ui:build": "pnpm check:ui && run-p type-check \"ui:build-only {@}\" --",
     "ui:build-only": "vite build",
     "type-check": "vue-tsc --build",
     "format": "prettier --write src/",
     "deploy": "vite build && gh-pages -d dist",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "check:ui": "node scripts/check-pcl-ui.mjs"
   },
   "dependencies": {
+    "@lucide/vue": "^1.61.0",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-dialog": "~2.6.0",
     "@tauri-apps/plugin-log": "^2.8.0",

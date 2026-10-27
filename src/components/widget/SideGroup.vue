@@ -7,7 +7,7 @@ import { type INavItemGroup } from '@/types/naviOptions'
 <template lang="pug">
     div
         //- 添加 sidenav-line 类是为了方便外部做动画的
-        p.side-group-title.sidenav-line {{title}}
+        p.side-group-title.sidenav-line(v-if="title") {{title}}
         .side-group-content
             SideNavItem(
                 v-for="item in content" 
@@ -21,8 +21,8 @@ import { type INavItemGroup } from '@/types/naviOptions'
 }
 
 .side-group-title {
-  margin-left: 12px;
-  font-size: 11px;
+  margin: 6px 5px 4px 13px;
+  font-size: 12px;
   color: var(--color-text-grey);
 }
 </style>

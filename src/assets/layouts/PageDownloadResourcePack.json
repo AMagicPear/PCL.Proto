@@ -1,0 +1,279 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageDownloadResourcePack",
+    "PanScroll": "{Binding ElementName=Content}"
+  },
+  "children": [
+    {
+      "type": "PageComp",
+      "attrs": {
+        "Name": "Content",
+        "PageType": "ResourcePack"
+      },
+      "children": [
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "",
+            "Content": "{DynamicResource Common.Option.All}",
+            "IsSelected": "True"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Style}",
+            "IsEnabled": "False"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.VanillaLike}",
+            "Tag": "403/vanilla-like"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Realistic}",
+            "Tag": "400/realistic"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Modern}",
+            "Tag": "401/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Medieval}",
+            "Tag": "402/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Steampunk}",
+            "Tag": "399/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Themed}",
+            "Tag": "/themed"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Simplistic}",
+            "Tag": "/simplistic"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Decoration}",
+            "Tag": "/decoration"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Combat}",
+            "Tag": "/combat"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Utility}",
+            "Tag": "/utility"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Tweaks}",
+            "Tag": "/tweaks"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Cursed}",
+            "Tag": "/cursed"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Feature}",
+            "IsEnabled": "False"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Entities}",
+            "Tag": "/entities"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Audio}",
+            "Tag": "/audio"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Fonts}",
+            "Tag": "5244/fonts"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Models}",
+            "Tag": "/models"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Locale}",
+            "Tag": "/locale"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Gui}",
+            "Tag": "/gui"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.CoreShaders}",
+            "Tag": "/core-shaders"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Animated}",
+            "Tag": "404/"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.ModSupport}",
+            "Tag": "4465/modded"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Resolution}",
+            "IsEnabled": "False"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.ResourcePack.Resolution8xOrLower}",
+            "Tag": "/8x-"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.ResourcePack.Resolution16x}",
+            "Tag": "393/16x"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.ResourcePack.Resolution32x}",
+            "Tag": "394/32x"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.ResourcePack.Resolution48x}",
+            "Tag": "/48x"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.ResourcePack.Resolution64x}",
+            "Tag": "395/64x"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.ResourcePack.Resolution128x}",
+            "Tag": "396/128x"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.ResourcePack.Resolution256x}",
+            "Tag": "397/256x"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.ResourcePack.Resolution512xOrHigher}",
+            "Tag": "398/512x+"
+          }
+        }
+      ]
+    }
+  ]
+}

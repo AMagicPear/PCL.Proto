@@ -1,0 +1,151 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageDownloadShader",
+    "PanScroll": "{Binding ElementName=Content}"
+  },
+  "children": [
+    {
+      "type": "PageComp",
+      "attrs": {
+        "Name": "Content",
+        "PageType": "Shader"
+      },
+      "children": [
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Tag": "",
+            "Content": "{DynamicResource Common.Option.All}",
+            "IsSelected": "True"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Style}",
+            "IsEnabled": "False"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.VanillaLike}",
+            "Tag": "6555/vanilla-like"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Fantasy}",
+            "Tag": "6554/fantasy"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Realistic}",
+            "Tag": "6553/realistic"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.SemiRealistic}",
+            "Tag": "/semi-realistic"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Cartoon}",
+            "Tag": "/cartoon"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Feature}",
+            "IsEnabled": "False"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.ColoredLighting}",
+            "Tag": "/colored-lighting"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.PathTracing}",
+            "Tag": "/path-tracing"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Pbr}",
+            "Tag": "/pbr"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.Reflections}",
+            "Tag": "/reflections"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Content": "{DynamicResource Download.Comp.Category.Performance}",
+            "IsEnabled": "False"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.PerformancePotato}",
+            "Tag": "/potato"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.PerformanceLow}",
+            "Tag": "/low"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.PerformanceMedium}",
+            "Tag": "/medium"
+          }
+        },
+        {
+          "type": "PComboBoxItem",
+          "attrs": {
+            "Margin": "15,0,0,0",
+            "Content": "{DynamicResource Download.Comp.Category.PerformanceHigh}",
+            "Tag": "/high"
+          }
+        }
+      ]
+    }
+  ]
+}

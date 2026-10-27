@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import Dropdown from './Dropdown.vue'
+import PComboBox from './PComboBox.vue'
 import { type ISetupOption, type SetupItemType } from '@/stores/setup'
-import PInput from './PInput.vue'
+import PTextBox from './PTextBox.vue'
 
 withDefaults(
   defineProps<{
@@ -21,12 +21,12 @@ const model = defineModel<string>()
 <template lang="pug">
 .setupitem-with-text-container
     label.text-label {{ label }}
-    Dropdown.input(
+    PComboBox.input(
         v-if="type == 'select' && options"
         :options="options"
         v-model="model"
     )
-    PInput.input(
+    PTextBox.input(
         v-else-if="type == 'input'"
         :placeholder="options?.find(v => v.key === 'placeholder')?.text"
         v-model="model"

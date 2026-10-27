@@ -1,0 +1,120 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageDownloadCleanroom",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Orientation": "Vertical",
+            "Margin": "5"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "20,20,20,0",
+                "Grid.IsSharedSizeScope": "True",
+                "Title": "{DynamicResource Download.Version.Cleanroom.Intro.Title}",
+                "Name": "CardTip"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,15,20"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Name": "LabConnect",
+                        "Margin": "0,0,0,11",
+                        "Text": "{DynamicResource Download.Version.Cleanroom.Intro.Description}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Height": "35"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnWeb",
+                            "Grid.Column": "0",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Download.Version.OpenWebsite}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "HorizontalAlignment": "Left",
+                            "ColorType": "Highlight"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "StackPanel",
+              "attrs": {
+                "Name": "PanMain",
+                "Margin": "20,15,20,5",
+                "Grid.IsSharedSizeScope": "True"
+              }
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "Margin": "40,50",
+                "SnapsToDevicePixels": "True",
+                "Name": "PanLoad",
+                "UseAnimation": "False"
+              },
+              "children": [
+                {
+                  "type": "PLoading",
+                  "attrs": {
+                    "Text": "{DynamicResource Download.Version.Cleanroom.LoadingList}",
+                    "Margin": "20,20,20,17",
+                    "Name": "Load",
+                    "HorizontalAlignment": "Center",
+                    "VerticalAlignment": "Center"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

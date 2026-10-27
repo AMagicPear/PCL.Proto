@@ -1,78 +1,91 @@
-import { invoke } from '@tauri-apps/api/core'
-import { ref } from 'vue'
-
-export type gameVersionType = 'snapshot' | 'release' | 'old_beta' | 'old_alpha' | 'old'
-
-interface IVersionManifest {
-  latest: {
-    release: string
-    snapshot: string
-  }
-  versions: {
-    id: string
-    type: gameVersionType
-    url: string
-    time: string
-    releaseTime: string
-  }[]
-}
-
-interface SingleVersionShowInfo {
+import { invoke, isTauri } from '@tauri-apps/api/core'
+export type gameVersionType =
+  | 'snapshot'
+  | 'release'
+  | 'old_beta'
+  | 'old_alpha'
+  | 'old'
+  | 'special'
+  | 'pending'
+export interface ManifestVersion {
   id: string
+  type: gameVersionType
   releaseTime: string
 }
-
+export interface SingleVersionShowInfo {
+  id: string
+  releaseTime: string
+  timestamp: number
+}
 export interface IVersionShow {
-  latest: {
-    release: SingleVersionShowInfo
-    snapshot: SingleVersionShowInfo
-  }
+  latest: { release?: SingleVersionShowInfo; snapshot?: SingleVersionShowInfo }
   release: SingleVersionShowInfo[]
   snapshot: SingleVersionShowInfo[]
   old: SingleVersionShowInfo[]
+  fool: SingleVersionShowInfo[]
 }
-
-const versionDataRef = ref<IVersionShow>() // put it outside to avoid the chunk
-
-// 获取Minecraft版本信息
-export function useMinecraftVersions() {
-  invoke<IVersionManifest>('get_version_manifest').then((data: IVersionManifest) => {
-    const latestRelease = data.versions.find((v) => v.id === data.latest.release)!
-    const latestSnapshot = data.versions.find((v) => v.id === data.latest.snapshot)!
-    const releaseVersions = data.versions.filter((v) => v.type === 'release')
-    const snapshotVersions = data.versions.filter((v) => v.type === 'snapshot')
-    const oldVersions = data.versions.filter((v) => v.type === 'old_beta' || v.type === 'old_alpha')
-    const result: IVersionShow = {
-      latest: {
-        release: mapVersionToShow(latestRelease),
-        snapshot: mapVersionToShow(latestSnapshot),
-      },
-      release: releaseVersions.map(mapVersionToShow),
-      snapshot: snapshotVersions.map(mapVersionToShow),
-      old: oldVersions.map(mapVersionToShow),
-    }
-    versionDataRef.value = result
-  })
-
-  function formatReleaseTime(iso: string) {
-    const date = new Date(iso)
-    return `${date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })}`
+// Mirrors PCL2-CE's McVersionClassifier, preserving download IDs from the manifest.
+export function classifyVersion(version: ManifestVersion): 'release' | 'snapshot' | 'old' | 'fool' {
+  if (version.type === 'release') return 'release'
+  if (version.type === 'special') return 'fool'
+  if (!['snapshot', 'pending'].includes(version.type)) return 'old'
+  const id = version.id.toLowerCase()
+  const date = new Date(Date.parse(version.releaseTime) + 2 * 3600000)
+  if (
+    /^(2(point|\.)0|20w14inf)/.test(id) ||
+    [
+      '20w14∞',
+      '3d shareware v1.34',
+      '1.rv-pre1',
+      '15w14a',
+      '22w13oneblockatatime',
+      '23w13a_or_b',
+      '24w14potato',
+      '25w14craftmine',
+      '26w14a',
+    ].includes(id) ||
+    (date.getUTCMonth() === 3 && date.getUTCDate() === 1)
+  )
+    return 'fool'
+  return id.startsWith('1.') &&
+    !['combat', 'rc', 'experimental', 'pre'].some((part) => id.includes(part)) &&
+    id !== '1.2'
+    ? 'release'
+    : 'snapshot'
+}
+export async function getMinecraftVersions(): Promise<IVersionShow> {
+  let data: { versions: ManifestVersion[] }
+  if (isTauri()) data = await invoke('get_version_manifest')
+  else {
+    const response = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest.json')
+    if (!response.ok) throw new Error(`Minecraft 版本列表请求失败：HTTP ${response.status}`)
+    data = await response.json()
   }
-
-  function mapVersionToShow(v: { id: string; releaseTime: string; type: gameVersionType }) {
-    return {
-      id: v.id,
-      releaseTime: formatReleaseTime(v.releaseTime),
-    }
+  if (
+    !Array.isArray(data?.versions) ||
+    data.versions.some(
+      (item) =>
+        !item ||
+        typeof item.id !== 'string' ||
+        typeof item.type !== 'string' ||
+        typeof item.releaseTime !== 'string' ||
+        !Number.isFinite(Date.parse(item.releaseTime)),
+    )
+  )
+    throw new Error('Minecraft 版本列表格式错误')
+  const result: IVersionShow = { latest: {}, release: [], snapshot: [], old: [], fool: [] }
+  for (const version of [...data.versions].sort(
+    (a, b) => Date.parse(b.releaseTime) - Date.parse(a.releaseTime),
+  )) {
+    result[classifyVersion(version)].push({
+      id: version.id,
+      releaseTime: new Date(version.releaseTime).toLocaleString(),
+      timestamp: Date.parse(version.releaseTime),
+    })
   }
-
-  return versionDataRef
+  result.latest.release = result.release[0]
+  result.latest.snapshot = result.snapshot[0]
+  return result
 }
 
 interface DownloadInfo {

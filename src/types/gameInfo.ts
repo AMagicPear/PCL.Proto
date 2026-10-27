@@ -20,6 +20,8 @@ export type pluginType =
 
 export const gameInfoIcon: Record<showGameType, showIconType> = {
   snapshot: 'command',
+  special: 'gold',
+  pending: 'command',
   release: 'grass',
   old_beta: 'stone',
   old_alpha: 'stone',

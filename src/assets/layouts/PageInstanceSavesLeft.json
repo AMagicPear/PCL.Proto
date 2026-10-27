@@ -1,0 +1,101 @@
+{
+  "type": "PPageLeft",
+  "attrs": {
+    "Class": "PCL.PageInstanceSavesLeft",
+    "HorizontalAlignment": "Left"
+  },
+  "children": [
+    {
+      "type": "StackPanel",
+      "attrs": {
+        "Margin": "0,12,0,0",
+        "Name": "PanItem"
+      },
+      "children": [
+        {
+          "type": "PListItem",
+          "attrs": {
+            "Name": "ItemInfo",
+            "IsScaleAnimationEnabled": "False",
+            "Checked": "True",
+            "Type": "RadioBox",
+            "Tag": "0",
+            "MinPaddingRight": "35",
+            "Height": "36",
+            "VerticalAlignment": "Top",
+            "Title": "{DynamicResource Instance.Saves.Left.Info}",
+            "LogoScale": "1",
+            "SvgIcon": "lucide/info"
+          }
+        },
+        {
+          "type": "PListItem",
+          "attrs": {
+            "Name": "ItemDatapack",
+            "Title": "{DynamicResource Instance.Saves.Left.Datapack}",
+            "IsScaleAnimationEnabled": "False",
+            "Type": "RadioBox",
+            "Tag": "1",
+            "MinPaddingRight": "35",
+            "Height": "36",
+            "VerticalAlignment": "Top",
+            "LogoScale": "0.91",
+            "SvgIcon": "lucide/file-archive"
+          },
+          "children": [
+            {
+              "type": "PListItem.Buttons",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "Array",
+                  "attrs": {
+                    "Type": "{x:Type local:MyIconButton}"
+                  },
+                  "children": [
+                    {
+                      "type": "PIconButton",
+                      "attrs": {
+                        "Tag": "2",
+                        "ToolTip": "{DynamicResource Common.Action.Refresh}",
+                        "ToolTipService.Placement": "Right",
+                        "ToolTipService.InitialShowDelay": "200",
+                        "ToolTipService.VerticalOffset": "-1",
+                        "Click": "RefreshButton_Click",
+                        "LogoScale": "0.85",
+                        "SvgIcon": "lucide/refresh-cw"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Text": "{DynamicResource Instance.Saves.Left.QuickActions}",
+            "Margin": "13,6,5,4",
+            "Opacity": "0.6",
+            "FontSize": "12"
+          }
+        },
+        {
+          "type": "PListItem",
+          "attrs": {
+            "Name": "BtnOpenFolder",
+            "Title": "{DynamicResource Common.Action.OpenFolder}",
+            "IsScaleAnimationEnabled": "False",
+            "Type": "RadioBox",
+            "MinPaddingRight": "35",
+            "Height": "36",
+            "VerticalAlignment": "Top",
+            "LogoScale": "0.8",
+            "SvgIcon": "lucide/folder-open"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,24 +1,17 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomeView from '@/views/Home/index.vue'
-import SetupView from '@/views/Setup'
-import HomeSubView from '@/views/Home/HomeSubView.vue'
-import DownloadView from '@/views/Download'
-import JavaManage from '@/views/Setup/JavaSetup.vue'
-import LaunchSetup from '@/views/Setup/LaunchSetup.vue'
-import AboutAndThanks from '@/views/Setup/AboutAndThanks.vue'
-import InstanceSelect from '@/views/InstanceSelect'
-import InstanceSelectSubView from '@/views/InstanceSelect/InstanceSelectSubView.vue'
-import InstanceSetting from '@/views/InstanceSetting'
-import InstanceOverview from '@/views/InstanceSetting/InstanceOverview.vue'
+import HomeView from '@/views/Home/PageLaunch.vue'
+import SetupView from '@/views/Setup/PageSetupLeft'
+import HomeSubView from '@/views/Home/PageLaunchRight.vue'
+import DownloadView from '@/views/Download/PageDownloadLeft'
+import JavaManage from '@/views/Setup/PageSetupJava.vue'
+import InstanceSelect from '@/views/InstanceSelect/PageSelectLeft.vue'
+import InstanceSelectSubView from '@/views/InstanceSelect/PageSelectRight.vue'
+import InstanceSetting from '@/views/InstanceSetting/PageInstanceLeft'
 // import { useSelectedInstance } from '@/stores/gameLaunch'
-import HomeNew from '@/views/Home/HomeNew'
-import PageComp from '@/views/Download/PageComp.vue'
-import ResouceVersions from '@/views/Download/ResourceVersions.vue'
-import Dowloading from '@/views/Download/Dowloading.vue'
-import InstanceNotFound from '@/views/InstanceSelect/InstanceNotFound.vue'
-import GameDownloadInner from '@/views/Download/GameDownloadInner.vue'
-import GameDownload from '@/views/Download/GameDownload'
-import Personalization from '@/views/Setup/Personalization.vue'
+import ResouceVersions from '@/views/Download/PageDownloadCompDetail.vue'
+import Dowloading from '@/views/Download/PageSpeed.vue'
+import GameDownloadInner from '@/views/Download/PageDownloadInstall.vue'
+import GameDownload from '@/views/Download/PageDownloadInstall.vue'
 
 // const selectedInstance = useSelectedInstance()
 const router = createRouter({
@@ -40,11 +33,41 @@ const router = createRouter({
       ],
     },
     {
+      path: '/account/:login?',
+      component: HomeView,
+      meta: { isSubPage: true, title: '账号管理' },
+      children: [{ path: '', component: HomeSubView }],
+    },
+    {
       path: '/download',
       name: 'download',
       component: DownloadView,
       redirect: '/download/game',
       children: [
+        {
+          path: 'favorites',
+          component: () => import('@/views/Download/PageDownloadCompFavorites.vue'),
+        },
+        { path: 'client', component: () => import('@/views/Download/PageDownloadClient.vue') },
+        { path: 'optifine', component: () => import('@/views/Download/PageDownloadOptiFine.vue') },
+        { path: 'forge', component: () => import('@/views/Download/PageDownloadForge.vue') },
+        { path: 'neoforge', component: () => import('@/views/Download/PageDownloadNeoForge.vue') },
+        {
+          path: 'cleanroom',
+          component: () => import('@/views/Download/PageDownloadCleanroom.vue'),
+        },
+        { path: 'fabric', component: () => import('@/views/Download/PageDownloadFabric.vue') },
+        {
+          path: 'legacyfabric',
+          component: () => import('@/views/Download/PageDownloadLegacyFabric.vue'),
+        },
+        { path: 'labymod', component: () => import('@/views/Download/PageDownloadLabyMod.vue') },
+        {
+          path: 'liteloader',
+          component: () => import('@/views/Download/PageDownloadLiteLoader.vue'),
+        },
+        { path: 'datapack', component: () => import('@/views/Download/PageDownloadDataPack.vue') },
+
         {
           path: 'game',
           children: [
@@ -60,28 +83,23 @@ const router = createRouter({
         },
         {
           path: 'mod',
-          component: PageComp,
-          meta: { project_type: 'mod' },
+          component: () => import('@/views/Download/PageDownloadMod.vue'),
         },
         {
           path: 'modpack',
-          component: PageComp,
-          meta: { project_type: 'modpack' },
+          component: () => import('@/views/Download/PageDownloadPack.vue'),
         },
         {
           path: 'resourcepack',
-          component: PageComp,
-          meta: { project_type: 'resourcepack' },
+          component: () => import('@/views/Download/PageDownloadResourcePack.vue'),
         },
         {
           path: 'shader',
-          component: PageComp,
-          meta: { project_type: 'shader' },
+          component: () => import('@/views/Download/PageDownloadShader.vue'),
         },
         {
           path: 'world',
-          component: PageComp,
-          meta: { project_type: 'world' },
+          component: () => import('@/views/Download/PageDownloadWorld.vue'),
         },
       ],
     },
@@ -91,28 +109,39 @@ const router = createRouter({
       component: SetupView,
       redirect: '/setup/launch',
       children: [
+        { path: 'manage', component: () => import('@/views/Setup/PageSetupGameManage.vue') },
+        {
+          path: 'language',
+          component: () => import('@/views/Setup/PageSetupLauncherLanguage.vue'),
+        },
+        { path: 'misc', component: () => import('@/views/Setup/PageSetupLauncherMisc.vue') },
+        { path: 'link', component: () => import('@/views/Setup/PageSetupGameLink.vue') },
+        { path: 'update', component: () => import('@/views/Setup/PageSetupUpdate.vue') },
+        { path: 'feedback', component: () => import('@/views/Setup/PageSetupFeedback.vue') },
+        { path: 'log', component: () => import('@/views/Setup/PageSetupLog.vue') },
+
         {
           path: 'java',
           component: JavaManage,
         },
         {
           path: 'launch',
-          component: LaunchSetup,
+          component: () => import('@/views/Setup/PageSetupLaunch.vue'),
         },
         {
           path: 'personalization',
-          component: Personalization,
+          component: () => import('@/views/Setup/PageSetupUI.vue'),
         },
         {
           path: 'about',
-          component: AboutAndThanks,
+          component: () => import('@/views/Setup/PageSetupAbout.vue'),
         },
       ],
     },
     {
       path: '/tools',
       name: 'tools',
-      component: () => import('@/views/Tools/index.ts'),
+      component: () => import('@/views/Tools/PageToolsLeft.ts'),
       redirect: '/tools/lobby',
       children: [
         {
@@ -120,21 +149,21 @@ const router = createRouter({
           children: [
             {
               path: '',
-              component: () => import('@/views/Tools/LinkLobby.vue'),
+              component: () => import('@/views/Tools/PageToolsGameLink.vue'),
             },
             {
               path: 'inner',
-              component: () => import('@/views/Tools/LinkLobbyInner.vue'),
+              component: () => import('@/views/Tools/PageToolsGameLinkConnected.vue'),
             },
           ],
         },
         {
           path: 'wonderbox',
-          component: () => import('@/views/Tools/WonderBox.tsx'),
+          component: () => import('@/views/Tools/PageToolsTest.vue'),
         },
         {
           path: 'help',
-          component: () => import('@/views/Tools/LinkHelp.vue'),
+          component: () => import('@/views/Tools/PageHelpDetail.vue'),
         },
       ],
     },
@@ -149,7 +178,7 @@ const router = createRouter({
         },
         {
           path: '',
-          component: InstanceNotFound,
+          component: InstanceSelectSubView,
         },
       ],
     },
@@ -161,26 +190,94 @@ const router = createRouter({
       meta: { isSubPage: true, title: 'home.instance_setting' /* + selectedInstance.name */ }, // 用于标识当前处于特殊子页面
       children: [
         {
+          path: 'mod/disabled',
+          component: () => import('@/views/InstanceSetting/PageInstanceModDisabled.vue'),
+        },
+        {
+          path: 'mod/jarinjar',
+          component: () => import('@/views/InstanceSetting/PageInstanceCompJarInJar.vue'),
+        },
+        {
+          path: 'screenshot',
+          component: () => import('@/views/InstanceSetting/PageInstanceScreenshot.vue'),
+          meta: { resourceType: 'screenshot', downloadType: 'screenshot' },
+        },
+        {
+          path: 'mod',
+          component: () => import('@/views/InstanceSetting/PageInstanceCompResource.vue'),
+          meta: { resourceType: 'Mod', downloadType: 'mod' },
+        },
+        {
+          path: 'resourcepack',
+          component: () => import('@/views/InstanceSetting/PageInstanceCompResource.vue'),
+          meta: { resourceType: 'ResourcePack', downloadType: 'resourcepack' },
+        },
+        {
+          path: 'shader',
+          component: () => import('@/views/InstanceSetting/PageInstanceCompResource.vue'),
+          meta: { resourceType: 'Shader', downloadType: 'shader' },
+        },
+        {
+          path: 'schematic',
+          component: () => import('@/views/InstanceSetting/PageInstanceCompResource.vue'),
+          meta: { resourceType: 'Schematic', downloadType: 'schematic' },
+        },
+        {
+          path: 'server',
+          component: () => import('@/views/InstanceSetting/PageInstanceServer.vue'),
+          meta: { resourceType: 'server', downloadType: 'server' },
+        },
+
+        {
           path: 'overview',
-          component: InstanceOverview,
+          component: () => import('@/views/InstanceSetting/PageInstanceOverall.vue'),
         },
         {
           path: 'setting',
-          component: () => import('@/views/InstanceSetting/InstanceSettingSetting.vue'),
+          component: () => import('@/views/InstanceSetting/PageInstanceSetup.vue'),
         },
         {
           path: 'modify',
-          component: () => import('@/views/InstanceSetting/InstanceModify.vue'),
+          component: () => import('@/views/InstanceSetting/PageInstanceInstall.vue'),
         },
         {
           path: 'export',
-          component: () => import('@/views/InstanceSetting/InstanceExport.vue'),
+          component: () => import('@/views/InstanceSetting/PageInstanceExport.vue'),
         },
         {
           path: 'save',
-          component: () => import('@/views/InstanceSetting/Saves.vue'),
+          component: () => import('@/views/InstanceSetting/PageInstanceSaves.vue'),
         },
       ],
+    },
+    {
+      path: '/instance_save',
+      component: () => import('@/views/InstanceSetting/PageInstanceSavesLeft.vue'),
+      redirect: '/instance_save/info',
+      meta: { isSubPage: true, title: '存档管理' },
+      children: [
+        {
+          path: 'info',
+          component: () => import('@/views/InstanceSetting/PageInstanceSavesInfo.vue'),
+        },
+        {
+          path: 'datapack',
+          component: () => import('@/views/InstanceSetting/PageInstanceSavesDatapack.vue'),
+          meta: { downloadType: 'datapack' },
+        },
+      ],
+    },
+    {
+      path: '/logs',
+      component: () => import('@/views/Tools/PageLogLeft.vue'),
+      redirect: '/logs/view',
+      meta: { isSubPage: true, title: '日志' },
+      children: [{ path: 'view', component: () => import('@/views/Tools/PageLogRight.vue') }],
+    },
+    {
+      path: '/news',
+      component: () => import('@/views/Home/PageHomepageNewsView.vue'),
+      meta: { fullPage: true, isSubPage: true, title: '新闻' },
     },
     {
       path: '/resource',
@@ -198,7 +295,7 @@ const router = createRouter({
       path: '/downloading',
       name: 'downloading',
       component: Dowloading,
-      meta: { fullPage: false, isSubPage: true, title: 'Task Manage' },
+      meta: { fullPage: false, isSubPage: true, title: '任务管理' },
     },
   ],
 })

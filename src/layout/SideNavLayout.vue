@@ -1,10 +1,11 @@
 <script lang="ts">
-import { defineComponent, onMounted, onUnmounted, useTemplateRef } from 'vue'
+import { defineComponent, onMounted, onUnmounted, useTemplateRef, ref, provide } from 'vue'
 import useSideNavState from '@/stores/windowState'
 import SideGroup from '@/components/widget/SideGroup.vue'
 import { type INavItemGroup } from '@/types/naviOptions'
 import PLoading from '@/components/widget/PLoading.vue'
 import cardDropAnimate from '@/util/cardDropAnimate'
+import { useModal } from '@/composables/useModal'
 
 export default defineComponent({
   name: 'SideNavLayout',
@@ -19,6 +20,16 @@ export default defineComponent({
     },
   },
   setup(_props, context) {
+    const revision = ref(0)
+    provide('navAction', (kind: string) => {
+      if (kind === 'refresh') revision.value++
+      else
+        void useModal().open({
+          title: '提示',
+          content: '初始化设置尚未接入 PCL.Proto。',
+          plainText: true,
+        })
+    })
     context.expose({ animateSubview })
     let observer: ResizeObserver | null = null
     const asideRef = useTemplateRef<HTMLElement>('asideRef')
@@ -39,7 +50,6 @@ export default defineComponent({
     }
 
     onMounted(async () => {
-      console.log('[nav] SideNavLayout mounted')
       asideRef.value?.querySelectorAll('.sidenav-line').forEach((el_, i) => {
         let el = el_ as HTMLDivElement
         el.style.animationPlayState = 'paused'
@@ -60,6 +70,7 @@ export default defineComponent({
       asideRef,
       subviewRef,
       animateSubview,
+      revision,
     }
   },
 })
@@ -73,22 +84,25 @@ export default defineComponent({
             v-bind="group"
         )
     article.subview(ref="subviewRef" v-card-drop-children-animate)
-        RouterView(@animate-subview="animateSubview" @vue:updated="animateSubview")
+        RouterView(:key="revision" @animate-subview="animateSubview" @vue:mounted="animateSubview")
 </template>
 
 <style scoped>
 article {
   flex: 1 1 auto;
+  min-width: 0;
   overflow-y: auto;
 }
 
 aside {
-  padding: 14px 0 0 0;
+  padding: 12px 0 0;
+  width: 152px;
+  overflow-y: auto;
   height: 100%;
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 6px;
 }
 
 @keyframes fade-in-left {

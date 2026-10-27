@@ -1,0 +1,335 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageInstanceSaves",
+    "PanScroll": "{Binding ElementName=PanBack}",
+    "Grid.IsSharedSizeScope": "True"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "Grid",
+          "attrs": {},
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center",
+                "Margin": "40",
+                "Name": "PanNoWorld"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "20,17"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.RowDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "1*"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "1*"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "0",
+                        "Grid.ColumnSpan": "4",
+                        "Margin": "0,0,0,9",
+                        "HorizontalAlignment": "Center",
+                        "Text": "{DynamicResource Instance.Saves.Empty.Title}",
+                        "FontSize": "19",
+                        "UseLayoutRounding": "True",
+                        "SnapsToDevicePixels": "True",
+                        "Foreground": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "Rectangle",
+                      "attrs": {
+                        "Grid.Row": "1",
+                        "Grid.ColumnSpan": "4",
+                        "HorizontalAlignment": "Stretch",
+                        "Height": "2",
+                        "Fill": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "2",
+                        "Grid.ColumnSpan": "4",
+                        "Margin": "10,15,10,5",
+                        "Text": "{DynamicResource Instance.Saves.Empty.Message}",
+                        "TextWrapping": "Wrap",
+                        "HorizontalAlignment": "Center"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "3",
+                        "Grid.Column": "1",
+                        "Height": "35",
+                        "HorizontalAlignment": "Center",
+                        "Click": "BtnOpenFolder_Click",
+                        "MinWidth": "140",
+                        "Text": "{DynamicResource Instance.Saves.OpenFolder}",
+                        "Margin": "10,10,10,0",
+                        "Padding": "13,0",
+                        "ColorType": "Highlight"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "3",
+                        "Grid.Column": "2",
+                        "Height": "35",
+                        "HorizontalAlignment": "Center",
+                        "Click": "BtnDownloadNew_Click",
+                        "MinWidth": "140",
+                        "Text": "{DynamicResource Instance.Resource.DownloadNew}",
+                        "Margin": "10,10,10,0",
+                        "Padding": "13,0"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "3",
+                        "Grid.Column": "3",
+                        "Height": "35",
+                        "HorizontalAlignment": "Center",
+                        "Click": "BtnPaste_Click",
+                        "MinWidth": "140",
+                        "Text": "{DynamicResource Instance.Saves.PasteFile}",
+                        "Margin": "10,10,10,0",
+                        "Padding": "13,0"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "StackPanel",
+              "attrs": {
+                "Orientation": "Vertical",
+                "Margin": "25,10,25,10",
+                "Name": "PanContent"
+              },
+              "children": [
+                {
+                  "type": "PSearchBox",
+                  "attrs": {
+                    "Margin": "0,15",
+                    "HintText": "{DynamicResource Instance.Saves.SearchHint}",
+                    "Name": "SearchBox"
+                  }
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Margin": "0,0,0,15",
+                    "Title": "{DynamicResource Instance.Saves.QuickActions}"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Height": "35",
+                        "Margin": "25,40,15,20"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Grid.Column": "0",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Instance.Saves.OpenFolder}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "Click": "BtnOpenFolder_Click",
+                            "HorizontalAlignment": "Left",
+                            "ColorType": "Highlight"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Instance.Resource.DownloadNew}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "Click": "BtnDownloadNew_Click",
+                            "HorizontalAlignment": "Left"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Grid.Column": "2",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Instance.Saves.PasteFile}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "Click": "BtnPaste_Click",
+                            "HorizontalAlignment": "Left"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Margin": "0,0,0,15",
+                    "Name": "PanListBack",
+                    "VerticalAlignment": "Top",
+                    "Title": "{DynamicResource Instance.Saves.ListTitle}",
+                    "MinHeight": "55"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Margin": "0,13,15,0",
+                            "Orientation": "Horizontal",
+                            "VerticalAlignment": "Top",
+                            "HorizontalAlignment": "Right",
+                            "Height": "28"
+                          },
+                          "children": [
+                            {
+                              "type": "PIconTextButton",
+                              "attrs": {
+                                "Name": "BtnSort",
+                                "Text": "{DynamicResource Instance.Saves.SortBy}",
+                                "SvgIcon": "lucide/arrow-up-down"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Margin": "20,48,18,22",
+                        "Name": "PanList",
+                        "VerticalAlignment": "Top"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,498 @@
+{
+  "mod": [
+    {
+      "tag": "",
+      "text": "Common.Option.All"
+    },
+    {
+      "tag": "406/worldgen",
+      "text": "Download.Comp.Category.WorldGen"
+    },
+    {
+      "tag": "407/",
+      "text": "Download.Comp.Category.Biomes"
+    },
+    {
+      "tag": "410/",
+      "text": "Download.Comp.Category.Dimensions"
+    },
+    {
+      "tag": "408/",
+      "text": "Download.Comp.Category.OresResources"
+    },
+    {
+      "tag": "409/",
+      "text": "Download.Comp.Category.Structures"
+    },
+    {
+      "tag": "412/technology",
+      "text": "Download.Comp.Category.Technology"
+    },
+    {
+      "tag": "415/",
+      "text": "Download.Comp.Category.PipesLogistics"
+    },
+    {
+      "tag": "4843/",
+      "text": "Download.Comp.Category.Automation"
+    },
+    {
+      "tag": "417/",
+      "text": "Download.Comp.Category.Energy"
+    },
+    {
+      "tag": "4558/",
+      "text": "Download.Comp.Category.Redstone"
+    },
+    {
+      "tag": "436/food",
+      "text": "Download.Comp.Category.FoodCooking"
+    },
+    {
+      "tag": "416/",
+      "text": "Download.Comp.Category.Farming"
+    },
+    {
+      "tag": "/game-mechanics",
+      "text": "Download.Comp.Category.GameMechanics"
+    },
+    {
+      "tag": "414/transportation",
+      "text": "Download.Comp.Category.Transportation"
+    },
+    {
+      "tag": "420/storage",
+      "text": "Download.Comp.Category.Storage"
+    },
+    {
+      "tag": "419/magic",
+      "text": "Download.Comp.Category.Magic"
+    },
+    {
+      "tag": "422/adventure",
+      "text": "Download.Comp.Category.Adventure"
+    },
+    {
+      "tag": "424/decoration",
+      "text": "Download.Comp.Category.Decoration"
+    },
+    {
+      "tag": "411/mobs",
+      "text": "Download.Comp.Category.Mobs"
+    },
+    {
+      "tag": "5191/utility",
+      "text": "Download.Comp.Category.Utility"
+    },
+    {
+      "tag": "434/equipment",
+      "text": "Download.Comp.Category.Equipment"
+    },
+    {
+      "tag": "9026/",
+      "text": "Download.Comp.Category.Creative"
+    },
+    {
+      "tag": "6814/optimization",
+      "text": "Download.Comp.Category.Optimization"
+    },
+    {
+      "tag": "423/",
+      "text": "Download.Comp.Category.Display"
+    },
+    {
+      "tag": "435/social",
+      "text": "Download.Comp.Category.Server"
+    },
+    {
+      "tag": "421/library",
+      "text": "Download.Comp.Category.Library"
+    }
+  ],
+  "modpack": [
+    {
+      "tag": "",
+      "text": "Common.Option.All"
+    },
+    {
+      "tag": "4484/",
+      "text": "Download.Comp.Category.Multiplayer"
+    },
+    {
+      "tag": "/optimization",
+      "text": "Download.Comp.Category.Optimization"
+    },
+    {
+      "tag": "4479/challenging",
+      "text": "Download.Comp.Category.Modpack.Hardcore"
+    },
+    {
+      "tag": "4483/combat",
+      "text": "Download.Comp.Category.Combat"
+    },
+    {
+      "tag": "4478/quests",
+      "text": "Download.Comp.Category.Modpack.Quests"
+    },
+    {
+      "tag": "4472/technology",
+      "text": "Download.Comp.Category.Technology"
+    },
+    {
+      "tag": "4473/magic",
+      "text": "Download.Comp.Category.Magic"
+    },
+    {
+      "tag": "4475/adventure",
+      "text": "Download.Comp.Category.Adventure"
+    },
+    {
+      "tag": "/kitchen-sink",
+      "text": "Download.Comp.Category.Modpack.KitchenSink"
+    },
+    {
+      "tag": "4476/",
+      "text": "Download.Comp.Category.Modpack.Exploration"
+    },
+    {
+      "tag": "4477/",
+      "text": "Download.Comp.Category.Modpack.MiniGame"
+    },
+    {
+      "tag": "4471/",
+      "text": "Download.Comp.Category.Modpack.SciFi"
+    },
+    {
+      "tag": "4736/",
+      "text": "Download.Comp.Category.Modpack.Skyblock"
+    },
+    {
+      "tag": "5128/",
+      "text": "Download.Comp.Category.Modpack.VanillaPlus"
+    },
+    {
+      "tag": "4487/",
+      "text": "Download.Comp.Category.Modpack.Ftb"
+    },
+    {
+      "tag": "4480/",
+      "text": "Download.Comp.Category.Modpack.MapBased"
+    },
+    {
+      "tag": "4481/lightweight",
+      "text": "Download.Comp.Category.Modpack.SmallLight"
+    },
+    {
+      "tag": "4482/",
+      "text": "Download.Comp.Category.Modpack.ExtraLarge"
+    }
+  ],
+  "datapack": [
+    {
+      "tag": "",
+      "text": "Common.Option.All"
+    },
+    {
+      "tag": "/worldgen",
+      "text": "Download.Comp.Category.WorldGen"
+    },
+    {
+      "tag": "6951/technology",
+      "text": "Download.Comp.Category.Technology"
+    },
+    {
+      "tag": "/game-mechanics",
+      "text": "Download.Comp.Category.GameMechanics"
+    },
+    {
+      "tag": "/transportation",
+      "text": "Download.Comp.Category.Transportation"
+    },
+    {
+      "tag": "/storage",
+      "text": "Download.Comp.Category.Storage"
+    },
+    {
+      "tag": "6952/magic",
+      "text": "Download.Comp.Category.Magic"
+    },
+    {
+      "tag": "6948/adventure",
+      "text": "Download.Comp.Category.Adventure"
+    },
+    {
+      "tag": "6949/",
+      "text": "Download.Comp.Category.DataPack.Fantasy"
+    },
+    {
+      "tag": "/decoration",
+      "text": "Download.Comp.Category.Decoration"
+    },
+    {
+      "tag": "/mobs",
+      "text": "Download.Comp.Category.Mobs"
+    },
+    {
+      "tag": "6953/utility",
+      "text": "Download.Comp.Category.Utility"
+    },
+    {
+      "tag": "/equipment",
+      "text": "Download.Comp.Category.Equipment"
+    },
+    {
+      "tag": "/optimization",
+      "text": "Download.Comp.Category.Optimization"
+    },
+    {
+      "tag": "/social",
+      "text": "Download.Comp.Category.Server"
+    },
+    {
+      "tag": "6950/library",
+      "text": "Download.Comp.Category.Library"
+    },
+    {
+      "tag": "6946/",
+      "text": "Download.Comp.Category.Mod.ModRelated"
+    }
+  ],
+  "resourcepack": [
+    {
+      "tag": "",
+      "text": "Common.Option.All"
+    },
+    {
+      "tag": "",
+      "text": "Download.Comp.Category.Style"
+    },
+    {
+      "tag": "403/vanilla-like",
+      "text": "Download.Comp.Category.VanillaLike"
+    },
+    {
+      "tag": "400/realistic",
+      "text": "Download.Comp.Category.Realistic"
+    },
+    {
+      "tag": "401/",
+      "text": "Download.Comp.Category.Modern"
+    },
+    {
+      "tag": "402/",
+      "text": "Download.Comp.Category.Medieval"
+    },
+    {
+      "tag": "399/",
+      "text": "Download.Comp.Category.Steampunk"
+    },
+    {
+      "tag": "/themed",
+      "text": "Download.Comp.Category.Themed"
+    },
+    {
+      "tag": "/simplistic",
+      "text": "Download.Comp.Category.Simplistic"
+    },
+    {
+      "tag": "/decoration",
+      "text": "Download.Comp.Category.Decoration"
+    },
+    {
+      "tag": "/combat",
+      "text": "Download.Comp.Category.Combat"
+    },
+    {
+      "tag": "/utility",
+      "text": "Download.Comp.Category.Utility"
+    },
+    {
+      "tag": "/tweaks",
+      "text": "Download.Comp.Category.Tweaks"
+    },
+    {
+      "tag": "/cursed",
+      "text": "Download.Comp.Category.Cursed"
+    },
+    {
+      "tag": "",
+      "text": "Download.Comp.Category.Feature"
+    },
+    {
+      "tag": "/entities",
+      "text": "Download.Comp.Category.Entities"
+    },
+    {
+      "tag": "/audio",
+      "text": "Download.Comp.Category.Audio"
+    },
+    {
+      "tag": "5244/fonts",
+      "text": "Download.Comp.Category.Fonts"
+    },
+    {
+      "tag": "/models",
+      "text": "Download.Comp.Category.Models"
+    },
+    {
+      "tag": "/locale",
+      "text": "Download.Comp.Category.Locale"
+    },
+    {
+      "tag": "/gui",
+      "text": "Download.Comp.Category.Gui"
+    },
+    {
+      "tag": "/core-shaders",
+      "text": "Download.Comp.Category.CoreShaders"
+    },
+    {
+      "tag": "404/",
+      "text": "Download.Comp.Category.Animated"
+    },
+    {
+      "tag": "4465/modded",
+      "text": "Download.Comp.Category.ModSupport"
+    },
+    {
+      "tag": "",
+      "text": "Download.Comp.Category.Resolution"
+    },
+    {
+      "tag": "/8x-",
+      "text": "Download.Comp.Category.ResourcePack.Resolution8xOrLower"
+    },
+    {
+      "tag": "393/16x",
+      "text": "Download.Comp.Category.ResourcePack.Resolution16x"
+    },
+    {
+      "tag": "394/32x",
+      "text": "Download.Comp.Category.ResourcePack.Resolution32x"
+    },
+    {
+      "tag": "/48x",
+      "text": "Download.Comp.Category.ResourcePack.Resolution48x"
+    },
+    {
+      "tag": "395/64x",
+      "text": "Download.Comp.Category.ResourcePack.Resolution64x"
+    },
+    {
+      "tag": "396/128x",
+      "text": "Download.Comp.Category.ResourcePack.Resolution128x"
+    },
+    {
+      "tag": "397/256x",
+      "text": "Download.Comp.Category.ResourcePack.Resolution256x"
+    },
+    {
+      "tag": "398/512x+",
+      "text": "Download.Comp.Category.ResourcePack.Resolution512xOrHigher"
+    }
+  ],
+  "shader": [
+    {
+      "tag": "",
+      "text": "Common.Option.All"
+    },
+    {
+      "tag": "",
+      "text": "Download.Comp.Category.Style"
+    },
+    {
+      "tag": "6555/vanilla-like",
+      "text": "Download.Comp.Category.VanillaLike"
+    },
+    {
+      "tag": "6554/fantasy",
+      "text": "Download.Comp.Category.Fantasy"
+    },
+    {
+      "tag": "6553/realistic",
+      "text": "Download.Comp.Category.Realistic"
+    },
+    {
+      "tag": "/semi-realistic",
+      "text": "Download.Comp.Category.SemiRealistic"
+    },
+    {
+      "tag": "/cartoon",
+      "text": "Download.Comp.Category.Cartoon"
+    },
+    {
+      "tag": "",
+      "text": "Download.Comp.Category.Feature"
+    },
+    {
+      "tag": "/colored-lighting",
+      "text": "Download.Comp.Category.ColoredLighting"
+    },
+    {
+      "tag": "/path-tracing",
+      "text": "Download.Comp.Category.PathTracing"
+    },
+    {
+      "tag": "/pbr",
+      "text": "Download.Comp.Category.Pbr"
+    },
+    {
+      "tag": "/reflections",
+      "text": "Download.Comp.Category.Reflections"
+    },
+    {
+      "tag": "",
+      "text": "Download.Comp.Category.Performance"
+    },
+    {
+      "tag": "/potato",
+      "text": "Download.Comp.Category.PerformancePotato"
+    },
+    {
+      "tag": "/low",
+      "text": "Download.Comp.Category.PerformanceLow"
+    },
+    {
+      "tag": "/medium",
+      "text": "Download.Comp.Category.PerformanceMedium"
+    },
+    {
+      "tag": "/high",
+      "text": "Download.Comp.Category.PerformanceHigh"
+    }
+  ],
+  "world": [
+    {
+      "tag": "",
+      "text": "Common.Option.All"
+    },
+    {
+      "tag": "248/",
+      "text": "Download.Comp.Category.World.Adventure"
+    },
+    {
+      "tag": "249/",
+      "text": "Download.Comp.Category.World.Creative"
+    },
+    {
+      "tag": "250/",
+      "text": "Download.Comp.Category.Modpack.MiniGame"
+    },
+    {
+      "tag": "251/",
+      "text": "Download.Comp.Category.World.Parkour"
+    },
+    {
+      "tag": "252/",
+      "text": "Download.Comp.Category.World.Puzzle"
+    },
+    {
+      "tag": "253/",
+      "text": "Download.Comp.Category.World.Survival"
+    },
+    {
+      "tag": "4464/",
+      "text": "Download.Comp.Category.World.ModWorld"
+    }
+  ]
+}

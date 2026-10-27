@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import PCard from '@/components/widget/PCard.vue'
 import { pluginShowText, showIconPath, type pluginType, type showIconType } from '@/types/gameInfo'
-import CardInfoItem from './CardInfoItem.vue'
+import PListItem from './PListItem.vue'
 import { ref } from 'vue'
 import { onMounted } from 'vue'
 import { useTemplateRef } from 'vue'
@@ -57,7 +57,7 @@ onMounted(() => {
       </div>
     </template>
     <template #content v-if="plugin != 'vanilla' && versions">
-      <CardInfoItem
+      <PListItem
         v-for="version in versions"
         :title="version.version"
         :subtitle="version.stable == null ? undefined : version.stable ? '稳定版' : '开发版'"

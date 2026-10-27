@@ -1,0 +1,970 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageToolsTest",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanMain",
+            "Margin": "25,10",
+            "Grid.IsSharedSizeScope": "True"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,15",
+                "Title": "{DynamicResource Tools.Test.Title}"
+              },
+              "children": [
+                {
+                  "type": "WrapPanel",
+                  "attrs": {
+                    "Margin": "25,40,21,5",
+                    "ItemHeight": "50"
+                  },
+                  "children": [
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Name": "BtnClear",
+                        "MinWidth": "120",
+                        "Text": "{DynamicResource Tools.Test.Clean.Title}",
+                        "ToolTip": "{DynamicResource Tools.Test.Clean.ToolTip}",
+                        "Margin": "0,0,15,15",
+                        "Click": "BtnClear_Click"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "MinWidth": "100",
+                        "Text": "{DynamicResource Tools.Test.Luck.Title}",
+                        "Margin": "0,0,15,15",
+                        "Click": "BtnLuck_Click"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "MinWidth": "100",
+                        "Text": "{DynamicResource Tools.Test.Crash.Title}",
+                        "ToolTip": "{DynamicResource Tools.Test.Crash.ManualCrash}",
+                        "ColorType": "Red",
+                        "Margin": "0,0,15,15",
+                        "Click": "BtnCrash_Click",
+                        "Visibility": "Collapsed",
+                        "Name": "BtnCrash"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "MinWidth": "120",
+                        "Text": "{DynamicResource Tools.Test.Shortcut.Title}",
+                        "ToolTip": "{DynamicResource Tools.Test.Shortcut.ToolTip}",
+                        "Margin": "0,0,15,15",
+                        "Click": "BtnCreateShortcut_Click"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "MinWidth": "120",
+                        "Text": "{DynamicResource Tools.Test.LaunchCount.Title}",
+                        "Margin": "0,0,15,15",
+                        "Click": "BtnLaunchCount_Click"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Tools.Test.CustomDownload.Title}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Orientation": "Vertical",
+                    "Margin": "25,40,25,20"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Text": "{DynamicResource Tools.Test.CustomDownload.Description}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Margin": "0,10,0,0"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.Resources",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "Style",
+                              "attrs": {
+                                "TargetType": "{x:Type TextBlock}",
+                                "BasedOn": "{StaticResource BasedOnTextBlock}"
+                              },
+                              "children": [
+                                {
+                                  "type": "Setter",
+                                  "attrs": {
+                                    "Property": "VerticalAlignment",
+                                    "Value": "Center"
+                                  }
+                                },
+                                {
+                                  "type": "Setter",
+                                  "attrs": {
+                                    "Property": "Margin",
+                                    "Value": "0,0,25,0"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "Margin": "0,0,25,0",
+                            "Grid.Column": "0",
+                            "Grid.Row": "0",
+                            "Text": "{DynamicResource Tools.Test.CustomDownload.Url}"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextDownloadUrl",
+                            "Grid.Column": "1",
+                            "Grid.Row": "0",
+                            "Grid.ColumnSpan": "2",
+                            "TextChanged": "TextDownloadUrl_TextChanged",
+                            "ValidatedTextChanged": "TextDownloadUrl_ValidateChanged"
+                          },
+                          "children": [
+                            {
+                              "type": "PTextBox.ValidateRules",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "HttpAndUncValidator",
+                                  "attrs": {}
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "Margin": "0,0,25,0",
+                            "Grid.Column": "0",
+                            "Grid.Row": "2",
+                            "Text": "{DynamicResource Tools.Test.CustomDownload.SaveTo}"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextDownloadFolder",
+                            "Grid.Column": "1",
+                            "Grid.Row": "2",
+                            "Margin": "0,10",
+                            "ValidatedTextChanged": "TextDownloadFolder_OnValidatedTextChanged"
+                          },
+                          "children": [
+                            {
+                              "type": "PTextBox.ValidateRules",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "FolderPathValidator",
+                                  "attrs": {}
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PTextButton",
+                          "attrs": {
+                            "Grid.Column": "2",
+                            "Grid.Row": "2",
+                            "Margin": "10,0,5,0",
+                            "VerticalAlignment": "Center",
+                            "Text": "{DynamicResource Tools.Test.CustomDownload.Select}",
+                            "Click": "MyTextButton_Click"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "Margin": "0,0,25,0",
+                            "Grid.Column": "0",
+                            "Grid.Row": "3",
+                            "Text": "{DynamicResource Tools.Test.CustomDownload.FileName}"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextDownloadName",
+                            "Grid.Column": "1",
+                            "Grid.Row": "3",
+                            "Grid.ColumnSpan": "2"
+                          },
+                          "children": [
+                            {
+                              "type": "PTextBox.ValidateRules",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "FileNameValidator",
+                                  "attrs": {}
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Margin": "0,15,0,0"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "35"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnDownloadStart",
+                            "Grid.Column": "0",
+                            "Width": "140",
+                            "Text": "{DynamicResource Tools.Test.CustomDownload.Start}",
+                            "ColorType": "Highlight",
+                            "Margin": "0,0,15,0",
+                            "HorizontalAlignment": "Right",
+                            "Click": "BtnDownloadStart_Click"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnDownloadOpen",
+                            "Grid.Column": "1",
+                            "Width": "140",
+                            "Text": "{DynamicResource Common.Action.OpenFolder}",
+                            "Margin": "0,0,15,0",
+                            "HorizontalAlignment": "Left",
+                            "Click": "BtnDownloadOpen_Click"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Name": "CardSkin",
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Tools.Test.Skin.Title}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Name": "PanSkinID",
+                        "Margin": "0,14,0,2"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Name"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Tools.Test.Skin.PlayerName}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextSkinID",
+                            "Grid.Column": "1",
+                            "MaxLength": "50"
+                          }
+                        },
+                        {
+                          "type": "Grid",
+                          "attrs": {
+                            "Height": "35",
+                            "Grid.Row": "1",
+                            "Grid.ColumnSpan": "2",
+                            "Margin": "0,14,0,0"
+                          },
+                          "children": [
+                            {
+                              "type": "Grid.ColumnDefinitions",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ColumnDefinition",
+                                  "attrs": {
+                                    "Width": "Auto",
+                                    "SharedSizeGroup": "Button"
+                                  }
+                                },
+                                {
+                                  "type": "ColumnDefinition",
+                                  "attrs": {
+                                    "Width": "Auto",
+                                    "SharedSizeGroup": "Button"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "PButton",
+                              "attrs": {
+                                "Name": "BtnSkinSave",
+                                "Text": "{DynamicResource Tools.Test.Skin.Save}",
+                                "MinWidth": "140",
+                                "Padding": "13,0",
+                                "Margin": "0,0,20,0",
+                                "Grid.Row": "1",
+                                "Click": "BtnSkinSave_Click"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Tools.Test.ServerQuery.Title}"
+              },
+              "children": [
+                {
+                  "type": "MinecraftServerQuery",
+                  "attrs": {
+                    "Margin": "15,40,15,15"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Tools.Test.Achievement.Title}",
+                "CanSwap": "True",
+                "IsSwapped": "True"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,30,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Margin": "0,4,0,2"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Column": "0",
+                            "Grid.Row": "0",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Tools.Test.Achievement.ItemId}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "Grid.Row": "0",
+                            "Grid.ColumnSpan": "2",
+                            "Name": "AchievementBlockTextBox",
+                            "MaxLength": "50",
+                            "Margin": "0,10"
+                          },
+                          "children": [
+                            {
+                              "type": "PTextBox.ValidateRules",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "RegexValidator",
+                                  "attrs": {
+                                    "Pattern": "^[a-z0-9_]+$",
+                                    "ErrorKey": "Tools.Test.Achievement.InvalidId"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Column": "0",
+                            "Grid.Row": "1",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Tools.Test.Achievement.Name}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "Grid.Row": "1",
+                            "Grid.ColumnSpan": "2",
+                            "Name": "AchievementTitleTextBox",
+                            "MaxLength": "50"
+                          },
+                          "children": [
+                            {
+                              "type": "PTextBox.ValidateRules",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "NullOrEmptyValidator",
+                                  "attrs": {}
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Column": "0",
+                            "Grid.Row": "2",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Tools.Test.Achievement.Line1}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "Grid.Row": "2",
+                            "Grid.ColumnSpan": "2",
+                            "Name": "AchievementString1TextBox",
+                            "MaxLength": "50",
+                            "Margin": "0,10"
+                          },
+                          "children": [
+                            {
+                              "type": "PTextBox.ValidateRules",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "NullOrEmptyValidator",
+                                  "attrs": {}
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Column": "0",
+                            "Grid.Row": "3",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Tools.Test.Achievement.Line2}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "Grid.Row": "3",
+                            "Grid.ColumnSpan": "2",
+                            "Name": "AchievementString2TextBox",
+                            "MaxLength": "50"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Margin": "0,15,0,10"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "35"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnAchievementPreview",
+                            "Grid.Column": "0",
+                            "Width": "140",
+                            "Text": "{DynamicResource Tools.Test.Achievement.Preview}",
+                            "ColorType": "Highlight",
+                            "Margin": "0,0,15,0",
+                            "HorizontalAlignment": "Right",
+                            "Click": "BtnAchievementPreview_Click"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnAchievementSave",
+                            "Grid.Column": "1",
+                            "Width": "140",
+                            "Text": "{DynamicResource Tools.Test.Achievement.Save}",
+                            "Margin": "0,0,15,0",
+                            "HorizontalAlignment": "Left",
+                            "Click": "BtnAchievementSave_Click"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Image",
+                      "attrs": {
+                        "Name": "AchievementImage",
+                        "Width": "320",
+                        "Height": "64",
+                        "Stretch": "Uniform",
+                        "Visibility": "Collapsed"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Tools.Test.Avatar.Title}",
+                "CanSwap": "True",
+                "IsSwapped": "True"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Orientation": "Vertical",
+                    "Margin": "25,40,25,20"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Margin": "0,0,0,10"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "*"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Text": "{DynamicResource Tools.Test.Avatar.Size}",
+                            "VerticalAlignment": "Center",
+                            "Margin": "0,0,10,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "CmbHeadSize",
+                            "Grid.Column": "1",
+                            "Height": "26",
+                            "SelectedIndex": "0"
+                          },
+                          "children": [
+                            {
+                              "type": "String",
+                              "attrs": {},
+                              "text": "64x64"
+                            },
+                            {
+                              "type": "String",
+                              "attrs": {},
+                              "text": "96x96"
+                            },
+                            {
+                              "type": "String",
+                              "attrs": {},
+                              "text": "128x128"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "*"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnSelectSkin",
+                            "Grid.Column": "1",
+                            "Text": "{DynamicResource Tools.Test.Avatar.SelectSkin}",
+                            "Width": "140",
+                            "Height": "35",
+                            "Margin": "0,0,10,0"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Grid.Column": "2",
+                            "Text": "{DynamicResource Tools.Test.Avatar.Save}",
+                            "Width": "140",
+                            "Height": "35",
+                            "Click": "BtnSaveHead_Click"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Border",
+                      "attrs": {
+                        "Name": "SkinPreviewBorder",
+                        "Margin": "0,15,0,0",
+                        "HorizontalAlignment": "Center",
+                        "Padding": "10",
+                        "Visibility": "Collapsed"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid",
+                          "attrs": {
+                            "Name": "SkinPreviewContainer",
+                            "Width": "80",
+                            "Height": "80"
+                          },
+                          "children": [
+                            {
+                              "type": "Image",
+                              "attrs": {
+                                "Name": "ImgFace",
+                                "Stretch": "Uniform",
+                                "RenderOptions.BitmapScalingMode": "NearestNeighbor"
+                              }
+                            },
+                            {
+                              "type": "Image",
+                              "attrs": {
+                                "Name": "ImgHair",
+                                "Stretch": "Uniform",
+                                "RenderOptions.BitmapScalingMode": "NearestNeighbor"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

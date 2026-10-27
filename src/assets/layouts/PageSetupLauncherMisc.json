@@ -1,0 +1,837 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageSetupLauncherMisc",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanMain",
+            "Margin": "25,10"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,15",
+                "Title": "{DynamicResource Setup.Misc.System.Title}"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "25,40,25,16"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto",
+                            "SharedSizeGroup": "Name"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "1*"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid.RowDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "28"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "9"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "28"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "5"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "28"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "5"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "20"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "8"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "VerticalAlignment": "Center",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Setup.Misc.System.Announcement}",
+                        "Margin": "0,0,25,0",
+                        "Grid.Row": "0"
+                      }
+                    },
+                    {
+                      "type": "PComboBox",
+                      "attrs": {
+                        "Name": "ComboSystemActivity",
+                        "Tag": "SystemSystemActivity",
+                        "Grid.Column": "1",
+                        "Grid.Row": "0",
+                        "SelectionChanged": "ComboSystemActivity_OnSelectionChanged"
+                      },
+                      "children": [
+                        {
+                          "type": "PComboBoxItem",
+                          "attrs": {
+                            "Content": "{DynamicResource Setup.Misc.System.Announcement.All}",
+                            "ToolTip": "{DynamicResource Setup.Misc.System.Announcement.All.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PComboBoxItem",
+                          "attrs": {
+                            "Content": "{DynamicResource Setup.Misc.System.Announcement.ImportantOnly}"
+                          }
+                        },
+                        {
+                          "type": "PComboBoxItem",
+                          "attrs": {
+                            "Content": "{DynamicResource Setup.Misc.System.Announcement.Disabled}"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "2",
+                        "VerticalAlignment": "Center",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Setup.Misc.System.MaxFps}",
+                        "Margin": "0,0,25,0"
+                      }
+                    },
+                    {
+                      "type": "PSlider",
+                      "attrs": {
+                        "Name": "SliderAniFPS",
+                        "Grid.Row": "2",
+                        "Tag": "UiAniFPS",
+                        "MaxValue": "59",
+                        "Value": "59",
+                        "Grid.Column": "1",
+                        "ToolTip": "{DynamicResource Setup.Misc.System.MaxFps.ToolTip}",
+                        "Change": "SliderChange"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "4",
+                        "VerticalAlignment": "Center",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Setup.Misc.System.MaxLogLines}",
+                        "Margin": "0,0,25,0"
+                      }
+                    },
+                    {
+                      "type": "PSlider",
+                      "attrs": {
+                        "Name": "SliderMaxLog",
+                        "Grid.Row": "4",
+                        "Tag": "SystemMaxLog",
+                        "MaxValue": "29",
+                        "Value": "13",
+                        "Grid.Column": "1",
+                        "ToolTip": "{DynamicResource Setup.Misc.System.MaxLogLines.ToolTip}",
+                        "Change": "SliderChange"
+                      }
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Grid.Row": "6",
+                        "Grid.ColumnSpan": "5"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "CheckBox"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "CheckBox"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "CheckBox"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "CheckBox"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "20"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "Grid.Column": "0",
+                            "Text": "{DynamicResource Setup.Misc.System.DisableHardwareAcceleration}",
+                            "Name": "CheckSystemDisableHardwareAcceleration",
+                            "Tag": "SystemDisableHardwareAcceleration",
+                            "Change": "CheckSystemDisableHardwareAcceleration_OnChange"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "Grid.Column": "1",
+                            "Text": "{DynamicResource Setup.Misc.System.Telemetry}",
+                            "Name": "CheckSystemTelemetry",
+                            "Tag": "SystemTelemetry",
+                            "Change": "CheckBoxChange",
+                            "ToolTip": "{DynamicResource Setup.Misc.System.Telemetry.ToolTip}"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Grid.Row": "8",
+                        "Grid.ColumnSpan": "5"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "35"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Grid.Column": "0",
+                            "Grid.Row": "0",
+                            "Name": "BtnSystemSettingExp",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Setup.Misc.System.ExportSettings}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "Click": "BtnSystemSettingExp_Click"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "Grid.Row": "0",
+                            "Name": "BtnSystemSettingImp",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Setup.Misc.System.ImportSettings}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "Click": "BtnSystemSettingImp_Click"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Grid.Column": "2",
+                            "Grid.Row": "0",
+                            "Name": "BtnSystemStopUsingPclCe",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Setup.Misc.System.StopUsingPclCe}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "ColorType": "Red",
+                            "Click": "BtnSystemStopUsingPclCe_Click"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Setup.Misc.Network.Title}"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "25,38,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto",
+                            "SharedSizeGroup": "Name"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "1*"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid.RowDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "28"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "4"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "28"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "4"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "PCheckBox",
+                      "attrs": {
+                        "Name": "CheckNetDohEnable",
+                        "Tag": "SystemNetEnableDoH",
+                        "Grid.Row": "0",
+                        "Grid.ColumnSpan": "2",
+                        "Text": "{DynamicResource Setup.Misc.Network.DoH}",
+                        "ToolTip": "{DynamicResource Setup.Misc.Network.DoH.ToolTip}",
+                        "Change": "CheckBoxChange"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "2",
+                        "VerticalAlignment": "Center",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Setup.Misc.Network.HttpProxy}",
+                        "Margin": "0,0,25,0"
+                      }
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Grid.Row": "2",
+                        "Grid.Column": "1"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "0.2*"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PRadioBox",
+                          "attrs": {
+                            "Text": "{DynamicResource Setup.Misc.Network.Proxy.None}",
+                            "Name": "RadioHttpProxyType0",
+                            "Height": "22",
+                            "Tag": "SystemHttpProxyType/0",
+                            "Grid.Column": "0",
+                            "Check": "RadioBoxChange"
+                          }
+                        },
+                        {
+                          "type": "PRadioBox",
+                          "attrs": {
+                            "Text": "{DynamicResource Setup.Misc.Network.Proxy.System}",
+                            "Name": "RadioHttpProxyType1",
+                            "Height": "22",
+                            "Tag": "SystemHttpProxyType/1",
+                            "Grid.Column": "1",
+                            "Check": "RadioBoxChange"
+                          }
+                        },
+                        {
+                          "type": "PRadioBox",
+                          "attrs": {
+                            "Text": "{DynamicResource Setup.Misc.Network.Proxy.Custom}",
+                            "Name": "RadioHttpProxyType2",
+                            "Height": "22",
+                            "Tag": "SystemHttpProxyType/2",
+                            "Grid.Column": "2",
+                            "Check": "RadioBoxChange"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Grid.Row": "4",
+                        "Grid.Column": "1",
+                        "Name": "HttpProxyCustom",
+                        "Visibility": "{Binding ElementName=RadioHttpProxyType2,Path=Checked,Converter={StaticResource BooleanToVisibilityConverter}}"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "9"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "9"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PHint",
+                          "attrs": {
+                            "Text": "{DynamicResource Setup.Misc.Network.Proxy.UntrustedWarning}",
+                            "Grid.Row": "0",
+                            "Grid.ColumnSpan": "5",
+                            "Theme": "Yellow"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextSystemHttpProxy",
+                            "Grid.Row": "2",
+                            "Grid.Column": "0",
+                            "Grid.ColumnSpan": "5",
+                            "Tag": "SystemHttpProxy",
+                            "HintText": "比如 http://127.0.0.1:1080/",
+                            "ToolTip": "{DynamicResource Setup.Misc.Network.Proxy.InvalidWarning}"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Column": "0",
+                            "Grid.Row": "4",
+                            "Text": "{DynamicResource Setup.Misc.Network.Proxy.Username}",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Margin": "0,0,5,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "Grid.Row": "4",
+                            "HintText": "{DynamicResource Setup.Misc.Network.Proxy.Optional}",
+                            "Tag": "SystemHttpProxyCustomUsername",
+                            "Name": "TextSystemHttpProxyCustomUsername",
+                            "Margin": "0,0,5,0"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Column": "2",
+                            "Grid.Row": "4",
+                            "Text": "{DynamicResource Setup.Misc.Network.Proxy.Password}",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Margin": "0,0,5,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Grid.Column": "3",
+                            "Grid.Row": "4",
+                            "HintText": "{DynamicResource Setup.Misc.Network.Proxy.Optional}",
+                            "Tag": "SystemHttpProxyCustomPassword",
+                            "Name": "TextSystemHttpProxyCustomPassword",
+                            "Margin": "0,0,5,0"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Text": "{DynamicResource Setup.Misc.Network.Proxy.Apply}",
+                            "TextPadding": "3",
+                            "Grid.Row": "4",
+                            "Grid.Column": "4",
+                            "Name": "BtnApplyHttpProxy",
+                            "Click": "ApplyHttpProxyBtn_OnClicked"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Name": "CardDebug",
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Setup.Misc.Debug.Title}",
+                "CanSwap": "True",
+                "IsSwapped": "True"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Name": "PanDebugAnim",
+                        "Height": "22",
+                        "Margin": "0,0,0,10"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Name"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.Misc.Debug.AnimationSpeed}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PSlider",
+                          "attrs": {
+                            "Name": "SliderDebugAnim",
+                            "Tag": "SystemDebugAnim",
+                            "MaxValue": "30",
+                            "Grid.Column": "1",
+                            "Change": "SliderChange"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1.5*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Grid.Column": "0",
+                            "Text": "{DynamicResource Setup.Misc.Debug.SkipCopy}",
+                            "Height": "22",
+                            "Name": "CheckDebugSkipCopy",
+                            "Tag": "SystemDebugSkipCopy",
+                            "ToolTip": "{DynamicResource Setup.Misc.Debug.SkipCopy.ToolTip}",
+                            "Change": "CheckBoxChange"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "Text": "{DynamicResource Setup.Misc.Debug.Mode}",
+                            "Height": "22",
+                            "Name": "CheckDebugMode",
+                            "Tag": "SystemDebugMode",
+                            "ToolTip": "{DynamicResource Setup.Misc.Debug.Mode.ToolTip}",
+                            "Change": "CheckDebugMode_OnChange"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Grid.Column": "2",
+                            "Text": "{DynamicResource Setup.Misc.Debug.Delay}",
+                            "Height": "22",
+                            "Name": "CheckDebugDelay",
+                            "Tag": "SystemDebugDelay",
+                            "ToolTip": "{DynamicResource Setup.Misc.Debug.Delay.ToolTip}",
+                            "Change": "CheckBoxChange"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,577 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageInstanceOverall",
+    "PanScroll": "{Binding ElementName=PanBack}",
+    "Grid.IsSharedSizeScope": "True"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanMain",
+            "Margin": "25,10"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,15",
+                "Title": ""
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "10,7",
+                    "Name": "PanDisplayItem"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Instance.Overall.Info.Title}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Name": "PanInfo",
+                    "Margin": "15,40,25,5"
+                  },
+                  "children": [
+                    {
+                      "type": "PLoading",
+                      "attrs": {
+                        "Name": "LabInfoLoading",
+                        "Text": "{DynamicResource Instance.Overall.Info.Loading}",
+                        "Margin": "0,0,0,10"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Instance.Overall.Personalization.Title}",
+                "Name": "PanDisplay"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Name": "PanDisplayIcon",
+                        "HorizontalAlignment": "Stretch"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Name"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "9"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Overall.Icon.Title}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "Name": "ComboDisplayLogo"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Common.Option.Auto}",
+                                "IsSelected": "True",
+                                "Tag": ""
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Common.Option.Customize}",
+                                "Name": "ItemDisplayLogoCustom"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.Cobblestone}",
+                                "Tag": "pack://application:,,,/images/Blocks/CobbleStone.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.CommandBlock}",
+                                "Tag": "pack://application:,,,/images/Blocks/CommandBlock.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.GoldBlock}",
+                                "Tag": "pack://application:,,,/images/Blocks/GoldBlock.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.GrassBlock}",
+                                "Tag": "pack://application:,,,/images/Blocks/Grass.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.DirtPath}",
+                                "Tag": "pack://application:,,,/images/Blocks/GrassPath.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.Anvil}",
+                                "Tag": "pack://application:,,,/images/Blocks/Anvil.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.RedstoneBlock}",
+                                "Tag": "pack://application:,,,/images/Blocks/RedstoneBlock.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.RedstoneLampOn}",
+                                "Tag": "pack://application:,,,/images/Blocks/RedstoneLampOn.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.RedstoneLampOff}",
+                                "Tag": "pack://application:,,,/images/Blocks/RedstoneLampOff.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.Egg}",
+                                "Tag": "pack://application:,,,/images/Blocks/Egg.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.Fabric}",
+                                "Tag": "pack://application:,,,/images/Blocks/Fabric.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.Quilt}",
+                                "Tag": "pack://application:,,,/images/Blocks/Quilt.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.NeoForgeFox}",
+                                "Tag": "pack://application:,,,/images/Blocks/NeoForge.png"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Icon.Cleanroom}",
+                                "Tag": "pack://application:,,,/images/Blocks/Cleanroom.png"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "Grid.Row": "2",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Overall.Category.Title}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "Grid.Row": "2",
+                            "Name": "ComboDisplayType"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Common.Option.Auto}",
+                                "IsSelected": "True"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Category.Hidden}",
+                                "ToolTip": "{DynamicResource Instance.Overall.Category.Hidden.ToolTip}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Category.Modable}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Category.Regular}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Category.LessUsed}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Overall.Category.AprilFools}"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Margin": "0,15,0,7",
+                        "Height": "35"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnDisplayRename",
+                            "Text": "{DynamicResource Instance.Overall.Rename}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnDisplayDesc",
+                            "Text": "{DynamicResource Instance.Overall.EditDescription}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "Grid.Column": "1"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnDisplayStar",
+                            "Text": "{DynamicResource Instance.Overall.Favorite}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "Grid.Column": "2"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Instance.Overall.Shortcuts.Title}",
+                "Name": "PanFolder"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Margin": "0,2,0,7",
+                        "Height": "35"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnFolderVersion",
+                            "Text": "{DynamicResource Instance.Overall.Shortcuts.InstanceFolder}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnFolderSaves",
+                            "Text": "{DynamicResource Instance.Overall.Shortcuts.SavesFolder}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "Grid.Column": "1"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnFolderMods",
+                            "Text": "{DynamicResource Instance.Overall.Shortcuts.ModsFolder}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "Grid.Column": "2"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Instance.Overall.Manage.Title}",
+                "Name": "PanManage"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "WrapPanel",
+                      "attrs": {
+                        "Margin": "0,-5,-20,7"
+                      },
+                      "children": [
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnManageScript",
+                            "Text": "{DynamicResource Instance.Overall.Manage.ExportLaunchScript}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,7,20,0",
+                            "Height": "35"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnManageTest",
+                            "Text": "{DynamicResource Instance.Overall.Manage.TestGame}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,7,20,0",
+                            "Height": "35"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnManageCheck",
+                            "Text": "{DynamicResource Instance.Overall.Manage.RepairFiles}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,7,20,0",
+                            "ToolTip": "{DynamicResource Instance.Overall.Manage.RepairFiles.ToolTip}",
+                            "Height": "35"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnManageRestore",
+                            "Text": "{DynamicResource Common.Action.Reset}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,7,20,0",
+                            "ToolTip": "{DynamicResource Instance.Overall.Manage.Reinstall.ToolTip}",
+                            "Height": "35"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnManageDelete",
+                            "Text": "{DynamicResource Instance.Overall.Manage.Delete}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,7,20,0",
+                            "ColorType": "Red",
+                            "Height": "35"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnManagePatch",
+                            "Text": "{DynamicResource Instance.Overall.Manage.PatchCore}",
+                            "MinWidth": "140",
+                            "Padding": "13,0",
+                            "Margin": "0,7,20,0",
+                            "Height": "35"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

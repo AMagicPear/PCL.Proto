@@ -1,4 +1,4 @@
-import CardInfoItem from '@/components/widget/CardInfoItem.vue'
+import PListItem from '@/components/widget/PListItem.vue'
 import type { ButtonType } from '@/components/widget/PButton.vue'
 import PButton from '@/components/widget/PButton.vue'
 import type { FoldStatus } from '@/components/widget/PCard.vue'
@@ -103,6 +103,7 @@ function parseXamlElement(element: Element): Component | string | null {
     }
     // console.log('[xaml] got local-element:', localType)
     switch (localType) {
+      case 'PCard':
       case 'MyCard':
         // console.log('[xaml] got MyCard', element)
         let foldStatus: FoldStatus = 'unfoldable'
@@ -120,11 +121,13 @@ function parseXamlElement(element: Element): Component | string | null {
             {element.elements?.map((el) => parseXamlElement(el))}
           </PCard>
         )
+      case 'PHint':
       case 'MyHint':
         let severity: Severity = 'error'
         if (element.attributes?.Theme == 'Blue') severity = 'info'
         if (element.attributes?.Theme == 'Red') severity = 'error'
         return <PHint severity={severity}>{element.attributes?.Text || element.text}</PHint>
+      case 'PButton':
       case 'MyButton':
         let type: ButtonType = 'default'
         if (element.attributes?.ColorType == 'Highlight') type = 'tint'
@@ -138,9 +141,10 @@ function parseXamlElement(element: Element): Component | string | null {
             {element.attributes?.Text}
           </PButton>
         )
+      case 'PListItem':
       case 'MyListItem':
         return (
-          <CardInfoItem
+          <PListItem
             title={element.attributes?.Title as string}
             subtitle={element.attributes?.Info as string}
             isGameInfo={false}
@@ -148,6 +152,7 @@ function parseXamlElement(element: Element): Component | string | null {
             click={onClick}
           />
         )
+      case 'PImage':
       case 'MyImage':
         return handleIcon(element.attributes?.Source as string) // TODO
       default:

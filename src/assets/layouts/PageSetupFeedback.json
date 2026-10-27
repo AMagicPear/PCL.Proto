@@ -1,0 +1,317 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageSetupFeedback",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanMain",
+            "Margin": "25,25,25,25"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Title": "{DynamicResource Setup.Feedback.Submit.Title}",
+                "Name": "PanInfo"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Orientation": "Vertical",
+                    "Margin": "20,40,18,22"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Text": "{DynamicResource Setup.Feedback.Submit.Description}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Margin": "0,15,0,0",
+                        "Height": "35"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Name": "BtnManageOpen",
+                            "Grid.Column": "0",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Setup.Feedback.Submit.Open}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "HorizontalAlignment": "Left",
+                            "ColorType": "Highlight",
+                            "Click": "Feedback_Click"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "StackPanel",
+              "attrs": {
+                "Name": "PanContent",
+                "Margin": "0,15,0,0"
+              },
+              "children": [
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Setup.Feedback.Status.Processing}",
+                    "Margin": "0,0,0,15",
+                    "Name": "PanContentProcessing",
+                    "CanSwap": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanListProcessing",
+                        "Orientation": "Vertical",
+                        "Margin": "20,36,18,18"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Setup.Feedback.Status.WaitingProcess}",
+                    "Margin": "0,0,0,15",
+                    "Name": "PanContentWaitingProcess",
+                    "CanSwap": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanListWaitingProcess",
+                        "Orientation": "Vertical",
+                        "Margin": "20,36,18,18"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Setup.Feedback.Status.Waiting}",
+                    "Margin": "0,0,0,15",
+                    "Name": "PanContentWait",
+                    "CanSwap": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanListWait",
+                        "Orientation": "Vertical",
+                        "Margin": "20,36,18,18"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Setup.Feedback.Status.Paused}",
+                    "Margin": "0,0,0,15",
+                    "Name": "PanContentPause",
+                    "CanSwap": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanListPause",
+                        "Orientation": "Vertical",
+                        "Margin": "20,36,18,18"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Setup.Feedback.Status.UpNext}",
+                    "Margin": "0,0,0,15",
+                    "Name": "PanContentUpnext",
+                    "CanSwap": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanListUpnext",
+                        "Orientation": "Vertical",
+                        "Margin": "20,36,18,18"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Setup.Feedback.Status.Completed}",
+                    "Margin": "0,0,0,15",
+                    "Name": "PanContentCompleted",
+                    "CanSwap": "True",
+                    "IsSwapped": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanListCompleted",
+                        "Orientation": "Vertical",
+                        "Margin": "20,36,18,18"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Setup.Feedback.Status.Declined}",
+                    "Margin": "0,0,0,15",
+                    "Name": "PanContentDecline",
+                    "CanSwap": "True",
+                    "IsSwapped": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanListDecline",
+                        "Orientation": "Vertical",
+                        "Margin": "20,36,18,18"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Setup.Feedback.Status.Ignored}",
+                    "Margin": "0,0,0,15",
+                    "Name": "PanContentIgnored",
+                    "CanSwap": "True",
+                    "IsSwapped": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanListIgnored",
+                        "Orientation": "Vertical",
+                        "Margin": "20,36,18,18"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Setup.Feedback.Status.Duplicate}",
+                    "Margin": "0,0,0,15",
+                    "Name": "PanContentDuplicate",
+                    "CanSwap": "True",
+                    "IsSwapped": "True"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Name": "PanListDuplicate",
+                        "Orientation": "Vertical",
+                        "Margin": "20,36,18,18"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center",
+                "SnapsToDevicePixels": "True",
+                "Name": "PanLoad",
+                "UseAnimation": "False",
+                "Margin": "40,50"
+              },
+              "children": [
+                {
+                  "type": "PLoading",
+                  "attrs": {
+                    "Text": "{DynamicResource Setup.Feedback.Loading}",
+                    "Margin": "20,20,20,17",
+                    "Name": "Load",
+                    "HorizontalAlignment": "Center",
+                    "VerticalAlignment": "Center"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

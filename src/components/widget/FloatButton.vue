@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { FloatButtonType, type FloatButtonState } from '@/composables/useFloatButton'
-import { emit, listen } from '@tauri-apps/api/event'
 import { ref, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -18,12 +17,6 @@ watchEffect(() => {
   }
   buttonWidth.value = props.type === FloatButtonType.DownloadGame ? 120 : 36
 })
-
-listen('float-button-click', (event) => {
-  if (event.payload === FloatButtonType.TaskManage) {
-    router.push({ name: 'downloading' })
-  }
-})
 </script>
 
 <template>
@@ -31,7 +24,7 @@ listen('float-button-click', (event) => {
     <button
       class="float-button"
       :title="title"
-      @click="emit('float-button-click', type)"
+      @click="router.push(type === FloatButtonType.TaskManage ? '/downloading' : '/download/game')"
       v-if="visible"
     >
       <component :is="icon" />

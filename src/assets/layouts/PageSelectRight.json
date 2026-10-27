@@ -1,0 +1,210 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageSelectRight",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "attrs": {},
+      "children": [
+        {
+          "type": "Grid",
+          "attrs": {
+            "Name": "PanAllBack"
+          },
+          "children": [
+            {
+              "type": "Grid.RowDefinitions",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "RowDefinition",
+                  "attrs": {
+                    "Height": "Auto"
+                  }
+                },
+                {
+                  "type": "RowDefinition",
+                  "attrs": {
+                    "Height": "*"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "PSearchBox",
+              "attrs": {
+                "Name": "PanVerSearchBox",
+                "Margin": "25,15,25,12",
+                "VerticalAlignment": "Top",
+                "Grid.Row": "0",
+                "ToolTip": "{DynamicResource Select.Instance.Search.ToolTip}"
+              }
+            },
+            {
+              "type": "PScrollViewer",
+              "attrs": {
+                "VerticalScrollBarVisibility": "Auto",
+                "HorizontalScrollBarVisibility": "Disabled",
+                "Name": "PanBack",
+                "Grid.Row": "1"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Name": "PanMain",
+                    "Margin": "25,2,25,10",
+                    "Grid.IsSharedSizeScope": "True"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center",
+                "Margin": "40",
+                "Name": "PanEmpty",
+                "UseAnimation": "False",
+                "Grid.Row": "1"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "20,17"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Name": "LabEmptyTitle",
+                        "Margin": "0,0,0,9",
+                        "HorizontalAlignment": "Center",
+                        "Text": "{DynamicResource Select.Instance.Empty.Title}",
+                        "FontSize": "19",
+                        "UseLayoutRounding": "True",
+                        "SnapsToDevicePixels": "True",
+                        "Foreground": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "Rectangle",
+                      "attrs": {
+                        "HorizontalAlignment": "Stretch",
+                        "Height": "2",
+                        "Fill": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Name": "LabEmptyContent",
+                        "Margin": "10,15,10,5",
+                        "Text": "{DynamicResource Select.Instance.Empty.Message}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Height": "35",
+                        "HorizontalAlignment": "Center",
+                        "Name": "BtnEmptyDownload",
+                        "MinWidth": "140",
+                        "Click": "BtnDownload_Click",
+                        "Text": "{DynamicResource Select.Instance.Empty.Download}",
+                        "Margin": "0,10,0,0",
+                        "Padding": "13,0",
+                        "ColorType": "Highlight"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center",
+                "Margin": "40",
+                "Name": "PanEmptySearch",
+                "UseAnimation": "False",
+                "Grid.Row": "1"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "20,17"
+                  },
+                  "children": [
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Name": "LabEmptySearchTitle",
+                        "Margin": "0,0,0,9",
+                        "HorizontalAlignment": "Center",
+                        "Text": "{DynamicResource Select.Instance.EmptySearch.Title}",
+                        "FontSize": "19",
+                        "UseLayoutRounding": "True",
+                        "SnapsToDevicePixels": "True",
+                        "Foreground": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "Rectangle",
+                      "attrs": {
+                        "HorizontalAlignment": "Stretch",
+                        "Height": "2",
+                        "Fill": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Name": "LabEmptySearchContent",
+                        "Margin": "10,15,10,5",
+                        "TextWrapping": "Wrap"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "PCard",
+          "attrs": {
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "SnapsToDevicePixels": "True",
+            "Name": "PanLoad",
+            "Margin": "40"
+          },
+          "children": [
+            {
+              "type": "PLoading",
+              "attrs": {
+                "Text": "{DynamicResource Select.Instance.Loading}",
+                "Margin": "20,20,20,17",
+                "Name": "Load",
+                "HorizontalAlignment": "Center",
+                "Click": "Load_Click",
+                "VerticalAlignment": "Center",
+                "IsHitTestVisible": "False",
+                "AutoRun": "False"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

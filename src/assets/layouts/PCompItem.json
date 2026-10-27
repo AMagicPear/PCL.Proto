@@ -1,0 +1,440 @@
+{
+  "type": "Grid",
+  "attrs": {
+    "Class": "PCL.MyCompItem",
+    "Name": "PanBack",
+    "Height": "64",
+    "RenderTransformOrigin": "0.5,0.5",
+    "Background": "{StaticResource ColorBrushSemiTransparent}",
+    "SnapsToDevicePixels": "True"
+  },
+  "children": [
+    {
+      "type": "Grid.ColumnDefinitions",
+      "attrs": {},
+      "children": [
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "7"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "50"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "8"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "Auto"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "1*"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "Auto"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Grid.RowDefinitions",
+      "attrs": {},
+      "children": [
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "1*"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "20"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "18"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "16"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "1.1*"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Border",
+      "attrs": {
+        "Grid.Column": "1",
+        "Grid.Row": "1",
+        "Grid.RowSpan": "3",
+        "IsHitTestVisible": "False",
+        "SnapsToDevicePixels": "True",
+        "UseLayoutRounding": "True",
+        "HorizontalAlignment": "Right",
+        "VerticalAlignment": "Center",
+        "Width": "50",
+        "Height": "50"
+      },
+      "children": [
+        {
+          "type": "Border.Clip",
+          "attrs": {},
+          "children": [
+            {
+              "type": "RectangleGeometry",
+              "attrs": {
+                "Rect": "0,0,50,50",
+                "RadiusX": "6",
+                "RadiusY": "6"
+              }
+            }
+          ]
+        },
+        {
+          "type": "PImage",
+          "attrs": {
+            "Name": "PathLogo",
+            "RenderOptions.BitmapScalingMode": "HighQuality",
+            "FallbackSource": "pack://application:,,,/images/Icons/NoIcon.png"
+          }
+        }
+      ]
+    },
+    {
+      "type": "StackPanel",
+      "attrs": {
+        "Grid.Column": "3",
+        "Grid.ColumnSpan": "2",
+        "Grid.Row": "1",
+        "VerticalAlignment": "Center",
+        "Orientation": "Horizontal",
+        "IsHitTestVisible": "False",
+        "SnapsToDevicePixels": "False",
+        "UseLayoutRounding": "False"
+      },
+      "children": [
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Name": "LabTitle",
+            "TextTrimming": "WordEllipsis",
+            "FontSize": "14",
+            "Foreground": "{DynamicResource ColorBrush1}"
+          }
+        },
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Name": "LabTitleRaw",
+            "TextTrimming": "WordEllipsis",
+            "FontSize": "12",
+            "Foreground": "{StaticResource ColorBrushGray1}",
+            "Opacity": "0.4",
+            "VerticalAlignment": "Center",
+            "Visibility": "Collapsed"
+          }
+        }
+      ]
+    },
+    {
+      "type": "StackPanel",
+      "attrs": {
+        "Name": "PanTags",
+        "Grid.Row": "2",
+        "Grid.Column": "3",
+        "Orientation": "Horizontal",
+        "VerticalAlignment": "Center",
+        "Margin": "-1,0,1,0",
+        "Visibility": "Collapsed"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Name": "LabInfo",
+        "Grid.Row": "2",
+        "Grid.Column": "4",
+        "VerticalAlignment": "Center",
+        "Margin": "0,0,3,0.5",
+        "TextTrimming": "CharacterEllipsis",
+        "FontSize": "12",
+        "Foreground": "{StaticResource ColorBrushGray3}",
+        "IsHitTestVisible": "True",
+        "SnapsToDevicePixels": "False",
+        "UseLayoutRounding": "False"
+      },
+      "children": [
+        {
+          "type": "TextBlock.ToolTip",
+          "attrs": {},
+          "children": [
+            {
+              "type": "ToolTip",
+              "attrs": {
+                "Name": "ToolTipInfo"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Grid",
+      "attrs": {
+        "Grid.Row": "3",
+        "Grid.Column": "3",
+        "Grid.ColumnSpan": "2",
+        "VerticalAlignment": "Center",
+        "IsHitTestVisible": "False",
+        "SnapsToDevicePixels": "False",
+        "UseLayoutRounding": "False"
+      },
+      "children": [
+        {
+          "type": "Grid.ColumnDefinitions",
+          "attrs": {},
+          "children": [
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Name": "ColumnVersion1",
+                "Width": "Auto"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Name": "ColumnVersion2",
+                "Width": "Auto",
+                "SharedSizeGroup": "CompItemVersion"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Name": "ColumnVersion3",
+                "Width": "0.25*"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "Auto"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "Auto",
+                "SharedSizeGroup": "LabDownload"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "0.25*"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Name": "ColumnTime1",
+                "Width": "Auto"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Name": "ColumnTime2",
+                "Width": "Auto",
+                "MinWidth": "57",
+                "SharedSizeGroup": "CompItemTime"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Name": "ColumnTime3",
+                "Width": "0.25*"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "Auto"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "Auto",
+                "SharedSizeGroup": "CompItemSource"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "0.25*"
+              }
+            }
+          ]
+        },
+        {
+          "type": "SvgIcon",
+          "attrs": {
+            "Name": "SvgIconVersion",
+            "Grid.Column": "0",
+            "IconBrush": "{StaticResource ColorBrushGray3}",
+            "Stretch": "Uniform",
+            "Height": "12",
+            "Icon": "lucide/layout-list"
+          }
+        },
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Name": "LabVersion",
+            "Grid.Column": "1",
+            "Margin": "4,0,2,0",
+            "VerticalAlignment": "Center",
+            "Foreground": "{StaticResource ColorBrushGray3}",
+            "FontSize": "12",
+            "TextTrimming": "WordEllipsis"
+          }
+        },
+        {
+          "type": "SvgIcon",
+          "attrs": {
+            "Name": "SvgIconDownload",
+            "Grid.Column": "3",
+            "IconBrush": "{StaticResource ColorBrushGray4}",
+            "Stretch": "Uniform",
+            "Height": "12",
+            "Icon": "lucide/download"
+          }
+        },
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Name": "LabDownload",
+            "Grid.Column": "4",
+            "Margin": "5,0,2,0",
+            "VerticalAlignment": "Center",
+            "Foreground": "{StaticResource ColorBrushGray4}",
+            "FontSize": "12"
+          }
+        },
+        {
+          "type": "SvgIcon",
+          "attrs": {
+            "Name": "SvgIconTime",
+            "Grid.Column": "6",
+            "IconBrush": "{StaticResource ColorBrushGray4}",
+            "Stretch": "Uniform",
+            "Height": "12",
+            "Margin": "0,0,1,0",
+            "Icon": "lucide/arrow-up-from-line"
+          }
+        },
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Name": "LabTime",
+            "Grid.Column": "7",
+            "Margin": "5,0,2,0",
+            "VerticalAlignment": "Center",
+            "Foreground": "{StaticResource ColorBrushGray4}",
+            "FontSize": "12"
+          }
+        },
+        {
+          "type": "SvgIcon",
+          "attrs": {
+            "Name": "SvgIconSource",
+            "Grid.Column": "9",
+            "IconBrush": "{StaticResource ColorBrushGray4}",
+            "Stretch": "Uniform",
+            "Height": "12",
+            "Icon": "lucide/globe"
+          }
+        },
+        {
+          "type": "TextBlock",
+          "attrs": {
+            "Name": "LabSource",
+            "Grid.Column": "10",
+            "Margin": "5,0,2,0",
+            "VerticalAlignment": "Center",
+            "Foreground": "{StaticResource ColorBrushGray4}",
+            "FontSize": "12"
+          }
+        }
+      ]
+    },
+    {
+      "type": "StackPanel",
+      "attrs": {
+        "Name": "PanButtons",
+        "Grid.Column": "5",
+        "Grid.Row": "0",
+        "Grid.RowSpan": "5",
+        "Orientation": "Horizontal",
+        "HorizontalAlignment": "Right",
+        "VerticalAlignment": "Center",
+        "Margin": "0,0,5,0",
+        "SnapsToDevicePixels": "False",
+        "UseLayoutRounding": "False",
+        "Opacity": "0"
+      },
+      "children": [
+        {
+          "type": "PIconButton",
+          "attrs": {
+            "Name": "BtnDownload",
+            "Height": "25",
+            "Width": "25",
+            "SvgIcon": "lucide/download",
+            "Margin": "0,0,4,0",
+            "Visibility": "Collapsed",
+            "ToolTip": "{DynamicResource Download.Comp.QuickDownload.Btn.ToolTip}"
+          }
+        },
+        {
+          "type": "PIconButton",
+          "attrs": {
+            "Name": "BtnDelete",
+            "Height": "25",
+            "Width": "25",
+            "SvgIcon": "lucide/heart"
+          }
+        }
+      ]
+    }
+  ]
+}

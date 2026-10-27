@@ -1,0 +1,250 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageInstanceServer",
+    "PanScroll": "{Binding ElementName=PanBack}",
+    "Grid.IsSharedSizeScope": "True"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Hidden",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "Grid",
+          "attrs": {},
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center",
+                "Margin": "40",
+                "Name": "PanNoServer"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "20,17"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.RowDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "1*"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "1*"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "0",
+                        "Grid.ColumnSpan": "4",
+                        "Margin": "0,0,0,9",
+                        "HorizontalAlignment": "Center",
+                        "Text": "{DynamicResource Instance.Server.Empty.Title}",
+                        "FontSize": "19",
+                        "UseLayoutRounding": "True",
+                        "SnapsToDevicePixels": "True",
+                        "Foreground": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "Rectangle",
+                      "attrs": {
+                        "Grid.Column": "0",
+                        "Grid.Row": "1",
+                        "Grid.ColumnSpan": "4",
+                        "HorizontalAlignment": "Stretch",
+                        "Height": "2",
+                        "Fill": "{DynamicResource ColorBrush3}"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Column": "0",
+                        "Grid.Row": "2",
+                        "Grid.ColumnSpan": "4",
+                        "Margin": "10,15,10,5",
+                        "Text": "{DynamicResource Instance.Server.Empty.Message}",
+                        "TextWrapping": "Wrap"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "3",
+                        "Grid.Column": "1",
+                        "Height": "35",
+                        "MinWidth": "140",
+                        "Text": "{DynamicResource Instance.Server.RefreshInfo}",
+                        "Padding": "13,0",
+                        "Margin": "10,10,10,0",
+                        "HorizontalAlignment": "Center",
+                        "Click": "BtnRefresh_Click",
+                        "ColorType": "Highlight"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Grid.Row": "3",
+                        "Grid.Column": "2",
+                        "Height": "35",
+                        "HorizontalAlignment": "Center",
+                        "Click": "BtnAddServer_Click",
+                        "Name": "BtnAddServerTop",
+                        "MinWidth": "140",
+                        "Text": "{DynamicResource Instance.Server.AddServer}",
+                        "Margin": "10,10,10,0",
+                        "Padding": "13,0"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "StackPanel",
+              "attrs": {
+                "Margin": "10,25,10,10"
+              },
+              "children": [
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Title": "{DynamicResource Instance.Server.QuickActions}",
+                    "Margin": "15,0,15,15",
+                    "Name": "PanContent"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Height": "35",
+                        "Margin": "25,40,23,15"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Button"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Grid.Column": "0",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Instance.Server.RefreshAll}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "HorizontalAlignment": "Left",
+                            "Click": "BtnRefresh_Click",
+                            "ColorType": "Highlight"
+                          }
+                        },
+                        {
+                          "type": "PButton",
+                          "attrs": {
+                            "Grid.Column": "1",
+                            "MinWidth": "140",
+                            "Text": "{DynamicResource Instance.Server.AddServer}",
+                            "Padding": "13,0",
+                            "Margin": "0,0,20,0",
+                            "HorizontalAlignment": "Left",
+                            "Click": "BtnAddServer_Click"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Name": "PanServers",
+                    "Margin": "15,0,15,15"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

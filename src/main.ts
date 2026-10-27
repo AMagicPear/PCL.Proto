@@ -6,8 +6,10 @@
 |_|    \____|_____(_)_|   |_|  \___/ \__\___/ 
  */
 import './assets/main.css'
+import { isTauri } from '@tauri-apps/api/core'
 
 import App from './App.vue'
+import { loadPclLocale } from './api/pclLocale'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -23,8 +25,8 @@ const pinia = createPinia()
 
 const i18n = createI18n({
   legacy: false,
-  locale: navigator.language,
-  fallbackLocale: 'en-US',
+  locale: localStorage.getItem('pcl-language') || localStorage.getItem('ce-language') || 'zh-CN',
+  fallbackLocale: 'zh-CN',
   messages: locales,
 })
 
@@ -50,9 +52,12 @@ app.directive('card-drop-children-animate', vAnimateChildrenDrop)
 
 document.documentElement.classList.add('theme-blue')
 
+void loadPclLocale(i18n.global.locale.value)
 app.mount('#app')
 
 // some async actions
-useAccountInfo().initialize()
-attachConsole()
-useSelectedInstance().fetch()
+if (isTauri()) void useAccountInfo().initialize()
+if (isTauri()) {
+  void attachConsole()
+  void useSelectedInstance().fetch().catch(console.error)
+}

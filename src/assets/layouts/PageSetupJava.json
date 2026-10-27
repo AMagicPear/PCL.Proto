@@ -1,0 +1,95 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageSetupJava",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "Grid",
+          "attrs": {},
+          "children": [
+            {
+              "type": "StackPanel",
+              "attrs": {
+                "Name": "PanMain",
+                "Margin": "25,25,25,10"
+              },
+              "children": [
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Margin": "0,0,0,15"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Margin": "8",
+                        "Orientation": "Horizontal"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconTextButton",
+                          "attrs": {
+                            "Name": "BtnAdd",
+                            "Text": "{DynamicResource Setup.Java.Add}",
+                            "LogoScale": "0.9",
+                            "Click": "BtnAdd_Click",
+                            "SvgIcon": "lucide/circle-plus"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "PCard",
+                  "attrs": {
+                    "Margin": "0,0,0,15"
+                  },
+                  "children": [
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Margin": "15",
+                        "Orientation": "Vertical",
+                        "Name": "PanContent"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Name": "CardLoad",
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center"
+              },
+              "children": [
+                {
+                  "type": "PLoading",
+                  "attrs": {
+                    "Text": "{DynamicResource Setup.Java.Loading}",
+                    "Name": "PanLoad",
+                    "Margin": "12"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

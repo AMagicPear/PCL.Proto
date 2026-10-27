@@ -2,17 +2,19 @@
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TitleLogo from '@/assets/icons/TitleLogo.svg'
-import TitleMinimize from '@/assets/icons/TitleMinimize.svg'
-import TitleClose from '@/assets/icons/TitleClose.svg'
-import ArrowLeft from '@/assets/icons/ArrowLeft.svg'
 import useSideNavState from '@/stores/windowState'
 import navItems from '@/layout/navItems'
 import currentPlatform from '@/util/platform'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { debug } from '@tauri-apps/plugin-log'
+import { isTauri } from '@tauri-apps/api/core'
+import PSvgIcon from './widget/PSvgIcon.vue'
+import { pclText } from '@/api/pclLocale'
+import { useI18n } from 'vue-i18n'
 
 const sideNavState = useSideNavState()
-const appWindow = getCurrentWindow()
+const appWindow = isTauri() ? getCurrentWindow() : null
+const { locale, t, te } = useI18n()
 
 const isSubPage = ref(false)
 const route = useRoute()
@@ -26,13 +28,13 @@ const isFullscreen = ref(false)
 watch(
   () => route.fullPath,
   (newPath, oldPath) => {
-    debug(`route change: ${oldPath} -> ${newPath}`)
+    if (isTauri()) void debug(`route change: ${oldPath} -> ${newPath}`)
     if (route.meta.isSubPage) {
       // 进入特殊页面时记录来源
       if (!isSubPage.value) {
         fromPage.value = oldPath
-        title.value = route.meta.title as string
       }
+      title.value = route.meta.title as string
       isSubPage.value = true
     } else {
       isSubPage.value = false
@@ -53,8 +55,8 @@ const backClicked = () => {
   }
 }
 
-appWindow.onResized(async () => {
-  isFullscreen.value = await appWindow.isFullscreen()
+appWindow?.onResized(async () => {
+  isFullscreen.value = await appWindow!.isFullscreen()
 })
 </script>
 
@@ -64,11 +66,10 @@ appWindow.onResized(async () => {
       .left.title(v-if="!isSubPage" :class="{ 'mac-margin-title': currentPlatform == 'macos' }")
         title-logo()
         .title-tag Proto
-        .title-tag.dev dev
       .left(v-else :class="{ 'mac-margin-title': currentPlatform == 'macos' }")
         i.button-animated(@click="backClicked")
-          arrow-left
-        span.title-text(v-if="title" data-tauri-drag-region) {{ $t(title) }}
+          PSvgIcon(name="lucide/arrow-left" :size="14")
+        span.title-text(v-if="title" data-tauri-drag-region) {{ te(title) ? t(title) : title }}
 
 
     Transition(name="nav")
@@ -76,11 +77,11 @@ appWindow.onResized(async () => {
         nav#main-nav(:class="{ 'mac-margin-nav': currentPlatform == 'macos' }")
           RouterLink(v-for="item in navItems" :key="item.to" :to="item.to")
             component(:is="item.icon")
-            | {{ $t(item.label) }}
+            | {{ pclText(item.label, locale) }}
 
-    .right(v-if="currentPlatform != 'macos'")
-      i.button-animated(@click="appWindow.minimize"): title-minimize
-      i.button-animated(@click="appWindow.close"): title-close
+    .right(v-if="currentPlatform != 'macos' && appWindow")
+      i.button-animated(@click="appWindow?.minimize()"): PSvgIcon(name="lucide/minus" :size="14")
+      i.button-animated(@click="appWindow?.close()"): PSvgIcon(name="lucide/x" :size="14")
 
 </template>
 

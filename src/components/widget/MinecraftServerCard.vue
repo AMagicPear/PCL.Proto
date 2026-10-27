@@ -1,13 +1,14 @@
 <script lang="tsx" setup>
 import { defineComponent, ref } from 'vue'
 import PCard from './PCard.vue'
-import PInput from './PInput.vue'
+import PTextBox from './PTextBox.vue'
 import PButton from './PButton.vue'
 import type { MCPingResult, ExtraItem } from '@/types/mcPing'
-import { invoke } from '@tauri-apps/api/core'
+import { isTauri, invoke } from '@tauri-apps/api/core'
 import { error } from '@tauri-apps/plugin-log'
 import sideTip from '@/composables/sideTip'
 
+defineProps<{ embedded?: boolean }>()
 const serverInput = ref<string>()
 const mcPingResult = ref<MCPingResult | null>()
 const latency = ref<number>()
@@ -27,13 +28,14 @@ async function performQuery() {
       sideTip.show('请输入地址后再查询')
     }
   } catch (err) {
-    error(`server query: ${err}`)
+    if (isTauri()) void error(`server query: ${err}`)
     mcPingResult.value = null
     sideTip.show(`${err}`, 'warn')
   }
 }
 
 function parseMinecraftText(text: string) {
+  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const codes: Record<string, any> = {
     '0': { color: 'black' },
     '1': { color: 'dark_blue' },
@@ -124,7 +126,7 @@ const DescriptionExtra = defineComponent(
 </script>
 
 <template>
-  <PCard title="瞅眼服务器">
+  <component :is="embedded ? 'div' : PCard" title="瞅眼服务器">
     <div
       style="
         display: flex;
@@ -134,7 +136,7 @@ const DescriptionExtra = defineComponent(
         margin-bottom: 8px;
       "
     >
-      <PInput v-model="serverInput" placeholder="输入服务器地址" style="flex: 1" />
+      <PTextBox v-model="serverInput" placeholder="输入服务器地址" style="flex: 1" />
       <PButton inline :click="performQuery" :disabled="!serverInput">查询</PButton>
     </div>
     <div class="server-card" v-if="mcPingResult">
@@ -155,7 +157,7 @@ const DescriptionExtra = defineComponent(
         <p class="latency-text">{{ latency }}ms</p>
       </div>
     </div>
-  </PCard>
+  </component>
 </template>
 
 <style scoped>

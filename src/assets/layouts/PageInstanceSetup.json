@@ -1,0 +1,1446 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageInstanceSetup",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanMain",
+            "Margin": "25,25,25,25"
+          },
+          "children": [
+            {
+              "type": "PHint",
+              "attrs": {
+                "Text": "{DynamicResource Instance.Setup.Hint}",
+                "Theme": "Blue",
+                "Margin": "0,0,0,15",
+                "CanClose": "True",
+                "RelativeSetup": "HintIndieSetup"
+              }
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Name": "CardArgument",
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Setup.Launch.Options.Title}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,25,21"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Name"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "60"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "9"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "9"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "9"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Setup.Options.InstanceIsolation}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "ComboArgumentIndieV2",
+                            "Grid.Row": "0",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "VersionArgumentIndieV2",
+                            "Grid.Column": "1"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Setup.Options.InstanceIsolation.Enabled}",
+                                "ToolTipService.InitialShowDelay": "0",
+                                "ToolTipService.BetweenShowDelay": "0",
+                                "ToolTip": "{DynamicResource Instance.Setup.Options.InstanceIsolation.Enabled.ToolTip}",
+                                "ToolTipService.HorizontalOffset": "100"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Common.Action.Close}",
+                                "ToolTipService.InitialShowDelay": "0",
+                                "ToolTipService.BetweenShowDelay": "0",
+                                "ToolTip": "{DynamicResource Instance.Setup.Options.InstanceIsolation.Disabled.ToolTip}",
+                                "ToolTipService.HorizontalOffset": "100"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "2",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.Launch.Options.WindowTitle.Label}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "TextArgumentTitle",
+                            "Grid.Row": "2",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "VersionArgumentTitle",
+                            "Grid.Column": "1",
+                            "IsEditable": "True",
+                            "IsTextSearchEnabled": "False",
+                            "ToolTip": "{DynamicResource Instance.Setup.Options.WindowTitle.ToolTip}"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.Launch.Options.WindowTitle.SampleFormat}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Name": "CheckArgumentTitleEmpty",
+                            "Margin": "0,0,0,9",
+                            "Grid.Row": "4",
+                            "Grid.ColumnSpan": "3",
+                            "Text": "{DynamicResource Instance.Setup.Options.WindowTitle.Default}",
+                            "Tag": "VersionArgumentTitleEmpty",
+                            "Grid.Column": "0",
+                            "ToolTip": "{DynamicResource Instance.Setup.Options.WindowTitle.Default.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "6",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.Launch.Options.CustomInfo.Label}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextArgumentInfo",
+                            "Grid.Row": "6",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "VersionArgumentInfo",
+                            "Grid.Column": "1",
+                            "HintText": "{DynamicResource Instance.Setup.FollowGlobal}",
+                            "ToolTip": "{DynamicResource Instance.Setup.Options.CustomInfo.ToolTip}"
+                          },
+                          "children": [
+                            {
+                              "type": "PTextBox.ValidateRules",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "BlacklistValidator",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "BlacklistValidator.Blacklist",
+                                      "attrs": {},
+                                      "children": [
+                                        {
+                                          "type": "String",
+                                          "attrs": {},
+                                          "text": "\""
+                                        },
+                                        {
+                                          "type": "String",
+                                          "attrs": {},
+                                          "text": "“"
+                                        },
+                                        {
+                                          "type": "String",
+                                          "attrs": {},
+                                          "text": "”"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "Grid.Row": "8",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Setup.Options.Java}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "ComboArgumentJava",
+                            "Grid.ColumnSpan": "2",
+                            "Grid.Row": "8",
+                            "Grid.Column": "1",
+                            "MaxDropDownHeight": "240",
+                            "ToolTip": "{DynamicResource Instance.Setup.Options.Java.ToolTip}"
+                          },
+                          "children": [
+                            {
+                              "type": "ComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Setup.Options.Java.Loading}",
+                                "IsSelected": "True"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Setup.Launch.Memory.Title}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "PHint",
+                      "attrs": {
+                        "Name": "LabRamWarn",
+                        "Text": "{DynamicResource Setup.Launch.Memory.Warning.Java32Bit}",
+                        "Theme": "Yellow",
+                        "Margin": "0,0,0,12"
+                      }
+                    },
+                    {
+                      "type": "PHint",
+                      "attrs": {
+                        "Name": "HintRamTooHigh",
+                        "Visibility": "Collapsed",
+                        "Height": "30",
+                        "Theme": "Yellow",
+                        "Text": "{DynamicResource Setup.Launch.Memory.Warning.TooMuch}",
+                        "Margin": "0,0,0,12",
+                        "HorizontalAlignment": "Stretch",
+                        "VerticalAlignment": "Stretch"
+                      }
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Margin": "0,0,0,3"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "*"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PRadioBox",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "Grid.Column": "0",
+                            "Grid.ColumnSpan": "2",
+                            "Text": "{DynamicResource Instance.Setup.FollowGlobal}",
+                            "Checked": "True",
+                            "Name": "RadioRamType2",
+                            "Tag": "VersionRamType/2",
+                            "Margin": "0,0,20,9"
+                          }
+                        },
+                        {
+                          "type": "PRadioBox",
+                          "attrs": {
+                            "Grid.Row": "1",
+                            "Grid.Column": "0",
+                            "Text": "{DynamicResource Setup.Launch.Memory.Auto}",
+                            "Width": "110",
+                            "HorizontalAlignment": "Left",
+                            "Name": "RadioRamType0",
+                            "Tag": "VersionRamType/0",
+                            "Margin": "0,0,20,9",
+                            "ToolTip": "{DynamicResource Setup.Launch.Memory.Auto.ToolTip}",
+                            "ToolTipService.Placement": "Left",
+                            "ToolTipService.HorizontalOffset": "-10",
+                            "ToolTipService.VerticalOffset": "-10"
+                          }
+                        },
+                        {
+                          "type": "PRadioBox",
+                          "attrs": {
+                            "Grid.Row": "2",
+                            "Grid.Column": "0",
+                            "Text": "{DynamicResource Common.Option.Customize}",
+                            "Width": "110",
+                            "HorizontalAlignment": "Left",
+                            "Name": "RadioRamType1",
+                            "Tag": "VersionRamType/1",
+                            "Margin": "0,0,20,9"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "3",
+                            "Grid.Column": "0",
+                            "Text": "{DynamicResource Setup.Launch.Memory.Max}",
+                            "VerticalAlignment": "Center",
+                            "Margin": "0,0,20,9",
+                            "ToolTip": "{DynamicResource Setup.Launch.Memory.Max.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PSlider",
+                          "attrs": {
+                            "Grid.Row": "3",
+                            "Grid.Column": "1",
+                            "IsEnabled": "False",
+                            "Name": "SliderRamCustom",
+                            "Tag": "VersionRamCustom",
+                            "MaxValue": "49",
+                            "Value": "13",
+                            "Margin": "0,0,12,9"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "4",
+                            "Grid.Column": "0",
+                            "Text": "{DynamicResource Setup.Launch.Memory.Initial}",
+                            "VerticalAlignment": "Center",
+                            "Margin": "0,0,20,0",
+                            "ToolTip": "{DynamicResource Setup.Launch.Memory.Initial.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PSlider",
+                          "attrs": {
+                            "Grid.Row": "4",
+                            "Grid.Column": "1",
+                            "IsEnabled": "False",
+                            "Name": "SliderRamInitialCustom",
+                            "Tag": "VersionRamCustomInitial",
+                            "MaxValue": "49",
+                            "Value": "0",
+                            "Margin": "0,0,12,0",
+                            "ToolTip": "{DynamicResource Setup.Launch.Memory.Initial.ToolTip}"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {
+                        "Name": "PanRamDisplay",
+                        "Margin": "0,11,2,0",
+                        "SnapsToDevicePixels": "True"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Name": "ColumnRamUsed",
+                                "Width": "4.7*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Name": "ColumnRamGame",
+                                "Width": "2.5*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Name": "ColumnRamEmpty",
+                                "Width": "0.7*"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {}
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "4"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Rectangle",
+                          "attrs": {
+                            "Name": "RectRamUsed",
+                            "Grid.Row": "1",
+                            "StrokeThickness": "0"
+                          },
+                          "children": [
+                            {
+                              "type": "Rectangle.Fill",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "LinearGradientBrush",
+                                  "attrs": {
+                                    "EndPoint": "1,0.5",
+                                    "StartPoint": "0,0.5"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "GradientStop",
+                                      "attrs": {
+                                        "Color": "{DynamicResource ColorObject3}",
+                                        "Offset": "0"
+                                      }
+                                    },
+                                    {
+                                      "type": "GradientStop",
+                                      "attrs": {
+                                        "Color": "{DynamicResource ColorObject2}",
+                                        "Offset": "0.5"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Rectangle",
+                          "attrs": {
+                            "Grid.Row": "1",
+                            "StrokeThickness": "0",
+                            "Grid.Column": "1",
+                            "Fill": "{DynamicResource ColorBrush3}",
+                            "Opacity": "0.5",
+                            "Name": "RectRamGame"
+                          }
+                        },
+                        {
+                          "type": "Rectangle",
+                          "attrs": {
+                            "Name": "RectRamEmpty",
+                            "Grid.Row": "1",
+                            "StrokeThickness": "0",
+                            "Grid.Column": "2",
+                            "Fill": "{DynamicResource ColorBrush6}",
+                            "Opacity": "0.7"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Name": "LabRamUsedTitle",
+                            "Text": "{DynamicResource Instance.Setup.Memory.Used}",
+                            "Grid.ColumnSpan": "3",
+                            "Opacity": "0.7",
+                            "TextTrimming": "None",
+                            "Margin": "2,0,0,5",
+                            "FontSize": "11",
+                            "HorizontalAlignment": "Left"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Name": "LabRamGameTitle",
+                            "Text": "{DynamicResource Setup.Launch.Memory.GameAllocation}",
+                            "Opacity": "0.7",
+                            "Grid.ColumnSpan": "3",
+                            "TextTrimming": "None",
+                            "Margin": "2,0,0,5",
+                            "FontSize": "11",
+                            "HorizontalAlignment": "Left"
+                          }
+                        },
+                        {
+                          "type": "StackPanel",
+                          "attrs": {
+                            "Grid.Row": "2",
+                            "Orientation": "Horizontal",
+                            "Grid.ColumnSpan": "3",
+                            "Margin": "2,3,0,0",
+                            "HorizontalAlignment": "Left"
+                          },
+                          "children": [
+                            {
+                              "type": "TextBlock",
+                              "attrs": {
+                                "Name": "LabRamUsed",
+                                "Text": "4.7 GiB",
+                                "FontSize": "16",
+                                "Foreground": "{DynamicResource ColorBrushMemory}",
+                                "TextTrimming": "None"
+                              }
+                            },
+                            {
+                              "type": "TextBlock",
+                              "attrs": {
+                                "Name": "LabRamTotal",
+                                "Text": " / 7.9 GiB",
+                                "FontSize": "16",
+                                "Foreground": "{DynamicResource ColorBrushMemory}",
+                                "TextTrimming": "None"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "2",
+                            "Name": "LabRamGame",
+                            "Text": "2.5 GiB",
+                            "Grid.ColumnSpan": "3",
+                            "TextTrimming": "None",
+                            "Margin": "2,3,0,0",
+                            "FontSize": "16",
+                            "Foreground": "{DynamicResource ColorBrushMemory}",
+                            "HorizontalAlignment": "Left"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Name": "CardServer",
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Instance.Setup.Server.Title}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,42,25,18"
+                  },
+                  "children": [
+                    {
+                      "type": "PHint",
+                      "attrs": {
+                        "Name": "HintServerLoginLock",
+                        "Text": "{DynamicResource Instance.Setup.Server.LoginLockHint}",
+                        "IsWarn": "True",
+                        "Margin": "0,0,0,13",
+                        "Visibility": "Collapsed"
+                      }
+                    },
+                    {
+                      "type": "PHint",
+                      "attrs": {
+                        "Name": "LabServerAuthServerSecurityVerify",
+                        "Text": "{DynamicResource Instance.Setup.Server.SslWarning}",
+                        "IsWarn": "False",
+                        "Margin": "0,0,0,13",
+                        "Visibility": "Collapsed"
+                      }
+                    },
+                    {
+                      "type": "PHint",
+                      "attrs": {
+                        "Name": "LabServerAuthServerSecurity",
+                        "Text": "{DynamicResource Instance.Setup.Server.HttpWarning}",
+                        "Margin": "0,0,0,13",
+                        "Visibility": "Collapsed"
+                      }
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Name"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "9"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "3"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Setup.Server.RestrictLogin}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "ComboServerLoginRequire",
+                            "Grid.Row": "0",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "VersionServerLoginRequire",
+                            "Grid.Column": "1"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Setup.Server.LoginMethod.Unlimited}",
+                                "IsSelected": "True"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Setup.Server.LoginMethod.MicrosoftOnly}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Setup.Server.LoginMethod.AuthOnly}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Instance.Setup.Server.LoginMethod.MicrosoftOrAuth}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Name": "LabServerAuthServer",
+                            "Grid.Row": "1",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Setup.Server.AuthServer}",
+                            "Margin": "0,8,25,0",
+                            "Visibility": "Collapsed"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextServerAuthServer",
+                            "Grid.Row": "1",
+                            "Grid.ColumnSpan": "2",
+                            "ShowValidateResult": "False",
+                            "Tag": "VersionServerAuthServer",
+                            "Grid.Column": "1",
+                            "Margin": "0,8,0,0",
+                            "Visibility": "Collapsed",
+                            "HintText": "{DynamicResource Instance.Setup.Server.AuthServer.Hint}"
+                          },
+                          "children": [
+                            {
+                              "type": "PTextBox.ValidateRules",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "HttpValidator",
+                                  "attrs": {}
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Name": "LabServerAuthRegister",
+                            "Grid.Row": "2",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Setup.Server.Register}",
+                            "Margin": "0,8,25,0",
+                            "Visibility": "Collapsed"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextServerAuthRegister",
+                            "Grid.Row": "2",
+                            "Grid.ColumnSpan": "2",
+                            "ShowValidateResult": "False",
+                            "Tag": "VersionServerAuthRegister",
+                            "Grid.Column": "1",
+                            "Margin": "0,8,0,0",
+                            "Visibility": "Collapsed",
+                            "HintText": "{DynamicResource Instance.Setup.Server.Register.Hint}"
+                          },
+                          "children": [
+                            {
+                              "type": "PTextBox.ValidateRules",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "HttpValidator",
+                                  "attrs": {
+                                    "AllowsNullOrEmpty": "True"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Name": "LabServerAuthName",
+                            "Grid.Row": "3",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Setup.Server.Name}",
+                            "Margin": "0,8,25,0",
+                            "Visibility": "Collapsed"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextServerAuthName",
+                            "Grid.Row": "3",
+                            "Grid.ColumnSpan": "2",
+                            "ShowValidateResult": "False",
+                            "Tag": "VersionServerAuthName",
+                            "Grid.Column": "1",
+                            "Margin": "0,8,0,0",
+                            "Visibility": "Collapsed",
+                            "HintText": "{DynamicResource Instance.Setup.Server.Name.Hint}"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "Grid.Row": "5",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Instance.Setup.Server.AutoJoin}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PTextBox",
+                          "attrs": {
+                            "Name": "TextServerEnter",
+                            "Grid.ColumnSpan": "2",
+                            "Grid.Row": "5",
+                            "Tag": "VersionServerEnter",
+                            "Grid.Column": "1",
+                            "ToolTip": "{DynamicResource Instance.Setup.Server.AutoJoin.ToolTip}"
+                          },
+                          "children": [
+                            {
+                              "type": "PTextBox.ValidateRules",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "BlacklistValidator",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "BlacklistValidator.Blacklist",
+                                      "attrs": {},
+                                      "children": [
+                                        {
+                                          "type": "String",
+                                          "attrs": {},
+                                          "text": "\""
+                                        },
+                                        {
+                                          "type": "String",
+                                          "attrs": {},
+                                          "text": "“"
+                                        },
+                                        {
+                                          "type": "String",
+                                          "attrs": {},
+                                          "text": "”"
+                                        },
+                                        {
+                                          "type": "String",
+                                          "attrs": {},
+                                          "text": "http://"
+                                        },
+                                        {
+                                          "type": "String",
+                                          "attrs": {},
+                                          "text": "https://"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Name": "BtnServerAuthLittle",
+                        "Height": "35",
+                        "MinWidth": "150",
+                        "Margin": "0,12,0,0",
+                        "Text": "{DynamicResource Instance.Setup.Server.SetLittleSkin}",
+                        "HorizontalAlignment": "Left",
+                        "ColorType": "Highlight"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Name": "BtnServerAuthLock",
+                        "Height": "35",
+                        "MinWidth": "150",
+                        "Margin": "180,-35,0,0",
+                        "Text": "{DynamicResource Instance.Setup.Server.LockLoginMethod}",
+                        "HorizontalAlignment": "Left",
+                        "IsEnabled": "False"
+                      }
+                    },
+                    {
+                      "type": "PButton",
+                      "attrs": {
+                        "Name": "BtnServerNewProfile",
+                        "Height": "35",
+                        "MinWidth": "150",
+                        "Margin": "360,-35,0,0",
+                        "Text": "{DynamicResource Instance.Setup.Server.CreateProfile}",
+                        "HorizontalAlignment": "Left"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Name": "CardAdvance",
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Setup.Launch.Advanced.Title}",
+                "IsSwapped": "True",
+                "CanSwap": "True"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "25,40,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto",
+                            "SharedSizeGroup": "Name"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "1*"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid.RowDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "28"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "9"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "9"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "28"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "9"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "28"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "9"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "31"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "Auto"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "0",
+                        "VerticalAlignment": "Center",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Setup.Launch.Advanced.Renderer.Label}",
+                        "Margin": "0,0,25,0"
+                      }
+                    },
+                    {
+                      "type": "PComboBox",
+                      "attrs": {
+                        "Name": "ComboAdvanceRenderer",
+                        "Grid.Row": "0",
+                        "Grid.Column": "1",
+                        "Grid.ColumnSpan": "2",
+                        "Tag": "VersionAdvanceRenderer"
+                      },
+                      "children": [
+                        {
+                          "type": "PComboBoxItem",
+                          "attrs": {
+                            "Content": "{DynamicResource Instance.Setup.FollowGlobal}",
+                            "IsSelected": "True"
+                          }
+                        },
+                        {
+                          "type": "PComboBoxItem",
+                          "attrs": {
+                            "Content": "{DynamicResource Setup.Launch.Advanced.Renderer.GameDefault}"
+                          }
+                        },
+                        {
+                          "type": "PComboBoxItem",
+                          "attrs": {
+                            "Content": "{DynamicResource Setup.Launch.Advanced.Renderer.Software}"
+                          }
+                        },
+                        {
+                          "type": "PComboBoxItem",
+                          "attrs": {
+                            "Content": "{DynamicResource Setup.Launch.Advanced.Renderer.DirectX12}"
+                          }
+                        },
+                        {
+                          "type": "PComboBoxItem",
+                          "attrs": {
+                            "Content": "{DynamicResource Setup.Launch.Advanced.Renderer.Vulkan}"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "2",
+                        "VerticalAlignment": "Center",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Setup.Launch.Advanced.JvmHead}",
+                        "Margin": "0,0,25,0"
+                      }
+                    },
+                    {
+                      "type": "PTextBox",
+                      "attrs": {
+                        "Name": "TextAdvanceJvm",
+                        "Grid.Row": "2",
+                        "Grid.ColumnSpan": "2",
+                        "Tag": "VersionAdvanceJvm",
+                        "Grid.Column": "1",
+                        "MaxLength": "4000",
+                        "ToolTip": "{DynamicResource Instance.Setup.Advanced.JvmArgs.ToolTip}",
+                        "HintText": "{DynamicResource Instance.Setup.FollowGlobal}",
+                        "Height": "100",
+                        "AcceptsReturn": "True",
+                        "TextWrapping": "Wrap",
+                        "VerticalContentAlignment": "Top",
+                        "Padding": "0,5",
+                        "VerticalScrollBarVisibility": "Auto"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "4",
+                        "VerticalAlignment": "Center",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Setup.Launch.Advanced.GameTail}",
+                        "Margin": "0,0,25,0"
+                      }
+                    },
+                    {
+                      "type": "PTextBox",
+                      "attrs": {
+                        "Name": "TextAdvanceGame",
+                        "Grid.Row": "4",
+                        "Grid.ColumnSpan": "2",
+                        "Tag": "VersionAdvanceGame",
+                        "Grid.Column": "1",
+                        "ToolTip": "{DynamicResource Instance.Setup.Advanced.GameArgs.ToolTip}",
+                        "HintText": "{DynamicResource Instance.Setup.FollowGlobal}"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "6",
+                        "VerticalAlignment": "Center",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Instance.Setup.Advanced.Classpath}",
+                        "Margin": "0,0,25,0"
+                      }
+                    },
+                    {
+                      "type": "PTextBox",
+                      "attrs": {
+                        "Name": "TextAdvanceClasspathHead",
+                        "Grid.Row": "6",
+                        "Grid.ColumnSpan": "2",
+                        "Tag": "VersionAdvanceClasspathHead",
+                        "Grid.Column": "1",
+                        "ToolTip": "{DynamicResource Instance.Setup.Advanced.Classpath.ToolTip}"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "Grid.Row": "8",
+                        "VerticalAlignment": "Center",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Setup.Launch.Advanced.PreLaunchCommand}",
+                        "Margin": "0,0,25,3"
+                      }
+                    },
+                    {
+                      "type": "PTextBox",
+                      "attrs": {
+                        "Name": "TextAdvanceRun",
+                        "Grid.Row": "8",
+                        "Grid.ColumnSpan": "2",
+                        "Tag": "VersionAdvanceRun",
+                        "Grid.Column": "1",
+                        "HintText": "",
+                        "Margin": "0,0,0,3",
+                        "ToolTip": "{DynamicResource Instance.Setup.Advanced.PreLaunchCommand.ToolTip}"
+                      }
+                    },
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Margin": "0,8,0,4",
+                        "Grid.Row": "9",
+                        "Grid.ColumnSpan": "2",
+                        "HorizontalAlignment": "Left"
+                      },
+                      "children": [
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "28",
+                            "Name": "CheckAdvanceRunWait",
+                            "Tag": "VersionAdvanceRunWait",
+                            "Visibility": "Collapsed",
+                            "Text": "{DynamicResource Setup.Launch.Advanced.PreLaunchCommand.Wait}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "28",
+                            "Text": "{DynamicResource Instance.Setup.Advanced.DisableModUpdate}",
+                            "Name": "CheckAdvanceDisableModUpdate",
+                            "Tag": "VersionAdvanceDisableModUpdate",
+                            "ToolTip": "{DynamicResource Setup.Ui.FeatureHide.Item.ModUpdate.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "28",
+                            "Text": "{DynamicResource Instance.Setup.Advanced.IgnoreJavaCompatibility}",
+                            "Name": "CheckAdvanceJava",
+                            "Tag": "VersionAdvanceJava",
+                            "ToolTip": "{DynamicResource Instance.Setup.Advanced.IgnoreJavaCompatibility.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "28",
+                            "Text": "{DynamicResource Instance.Setup.Advanced.DisableFileVerification}",
+                            "Name": "CheckAdvanceAssetsV2",
+                            "Tag": "VersionAdvanceAssetsV2",
+                            "Margin": "0,0,60,0",
+                            "ToolTip": "{DynamicResource Instance.Setup.Advanced.DisableFileVerification.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "28",
+                            "Text": "{DynamicResource Instance.Setup.Advanced.UseGlobalProxy}",
+                            "Name": "CheckAdvanceUseProxyV2",
+                            "Tag": "VersionAdvanceUseProxyV2",
+                            "ToolTip": "{DynamicResource Instance.Setup.Advanced.UseGlobalProxy.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "28",
+                            "Text": "{DynamicResource Setup.Launch.Advanced.DisableJlw}",
+                            "Name": "CheckAdvanceDisableJLW",
+                            "Tag": "VersionAdvanceDisableJLW",
+                            "ToolTip": "{DynamicResource Setup.Launch.Advanced.DisableJlw.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "28",
+                            "Text": "{DynamicResource Setup.Launch.Advanced.DisableLF}",
+                            "Name": "CheckAdvanceDisableLF",
+                            "Tag": "VersionAdvanceDisableLF",
+                            "ToolTip": "{DynamicResource Setup.Launch.Advanced.DisableLF.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "28",
+                            "Text": "{DynamicResource Instance.Setup.Advanced.UseDebugLog4j}",
+                            "Name": "CheckUseDebugLog4j2Config",
+                            "Tag": "VersionUseDebugLog4j2Config"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Height": "28",
+                            "Text": "{DynamicResource Setup.Launch.Advanced.DisableLwjglUnsafeAgent}",
+                            "Name": "CheckAdvanceDisableLwjglUnsafeAgent",
+                            "Tag": "VersionAdvanceDisableLwjglUnsafeAgent",
+                            "ToolTip": "{DynamicResource Setup.Launch.Advanced.DisableLwjglUnsafeAgent.ToolTip}"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PExtraTextButton",
+              "attrs": {
+                "HorizontalAlignment": "Center",
+                "Margin": "0,-5,0,0",
+                "Name": "BtnSwitch",
+                "Text": "{DynamicResource Instance.Setup.OpenGlobalSettings}",
+                "LogoScale": "0.9",
+                "SvgIcon": "lucide/arrow-right"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

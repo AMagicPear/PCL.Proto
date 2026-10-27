@@ -1,17 +1,21 @@
 <script lang="ts" setup>
 import { useTemplateRef, watchEffect } from 'vue'
 import PCard from './PCard.vue'
+import shapes from '@/assets/control-geometry.json'
+import paths from '@/assets/vector-paths.json'
+import { pclText } from '@/api/pclLocale'
+const pickaxe = Object.values(paths).find((item) => item.data === shapes['MyLoading.PathPickaxe'])!
 
 export type LoadingState = 'loading' | 'error'
 const props = withDefaults(
   defineProps<{ state?: LoadingState; loadingText?: string; card?: boolean }>(),
   {
     state: 'loading',
-    loadingText: '正在加载中...',
+    loadingText: undefined,
     card: true,
   },
 )
-const hammerRef = useTemplateRef<SVGPathElement>('hammerRef')
+const hammerRef = useTemplateRef<SVGGElement>('hammerRef')
 const trainglesRef = useTemplateRef<SVGGElement>('trainglesRef')
 
 watchEffect(() => {
@@ -26,92 +30,91 @@ watchEffect(() => {
 
 <template>
   <component :is="card ? PCard : 'div'" :hide-title="true" :class="{ 'card-loading': card }">
-    <div id="loading-container">
+    <div class="loading-container">
       <svg
-        xmlns="http://www.w3.org/2000/svg"
-        xmlns:xlink="http://www.w3.org/1999/xlink"
-        width="80"
-        height="80"
-        viewBox="0 0 80 80"
-        fill="none"
+        width="60"
+        height="47"
+        viewBox="0 0 60 47"
         class="load-svg"
         :class="state"
+        aria-hidden="true"
       >
-        <!-- 底下的横线 -->
-        <path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 66L29 66"></path>
-        <!-- 运动的锤子 -->
-        <path
-          class="hammer"
-          ref="hammerRef"
-          d="M53.7693 59.6884L53.7763 27.5221C59.2904 27.6694 62.7075 30.1275 67.6568 31.1071C73.6227 32.4731 74.8377 33.7263 71.1429 29.9828C66.9914 25.9769 61.6417 23.1999 55.6855 22.2612C55.1971 20.2186 53.3582 18.7011 51.1671 18.7045C48.976 18.7078 47.138 20.2185 46.6487 22.2612C40.6892 23.2052 35.3415 25.9781 31.1913 29.9828C26.8344 34.236 28.2414 32.9395 34.6703 31.1142C39.6201 30.1326 43.0467 27.6687 48.5579 27.5221L48.5508 59.6884C48.5508 59.7233 48.5795 59.752 48.6145 59.752L53.7056 59.752C53.7434 59.7491 53.7663 59.7262 53.7693 59.6884Z"
-          stroke="currentColor"
-          stroke-width="2"
-        ></path>
-        <!-- 锤子敲击后出现的三角形 -->
+        <path stroke="currentColor" stroke-width="2" d="M0 46H25" />
+        <g class="hammer" ref="hammerRef">
+          <svg x="10" y="6" width="35" height="35" :viewBox="pickaxe.viewBox" overflow="visible">
+            <path
+              :d="pickaxe.data"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              vector-effect="non-scaling-stroke"
+            />
+          </svg>
+        </g>
         <g class="triangles" fill="currentColor" ref="trainglesRef">
-          <path d="M11 61.67L12.8992 60.0019L15.2859 64.6345"></path>
-          <path d="M19.7416 60.147L21.4566 62.0039L16.8852 64.5056"></path>
+          <path :d="shapes['MyLoading.PathLeft']" transform="translate(7 41) rotate(-45 1 2)" />
+          <path :d="shapes['MyLoading.PathRight']" transform="translate(14 41) rotate(45 1 2)" />
         </g>
-        <!-- 叉叉 -->
-        <g class="wrong-x" fill="currentColor">
-          <path
-            d="M10.2929 49.2929C9.90237 49.6834 9.90237 50.3166 10.2929 50.7071L20.2929 60.7071C20.6834 61.0976 21.3166 61.0976 21.7071 60.7071C22.0976 60.3166 22.0976 59.6834 21.7071 59.2929L11.7071 49.2929C11.3166 48.9024 10.6834 48.9024 10.2929 49.2929Z"
-            fill-rule="evenodd"
-          ></path>
-          <path
-            d="M10.2929 60.7071C10.6834 61.0976 11.3166 61.0976 11.7071 60.7071L21.7071 50.7071C22.0977 50.3166 22.0976 49.6835 21.7071 49.2929C21.3166 48.9024 20.6834 48.9024 20.2929 49.2929L10.2929 59.2929C9.9024 59.6834 9.9024 60.3166 10.2929 60.7071Z"
-            fill-rule="evenodd"
-          ></path>
-        </g>
+        <path
+          class="wrong-x"
+          fill="currentColor"
+          :d="shapes['MyLoading.PathError'].replace(/^F1\s*/, '')"
+          transform="translate(4 23) scale(.85)"
+        />
       </svg>
     </div>
     <p class="loading-text" :class="state">
-      {{ state == 'loading' ? loadingText : '网络环境不佳，请重试或尝试使用 VPN' }}
+      {{
+        state === 'loading'
+          ? loadingText || pclText('Application.Control.Loading.Default')
+          : pclText('Application.Control.Loading.Failed')
+      }}
     </p>
   </component>
 </template>
 
 <style lang="css" scoped>
 .card-loading {
-  width: 300px;
+  width: min(300px, 100%);
 }
 
 .loading-text {
   text-align: center;
-  font-size: 14px;
+  font-size: 16px;
+  margin-top: 10px;
 }
 
 @keyframes hammerAnim {
   0% {
-    transform: rotate(10deg);
+    transform: rotate(55deg);
   }
 
   11% {
-    transform: rotate(-55deg);
+    transform: rotate(-20deg);
   }
 
   38% {
-    transform: rotate(13deg);
+    transform: rotate(58deg);
   }
 
   46% {
-    transform: rotate(4deg);
+    transform: rotate(49deg);
   }
 
   51% {
-    transform: rotate(8deg);
+    transform: rotate(53deg);
   }
 
   73% {
-    transform: rotate(6deg);
+    transform: rotate(51deg);
   }
 
   88% {
-    transform: rotate(8deg);
+    transform: rotate(53deg);
   }
 
   100% {
-    transform: rotate(10deg);
+    transform: rotate(55deg);
   }
 }
 
@@ -158,7 +161,7 @@ watchEffect(() => {
 }
 
 .hammer {
-  transform-origin: 50px 59px;
+  transform-origin: 40px 36px;
   animation: hammerAnim 1.6s infinite ease-in;
 }
 
@@ -179,7 +182,7 @@ watchEffect(() => {
   opacity: 0;
 }
 
-#loading-container {
+.loading-container {
   flex-shrink: 0;
   display: flex;
   align-items: center;

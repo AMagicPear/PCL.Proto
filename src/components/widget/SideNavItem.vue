@@ -1,33 +1,44 @@
 <script setup lang="ts">
 import type { INavItem } from '@/types/naviOptions'
-import IconRefresh from '@/components/icons/side/IconRefresh.vue'
 import { RouterLink } from 'vue-router'
+import { inject } from 'vue'
+const runAction = inject<(kind: string) => void>('navAction')
 defineProps<INavItem>()
 </script>
 
 <template>
-  <component
-    :is="linkto ? RouterLink : 'a'"
-    :to="linkto"
-    @click="clickCallback"
-    :class="{ custom: !linkto, 'sidenav-line': true }"
-  >
-    <svg class="indicator" width="4" height="23" viewBox="0 0 4 23" v-if="linkto">
-      <line
-        x1="2"
-        y1="2"
-        x2="2"
-        y2="21"
-        stroke="currentColor"
-        stroke-width="4"
-        stroke-linecap="round"
-      />
-    </svg>
+  <div class="sidenav-line">
+    <component
+      :is="linkto ? RouterLink : 'a'"
+      :to="linkto"
+      @click="clickCallback"
+      :class="{ custom: !linkto }"
+    >
+      <svg class="indicator" width="4" height="23" viewBox="0 0 4 23" v-if="linkto">
+        <line
+          x1="2"
+          y1="2"
+          x2="2"
+          y2="21"
+          stroke="currentColor"
+          stroke-width="4"
+          stroke-linecap="round"
+        />
+      </svg>
 
-    <i class="side-nav-icon" v-if="icon"><icon /></i>
-    <p>{{ text }}</p>
-    <i class="refresh-icon button-animated" v-if="linkto"><IconRefresh /></i>
-  </component>
+      <i class="side-nav-icon" v-if="icon"><icon /></i>
+      <p>{{ text }}</p>
+    </component>
+    <button
+      v-if="action"
+      class="refresh-icon button-animated"
+      :title="action.title"
+      :aria-label="action.title"
+      @click="runAction?.(action.kind)"
+    >
+      <component :is="action.icon" />
+    </button>
+  </div>
 </template>
 
 <style scoped>
@@ -39,7 +50,7 @@ a {
   justify-content: flex-start;
   font-size: 13px;
   color: var(--color-text-black);
-  height: 34px;
+  height: 36px;
   background-color: transparent;
   transition: 0.4s;
   padding-inline-end: 10px;
@@ -72,8 +83,19 @@ a.router-link-active .indicator {
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-i.refresh-icon {
-  margin-left: auto;
+.sidenav-line {
+  position: relative;
+}
+.refresh-icon {
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
   color: var(--color-tint-light);
   opacity: 0;
   transition: 0.4s;
@@ -82,11 +104,12 @@ i.refresh-icon {
   justify-content: center;
 }
 
-i.refresh-icon:hover {
+.refresh-icon:hover {
   color: var(--color-titlebar);
 }
 
-a.router-link-active:hover i.refresh-icon {
+.sidenav-line:has(a.router-link-active):hover .refresh-icon,
+.refresh-icon:focus-visible {
   opacity: 1;
 }
 

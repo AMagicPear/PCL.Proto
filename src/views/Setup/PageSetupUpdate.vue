@@ -1,0 +1,139 @@
+<script setup lang="ts">
+import { computed, onUnmounted, ref } from 'vue'
+import { usePageSettings } from '@/composables/usePageSettings'
+import PButton from '@/components/widget/PButton.vue'
+import PCard from '@/components/widget/PCard.vue'
+import PHint from '@/components/widget/PHint.vue'
+import appIcon from '/PCL.Proto.svg?url'
+const appVersion = __APP_VERSION__
+const { text } = usePageSettings('PageSetupUpdate')
+const repository = 'https://github.com/PCL-Community/PCL.Proto'
+const latest = ref<{ version: string; body: string; url: string }>()
+const loading = ref(false)
+const error = ref('')
+const status = computed(() =>
+  loading.value
+    ? '正在检查更新…'
+    : latest.value
+      ? latest.value.version.replace(/^v/, '') === appVersion
+        ? '当前已是最新版本'
+        : `最新发布：${latest.value.version}`
+      : '尚未检查更新',
+)
+let controller: AbortController | undefined
+async function check() {
+  controller?.abort()
+  const request = new AbortController()
+  controller = request
+  loading.value = true
+  error.value = ''
+  try {
+    const response = await fetch(
+      'https://api.github.com/repos/PCL-Community/PCL.Proto/releases/latest',
+      { signal: request.signal },
+    )
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const data: unknown = await response.json()
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      !('tag_name' in data) ||
+      typeof data.tag_name !== 'string' ||
+      !('html_url' in data) ||
+      typeof data.html_url !== 'string' ||
+      !data.html_url.startsWith(`${repository}/releases/`)
+    )
+      throw new Error('版本信息格式错误')
+    if (!request.signal.aborted)
+      latest.value = {
+        version: data.tag_name,
+        url: data.html_url,
+        body: 'body' in data && typeof data.body === 'string' ? data.body : '',
+      }
+  } catch (err) {
+    if (!request.signal.aborted) error.value = `检查更新失败：${String(err)}`
+  } finally {
+    if (!request.signal.aborted) loading.value = false
+  }
+}
+function open(url: string) {
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+onUnmounted(() => controller?.abort())
+</script>
+<template>
+  <section class="pcl-page update-page">
+    <PCard data-control="CardCheck" hide-title
+      ><div class="version-check">
+        <img :src="appIcon" alt="PCL.Proto" />
+        <div>
+          <h2>PCL.Proto {{ appVersion }}</h2>
+          <p>{{ status }}</p>
+        </div>
+        <PButton data-control="BtnCheckAgain" type="tint" :disabled="loading" :click="check">{{
+          text('Setup.Update.CheckAgain')
+        }}</PButton
+        ><PButton
+          data-control="BtnChangelog"
+          :click="() => open(latest?.url || `${repository}/releases`)"
+          >{{ text('Setup.Update.Changelog.View') }}</PButton
+        >
+      </div></PCard
+    >
+    <PHint v-if="error" severity="error">{{ error }}</PHint>
+    <PCard :title="text('Setup.Update.Changelog.View')"
+      ><div class="changelog">
+        <p>
+          {{
+            latest
+              ? latest.body || '此版本没有提供更新说明。'
+              : '检查更新后将在此显示 PCL.Proto 的版本说明。'
+          }}
+        </p>
+        <PButton inline :click="() => open(latest?.url || `${repository}/releases`)">{{
+          text('Setup.Update.Changelog.MoreInfo')
+        }}</PButton
+        ><PButton v-if="latest" type="tint" :click="() => open(latest!.url)"
+          >前往 GitHub 获取安装包</PButton
+        >
+      </div></PCard
+    >
+  </section>
+</template>
+<style scoped>
+.update-page {
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.version-check {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.version-check img {
+  width: 50px;
+  height: 50px;
+}
+.version-check > div {
+  flex: 1;
+  min-width: 150px;
+}
+h2 {
+  font-size: 20px;
+}
+.changelog {
+  padding: 0 25px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 12px;
+}
+.changelog p {
+  white-space: pre-wrap;
+  user-select: text;
+}
+</style>

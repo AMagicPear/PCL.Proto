@@ -1,0 +1,922 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageSetupGameManage",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled",
+        "Name": "PanBack"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanMain",
+            "Margin": "25,10"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,15",
+                "Title": "{DynamicResource Setup.GameManage.Source.Title}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,37,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Name"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "7"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "7"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "27"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "7"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "27"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "27"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "27"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "27"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "27"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Source.File}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "ComboDownloadSource",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "ToolDownloadSource",
+                            "Grid.Column": "1",
+                            "SelectionChanged": "ComboChange"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Source.UseMirror}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Source.PreferOfficialThenMirror}",
+                                "IsSelected": "True"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Source.UseOfficial}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Source.Version}",
+                            "Margin": "0,0,25,0",
+                            "Grid.Row": "2"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "ComboDownloadVersion",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "ToolDownloadVersion",
+                            "Grid.Column": "1",
+                            "Grid.Row": "2",
+                            "SelectionChanged": "ComboChange"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Source.Version.Mirror}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Source.PreferOfficialThenMirror}",
+                                "IsSelected": "True"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Source.UseOfficial}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "Grid.Row": "4",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Download.HttpProtocol}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "ComboDownloadHttpMode",
+                            "Grid.Row": "4",
+                            "Grid.Column": "1",
+                            "Tag": "ToolDownloadHttpMode",
+                            "SelectionChanged": "ComboChange"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Download.HttpProtocol.Auto}",
+                                "ToolTip": "{DynamicResource Setup.GameManage.Download.HttpProtocol.Auto.ToolTip}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Download.HttpProtocol.Http11}",
+                                "ToolTip": "{DynamicResource Setup.GameManage.Download.HttpProtocol.Http11.ToolTip}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Download.HttpProtocol.Http2}",
+                                "ToolTip": "{DynamicResource Setup.GameManage.Download.HttpProtocol.Http2.ToolTip}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "6",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Download.Threads}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PSlider",
+                          "attrs": {
+                            "Name": "SliderDownloadThread",
+                            "Grid.Row": "6",
+                            "Tag": "ToolDownloadThread",
+                            "PreviewChange": "SliderDownloadThread_PreviewChange",
+                            "MaxValue": "255",
+                            "Value": "63",
+                            "Grid.Column": "1",
+                            "Change": "SliderChange",
+                            "ToolTip": "{DynamicResource Setup.GameManage.Download.Threads.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "Grid.Row": "7",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Download.FileConnections}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PSlider",
+                          "attrs": {
+                            "Name": "SliderDownloadFileConnection",
+                            "Grid.Row": "7",
+                            "Tag": "ToolDownloadFileConnection",
+                            "MaxValue": "7",
+                            "Value": "7",
+                            "Grid.Column": "1",
+                            "Change": "SliderChange",
+                            "ToolTip": "{DynamicResource Setup.GameManage.Download.FileConnections.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Center",
+                            "Grid.Row": "8",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Download.SpeedLimit}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PSlider",
+                          "attrs": {
+                            "Name": "SliderDownloadSpeed",
+                            "Grid.Row": "8",
+                            "Tag": "ToolDownloadSpeed",
+                            "MaxValue": "42",
+                            "Value": "42",
+                            "Grid.Column": "1",
+                            "Change": "SliderChange",
+                            "ToolTip": "{DynamicResource Setup.GameManage.Download.SpeedLimit.ToolTip}"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "VerticalAlignment": "Top",
+                            "Grid.Row": "9",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Download.TargetFolder}",
+                            "Margin": "0,5,25,5"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Margin": "0,5",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Download.TargetFolder.Hint}",
+                            "Grid.Row": "9",
+                            "Grid.Column": "1",
+                            "VerticalAlignment": "Center",
+                            "Opacity": "0.5"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Margin": "0,5",
+                            "Grid.Row": "10",
+                            "Text": "{DynamicResource Setup.GameManage.Download.InstallBehavior}"
+                          }
+                        },
+                        {
+                          "type": "Grid",
+                          "attrs": {
+                            "Grid.Row": "10",
+                            "Grid.Column": "1"
+                          },
+                          "children": [
+                            {
+                              "type": "Grid.ColumnDefinitions",
+                              "attrs": {},
+                              "children": [
+                                {
+                                  "type": "ColumnDefinition",
+                                  "attrs": {
+                                    "Width": "*"
+                                  }
+                                },
+                                {
+                                  "type": "ColumnDefinition",
+                                  "attrs": {
+                                    "Width": "*"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "PCheckBox",
+                              "attrs": {
+                                "Grid.Row": "0",
+                                "Grid.Column": "0",
+                                "Text": "{DynamicResource Setup.GameManage.Download.AutoSelectInstance}",
+                                "Name": "CheckDownloadAutoSelectVersion",
+                                "Tag": "ToolDownloadAutoSelectVersion",
+                                "Change": "CheckBoxChange"
+                              }
+                            },
+                            {
+                              "type": "PCheckBox",
+                              "attrs": {
+                                "Grid.Row": "0",
+                                "Grid.Column": "1",
+                                "Margin": "0,0,0,0",
+                                "Text": "{DynamicResource Setup.GameManage.Download.FixAuthlib}",
+                                "Name": "CheckFixAuthlib",
+                                "Tag": "ToolFixAuthlib",
+                                "Change": "CheckBoxChange",
+                                "ToolTip": "{DynamicResource Setup.GameManage.Download.FixAuthlib.ToolTip}"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Setup.GameManage.Community.Title}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,37,25,12"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Name"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {}
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "7"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28",
+                                "Name": "RowFilenameFormat"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "7",
+                                "Name": "RowFilenameFormatGap"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28",
+                                "Name": "RowModManageStyle"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "7",
+                                "Name": "RowModManageStyleGap"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28",
+                                "Name": "RowQuickDownload"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "7",
+                                "Name": "RowQuickDownloadGap"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Community.Source}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "ComboDownloadMod",
+                            "Grid.Row": "0",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "ToolDownloadMod",
+                            "Grid.Column": "1",
+                            "SelectionChanged": "ComboChange"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Source.UseMirror}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.Source.PreferOfficialWithFallback}",
+                                "IsSelected": "True"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Source.UseOfficial}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "2",
+                            "Name": "TextFilenameFormat",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Community.FilenameFormat}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Grid.Row": "2",
+                            "Name": "ComboDownloadTranslateV2",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "ToolDownloadTranslateV2",
+                            "Grid.Column": "1",
+                            "SelectionChanged": "ComboChange",
+                            "ToolTip": "{DynamicResource Setup.GameManage.Community.FilenameFormat.ToolTip}"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.FilenameFormat.Style0}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.FilenameFormat.Style1}",
+                                "IsSelected": "True"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.FilenameFormat.Style2}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.FilenameFormat.Style3}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.FilenameFormat.Style4}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "4",
+                            "Name": "TextModManageStyle",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Community.ModManageStyle}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Grid.Row": "4",
+                            "Name": "ComboModLocalNameStyle",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "ToolModLocalNameStyle",
+                            "Grid.Column": "1",
+                            "SelectionChanged": "ComboChange",
+                            "ToolTip": "{DynamicResource Setup.GameManage.Community.ModManageStyle.ToolTip}"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.ModManageStyle.TitleTranslation}",
+                                "IsSelected": "True"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.ModManageStyle.TitleFilename}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "6",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Text": "{DynamicResource Setup.GameManage.Community.QuickDownload}",
+                            "Margin": "0,0,25,0"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Grid.Row": "6",
+                            "Name": "ComboDownloadQuickBehavior",
+                            "Grid.ColumnSpan": "2",
+                            "Tag": "ToolDownloadQuickBehavior",
+                            "Grid.Column": "1",
+                            "SelectionChanged": "ComboChange",
+                            "ToolTip": "{DynamicResource Setup.GameManage.Community.QuickDownload.ToolTip}"
+                          },
+                          "children": [
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.QuickDownload.AlwaysAsk}",
+                                "IsSelected": "True"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.QuickDownload.CurrentInstance}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.QuickDownload.AskInstance}"
+                              }
+                            },
+                            {
+                              "type": "PComboBoxItem",
+                              "attrs": {
+                                "Content": "{DynamicResource Setup.GameManage.Community.QuickDownload.AskPath}"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "*"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "Auto"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Margin": "0,2,0,4",
+                            "Text": "{DynamicResource Setup.GameManage.Community.HideQuilt}",
+                            "ToolTip": "{DynamicResource Setup.GameManage.Community.HideQuilt.ToolTip}",
+                            "Grid.Row": "0",
+                            "Height": "22",
+                            "Grid.Column": "0",
+                            "Change": "CheckBoxChange",
+                            "Name": "CheckDownloadIgnoreQuilt",
+                            "Tag": "ToolDownloadIgnoreQuilt"
+                          }
+                        },
+                        {
+                          "type": "PCheckBox",
+                          "attrs": {
+                            "Margin": "0,2,0,4",
+                            "Text": "{DynamicResource Setup.GameManage.Community.AutoInstallDependencies}",
+                            "ToolTip": "{DynamicResource Setup.GameManage.Community.AutoInstallDependencies.ToolTip}",
+                            "Grid.Row": "1",
+                            "Height": "22",
+                            "Grid.Column": "0",
+                            "Change": "CheckBoxChange",
+                            "Name": "CheckDownloadAutoInstallDependencies",
+                            "Tag": "ToolDownloadAutoInstallDependencies"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,0,0,15",
+                "Title": "{DynamicResource Setup.GameManage.Accessibility.Title}"
+              },
+              "children": [
+                {
+                  "type": "Grid",
+                  "attrs": {
+                    "Margin": "25,40,25,17"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid.ColumnDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "160"
+                          }
+                        },
+                        {
+                          "type": "ColumnDefinition",
+                          "attrs": {
+                            "Width": "Auto"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Grid.RowDefinitions",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "22"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "8"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "22"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "8"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "22"
+                          }
+                        },
+                        {
+                          "type": "RowDefinition",
+                          "attrs": {
+                            "Height": "8"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "VerticalAlignment": "Center",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Setup.GameManage.Accessibility.GameUpdateNotice}",
+                        "Margin": "0,0,25,0"
+                      }
+                    },
+                    {
+                      "type": "PCheckBox",
+                      "attrs": {
+                        "Text": "{DynamicResource Setup.GameManage.Accessibility.ReleaseNotice}",
+                        "Grid.Column": "1",
+                        "Name": "CheckUpdateRelease",
+                        "Change": "CheckBoxChange",
+                        "Tag": "ToolUpdateRelease",
+                        "ToolTip": "{DynamicResource Setup.GameManage.Accessibility.ReleaseNotice.ToolTip}"
+                      }
+                    },
+                    {
+                      "type": "PCheckBox",
+                      "attrs": {
+                        "Text": "{DynamicResource Setup.GameManage.Accessibility.SnapshotNotice}",
+                        "Grid.Column": "2",
+                        "Height": "22",
+                        "Name": "CheckUpdateSnapshot",
+                        "Change": "CheckBoxChange",
+                        "Tag": "ToolUpdateSnapshot",
+                        "ToolTip": "{DynamicResource Setup.GameManage.Accessibility.SnapshotNotice.ToolTip}"
+                      }
+                    },
+                    {
+                      "type": "TextBlock",
+                      "attrs": {
+                        "VerticalAlignment": "Center",
+                        "Grid.Row": "2",
+                        "HorizontalAlignment": "Left",
+                        "Text": "{DynamicResource Setup.GameManage.Accessibility.GameLanguage}",
+                        "Margin": "0,0,25,0"
+                      }
+                    },
+                    {
+                      "type": "PCheckBox",
+                      "attrs": {
+                        "Text": "{DynamicResource Setup.GameManage.Accessibility.AutoLauncherLanguage}",
+                        "Grid.Row": "2",
+                        "Grid.Column": "1",
+                        "Grid.ColumnSpan": "5",
+                        "Name": "CheckHelpLauncherLanguage",
+                        "Tag": "ToolHelpChinese",
+                        "Change": "CheckBoxChange"
+                      }
+                    },
+                    {
+                      "type": "PCheckBox",
+                      "attrs": {
+                        "Text": "{DynamicResource Setup.GameManage.Accessibility.ReadClipboard}",
+                        "Height": "22",
+                        "Grid.Row": "4",
+                        "Grid.Column": "0",
+                        "Grid.ColumnSpan": "3",
+                        "Change": "CheckBoxChange",
+                        "Name": "CheckDownloadClipboard",
+                        "Tag": "ToolDownloadClipboard",
+                        "ToolTip": "{DynamicResource Setup.GameManage.Accessibility.ReadClipboard.ToolTip}"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

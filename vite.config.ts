@@ -16,15 +16,13 @@ export default defineConfig({
     strictPort: true,
     watch: {
       ignored: ['**/src-tauri/**', '**/src-terracotta/**'],
-    }
+    },
   },
   envPrefix: ['VITE_', 'TAURI_ENV_*'],
+  optimizeDeps: { rolldownOptions: { transform: { jsx: 'preserve' } } },
   build: {
     // Tauri 在 Windows 上使用 Chromium，在 macOS 和 Linux 上使用 WebKit
-    target:
-      process.env.TAURI_ENV_PLATFORM == 'windows'
-        ? 'chrome105'
-        : 'safari13',
+    target: process.env.TAURI_ENV_PLATFORM == 'windows' ? 'chrome105' : 'safari13',
     // 在 debug 构建中不使用 minify
     minify: !process.env.TAURI_ENV_DEBUG ? 'esbuild' : false,
     // 在 debug 构建中生成 sourcemap
@@ -33,15 +31,15 @@ export default defineConfig({
   plugins: [
     vue(),
     svgLoader(),
-    vueJsx()
+    vueJsx(),
     // vueDevTools(),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   define: {
     __APP_VERSION__: JSON.stringify(version),
-  }
+  },
 })

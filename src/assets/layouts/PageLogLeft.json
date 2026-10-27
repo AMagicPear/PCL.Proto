@@ -1,0 +1,63 @@
+{
+  "type": "PPageLeft",
+  "attrs": {
+    "Class": "PCL.PageLogLeft",
+    "AnimatedControl": "{Binding ElementName=PanList, Mode=OneWay}"
+  },
+  "children": [
+    {
+      "type": "AdornerDecorator",
+      "attrs": {},
+      "children": [
+        {
+          "type": "Grid",
+          "attrs": {},
+          "children": [
+            {
+              "type": "Grid.RowDefinitions",
+              "attrs": {},
+              "children": [
+                {
+                  "type": "RowDefinition",
+                  "attrs": {
+                    "Height": "Auto"
+                  }
+                },
+                {
+                  "type": "RowDefinition",
+                  "attrs": {}
+                },
+                {
+                  "type": "RowDefinition",
+                  "attrs": {
+                    "Height": "5"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "PScrollViewer",
+              "attrs": {
+                "DeltaMult": "0.7",
+                "Grid.Row": "1",
+                "MaxWidth": "300",
+                "MinWidth": "250",
+                "VerticalScrollBarVisibility": "Auto",
+                "HorizontalScrollBarVisibility": "Disabled",
+                "Style": "{StaticResource ScrollViewerFullMargin}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Name": "PanList"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

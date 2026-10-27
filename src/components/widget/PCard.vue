@@ -67,7 +67,16 @@ defineExpose({ SwitchFoldState })
     :transition="{ type: shouldSpring ? 'spring' : 'tween', stiffness: 330, damping: 25, mass: 1 }"
   >
     <div class="mycard" ref="mycardInner" :class="{ 'hide-title': hideTitle }">
-      <header class="mycard-title" v-if="!hideTitle" @click="SwitchFoldState">
+      <header
+        class="mycard-title"
+        v-if="!hideTitle"
+        :role="foldState !== 'unfoldable' ? 'button' : undefined"
+        :tabindex="foldState !== 'unfoldable' ? 0 : undefined"
+        :aria-expanded="foldState !== 'fold'"
+        @keydown.enter="SwitchFoldState"
+        @keydown.space.prevent="SwitchFoldState"
+        @click="SwitchFoldState"
+      >
         <!-- 此处为兼容性设计：title插槽被设置时显示插槽内容，否则默认显示props中的title属性 -->
         <p>
           <slot name="title">{{ title }}</slot>
@@ -125,12 +134,12 @@ defineExpose({ SwitchFoldState })
 }
 
 .mycard {
-  padding: 8px 14px;
+  padding: 0;
 }
 
 .mycard.hide-title {
   /* 不知道为什么必须有上下的padding */
-  padding: 1px 6px;
+  padding: 0;
 }
 
 .mycard > .mycard-title {
@@ -138,7 +147,8 @@ defineExpose({ SwitchFoldState })
   align-items: center;
   justify-content: space-between;
   color: var(--color-text);
-  height: fit-content;
+  min-height: 40px;
+  padding: 0 15px;
 }
 
 .mycard > .mycard-title > i {
@@ -153,8 +163,8 @@ defineExpose({ SwitchFoldState })
 
 .mycard > .mycard-title > p *,
 .mycard > .mycard-title > p {
-  font-size: 12px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: 0px;
   line-height: 14.06px;
   text-align: left;
@@ -169,7 +179,7 @@ defineExpose({ SwitchFoldState })
 
 .mycard > .mycard-content {
   font-size: 12px;
-  margin: 9px;
+  margin: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;

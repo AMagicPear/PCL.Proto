@@ -24,10 +24,10 @@ export class Task {
     this.status = TaskStatus.Pending
     this.speed = 0
     this.items = [
-      new TaskItem(0, 'json download', id, 1),
-      new TaskItem(1, 'version jar', id, 1),
-      new TaskItem(2, 'libraries', id),
-      new TaskItem(3, 'assets', id),
+      new TaskItem(0, '下载版本信息', id, 1),
+      new TaskItem(1, '下载游戏主文件', id, 1),
+      new TaskItem(2, '下载支持库', id),
+      new TaskItem(3, '下载资源文件', id),
     ]
     this.progress = 0
   }
@@ -87,7 +87,7 @@ export const useTaskManager = defineStore('task-manager', () => {
       (tasks.value.reduce((acc, task) => {
         return acc + task.progress
       }, 0) /
-        tasks.value.length) *
+        (tasks.value.length || 1)) *
       100
     ).toFixed(2)
   })
@@ -102,7 +102,9 @@ export const useTaskManager = defineStore('task-manager', () => {
     }, 0)
   })
   const activeTaskCount = computed(() => {
-    return tasks.value.filter((task) => task.status !== TaskStatus.Completed).length
+    return tasks.value.filter(
+      (task) => task.status !== TaskStatus.Completed && task.status !== TaskStatus.Failed,
+    ).length
   })
   const floatButton = useFloatButton()
 
@@ -129,12 +131,21 @@ export const useTaskManager = defineStore('task-manager', () => {
         }
       }
     }
-    await invoke('download_minecraft_version', {
-      on_event: onEvent,
-      version_id,
-      task_id: current_taskid,
-      instance_name,
-    })
+    try {
+      await invoke('download_minecraft_version', {
+        on_event: onEvent,
+        version_id,
+        task_id: current_taskid,
+        instance_name,
+      })
+    } catch (err) {
+      const failedTask = tasks.value.find((task) => task.id === newTask.id)!
+      failedTask.status = TaskStatus.Failed
+      failedTask.items
+        .filter((item) => item.status !== TaskStatus.Completed)
+        .forEach((item) => (item.status = TaskStatus.Failed))
+      throw err
+    }
     console.log('download task completed', tasks.value)
     if (
       activeTaskCount.value <= 0 ||

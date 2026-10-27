@@ -1,0 +1,246 @@
+{
+  "type": "Grid",
+  "attrs": {
+    "Class": "PCL.PageLoginOffline",
+    "Tag": "False",
+    "Margin": "0,0,0,-2"
+  },
+  "children": [
+    {
+      "type": "Grid.RowDefinitions",
+      "attrs": {},
+      "children": [
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "10"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "30"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "10"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "50"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "Auto"
+          }
+        },
+        {
+          "type": "RowDefinition",
+          "attrs": {
+            "Height": "30"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Grid.ColumnDefinitions",
+      "attrs": {},
+      "children": [
+        {
+          "type": "ColumnDefinition",
+          "attrs": {
+            "Width": "50"
+          }
+        },
+        {
+          "type": "ColumnDefinition",
+          "attrs": {}
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Text": "{DynamicResource Launch.Account.Offline.PlayerId}",
+        "Grid.Row": "0",
+        "HorizontalAlignment": "Center",
+        "VerticalAlignment": "Center"
+      }
+    },
+    {
+      "type": "PTextBox",
+      "attrs": {
+        "Grid.Row": "0",
+        "Grid.Column": "1",
+        "Height": "28",
+        "Name": "TextName",
+        "ToolTip": "{DynamicResource Launch.Account.Offline.PlayerId.ToolTip}"
+      }
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Grid.Row": "2",
+        "Grid.Column": "1",
+        "Text": "{DynamicResource Launch.Account.Offline.UuidStandard}",
+        "TextAlignment": "Center",
+        "Margin": "-45,0,0,0",
+        "FontWeight": "Bold"
+      }
+    },
+    {
+      "type": "Grid",
+      "attrs": {
+        "Margin": "-40,0,0,0",
+        "Grid.Row": "3",
+        "Grid.Column": "1",
+        "HorizontalAlignment": "Center",
+        "VerticalAlignment": "Center"
+      },
+      "children": [
+        {
+          "type": "Grid.ColumnDefinitions",
+          "attrs": {},
+          "children": [
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "85"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "85"
+              }
+            },
+            {
+              "type": "ColumnDefinition",
+              "attrs": {
+                "Width": "85"
+              }
+            }
+          ]
+        },
+        {
+          "type": "PRadioBox",
+          "attrs": {
+            "Grid.Column": "0",
+            "Text": "{DynamicResource Launch.Account.Offline.Uuid.Standard}",
+            "Name": "RadioUuidStandard",
+            "Checked": "True",
+            "Height": "22",
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "Check": "RadioUuid_Checked",
+            "ToolTip": "{DynamicResource Launch.Account.Offline.Uuid.Standard.ToolTip}"
+          }
+        },
+        {
+          "type": "PRadioBox",
+          "attrs": {
+            "Grid.Column": "1",
+            "Text": "{DynamicResource Launch.Account.Offline.Uuid.Legacy}",
+            "Name": "RadioUuidLegacy",
+            "Height": "22",
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "Check": "RadioUuid_Checked",
+            "ToolTip": "{DynamicResource Launch.Account.Offline.Uuid.Legacy.ToolTip}"
+          }
+        },
+        {
+          "type": "PRadioBox",
+          "attrs": {
+            "Grid.Column": "2",
+            "Text": "{DynamicResource Common.Option.Customize}",
+            "Name": "RadioUuidCustom",
+            "Height": "22",
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "Check": "RadioUuid_Checked",
+            "ToolTip": "{DynamicResource Launch.Account.Offline.Uuid.Custom.ToolTip}"
+          }
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "attrs": {
+        "Text": "UUID",
+        "Grid.Row": "6",
+        "Name": "TextUuidTitle",
+        "HorizontalAlignment": "Center",
+        "VerticalAlignment": "Center",
+        "Visibility": "Collapsed"
+      }
+    },
+    {
+      "type": "PTextBox",
+      "attrs": {
+        "Grid.Row": "6",
+        "Grid.Column": "1",
+        "Height": "28",
+        "Visibility": "Collapsed",
+        "Name": "TextUuid",
+        "ToolTip": "{DynamicResource Launch.Account.Offline.Uuid.Custom.Input.ToolTip}"
+      }
+    },
+    {
+      "type": "PButton",
+      "attrs": {
+        "Name": "BtnBack",
+        "Grid.Row": "9",
+        "Grid.Column": "1",
+        "Width": "50",
+        "Margin": "-100,-40,0,40",
+        "ColorType": "Normal",
+        "Text": "{DynamicResource Launch.Account.Offline.Back}",
+        "HorizontalAlignment": "Center"
+      }
+    },
+    {
+      "type": "PButton",
+      "attrs": {
+        "Name": "BtnLogin",
+        "Grid.Row": "9",
+        "Grid.Column": "1",
+        "Width": "50",
+        "Margin": "20,-40,0,40",
+        "ColorType": "Highlight",
+        "Text": "{DynamicResource Launch.Account.Offline.Create}",
+        "HorizontalAlignment": "Center"
+      }
+    }
+  ]
+}

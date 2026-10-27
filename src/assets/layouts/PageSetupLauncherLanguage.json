@@ -1,0 +1,339 @@
+{
+  "type": "PPageRight",
+  "attrs": {
+    "Class": "PCL.PageSetupLauncherLanguage",
+    "PanScroll": "{Binding ElementName=PanBack}"
+  },
+  "children": [
+    {
+      "type": "PScrollViewer",
+      "attrs": {
+        "Name": "PanBack",
+        "VerticalScrollBarVisibility": "Auto",
+        "HorizontalScrollBarVisibility": "Disabled"
+      },
+      "children": [
+        {
+          "type": "StackPanel",
+          "attrs": {
+            "Name": "PanMain",
+            "Margin": "25,10"
+          },
+          "children": [
+            {
+              "type": "PCard",
+              "attrs": {
+                "Margin": "0,15,0,10",
+                "Title": "{DynamicResource Setup.Language.CardTitle}"
+              },
+              "children": [
+                {
+                  "type": "StackPanel",
+                  "attrs": {
+                    "Margin": "25,40,25,15"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attrs": {},
+                      "children": [
+                        {
+                          "type": "Grid.ColumnDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "Auto",
+                                "SharedSizeGroup": "Name"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "1*"
+                              }
+                            },
+                            {
+                              "type": "ColumnDefinition",
+                              "attrs": {
+                                "Width": "60"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid.RowDefinitions",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "9"
+                              }
+                            },
+                            {
+                              "type": "RowDefinition",
+                              "attrs": {
+                                "Height": "28"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "0",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Margin": "0,0,25,0",
+                            "Text": "{DynamicResource Setup.Language.UiLanguage}"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "ComboUiLanguage",
+                            "Grid.Row": "0",
+                            "Grid.Column": "1",
+                            "Grid.ColumnSpan": "2",
+                            "SelectionChanged": "ComboUiLanguage_SelectionChanged"
+                          }
+                        },
+                        {
+                          "type": "TextBlock",
+                          "attrs": {
+                            "Grid.Row": "2",
+                            "VerticalAlignment": "Center",
+                            "HorizontalAlignment": "Left",
+                            "Margin": "0,0,25,0",
+                            "Text": "{DynamicResource Setup.Language.FormatCulture}"
+                          }
+                        },
+                        {
+                          "type": "PComboBox",
+                          "attrs": {
+                            "Name": "ComboUiFormatCulture",
+                            "Grid.Row": "2",
+                            "Grid.Column": "1",
+                            "Grid.ColumnSpan": "2",
+                            "SelectionChanged": "ComboUiFormatCulture_SelectionChanged"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "BlurBorder",
+                      "attrs": {
+                        "Name": "BannerInternationalization",
+                        "Margin": "0,10,0,0",
+                        "Padding": "25",
+                        "MinHeight": "230",
+                        "CornerRadius": "5",
+                        "ClipToBounds": "True",
+                        "Background": "{DynamicResource ColorBrush7}"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid",
+                          "attrs": {},
+                          "children": [
+                            {
+                              "type": "Canvas",
+                              "attrs": {
+                                "Width": "205",
+                                "Height": "145",
+                                "HorizontalAlignment": "Right",
+                                "VerticalAlignment": "Top",
+                                "Margin": "0,-43,-25,0",
+                                "Panel.ZIndex": "0",
+                                "IsHitTestVisible": "False"
+                              },
+                              "children": [
+                                {
+                                  "type": "SvgIcon",
+                                  "attrs": {
+                                    "Width": "215",
+                                    "Height": "215",
+                                    "Canvas.Left": "5",
+                                    "Canvas.Top": "-56",
+                                    "Icon": "lucide/earth",
+                                    "IconBrush": "{DynamicResource ColorBrush5}",
+                                    "StrokeThickness": "2.4",
+                                    "Opacity": "0.62",
+                                    "Stretch": "Uniform"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attrs": {
+                                "Panel.ZIndex": "1"
+                              },
+                              "children": [
+                                {
+                                  "type": "Grid.RowDefinitions",
+                                  "attrs": {},
+                                  "children": [
+                                    {
+                                      "type": "RowDefinition",
+                                      "attrs": {
+                                        "Height": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "RowDefinition",
+                                      "attrs": {
+                                        "Height": "Auto"
+                                      }
+                                    },
+                                    {
+                                      "type": "RowDefinition",
+                                      "attrs": {
+                                        "Height": "*"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "StackPanel",
+                                  "attrs": {
+                                    "Grid.Row": "0",
+                                    "Margin": "0,0,170,0",
+                                    "HorizontalAlignment": "Left"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "TextBlock",
+                                      "attrs": {
+                                        "FontSize": "22",
+                                        "FontWeight": "Bold",
+                                        "Foreground": "{DynamicResource ColorBrush1}",
+                                        "Text": "{DynamicResource Setup.Language.Banner.TitlePrefix}",
+                                        "TextWrapping": "Wrap"
+                                      }
+                                    },
+                                    {
+                                      "type": "TextBlock",
+                                      "attrs": {
+                                        "Margin": "0,2,0,2",
+                                        "FontFamily": "Bahnschrift",
+                                        "FontSize": "42",
+                                        "FontWeight": "Bold",
+                                        "Foreground": "{DynamicResource ColorBrush1}",
+                                        "Text": "PCL CE",
+                                        "TextWrapping": "Wrap"
+                                      }
+                                    },
+                                    {
+                                      "type": "TextBlock",
+                                      "attrs": {
+                                        "FontSize": "22",
+                                        "FontWeight": "Bold",
+                                        "Foreground": "{DynamicResource ColorBrush1}",
+                                        "Text": "{DynamicResource Setup.Language.Banner.TitleSuffix}",
+                                        "TextWrapping": "Wrap"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "StackPanel",
+                                  "attrs": {
+                                    "Grid.Row": "1",
+                                    "Margin": "0,20,0,0"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "TextBlock",
+                                      "attrs": {
+                                        "FontSize": "14",
+                                        "LineHeight": "23",
+                                        "LineStackingStrategy": "BlockLineHeight",
+                                        "Foreground": "{DynamicResource ColorBrush1}",
+                                        "Text": "{DynamicResource Setup.Language.Banner.DescriptionLine1}",
+                                        "TextWrapping": "Wrap"
+                                      }
+                                    },
+                                    {
+                                      "type": "TextBlock",
+                                      "attrs": {
+                                        "Margin": "0,5,0,0",
+                                        "FontSize": "14",
+                                        "LineHeight": "23",
+                                        "LineStackingStrategy": "BlockLineHeight",
+                                        "Foreground": "{DynamicResource ColorBrush1}",
+                                        "Text": "{DynamicResource Setup.Language.Banner.DescriptionLine2}",
+                                        "TextWrapping": "Wrap"
+                                      }
+                                    },
+                                    {
+                                      "type": "TextBlock",
+                                      "attrs": {
+                                        "Margin": "0,5,0,0",
+                                        "FontSize": "14",
+                                        "LineHeight": "23",
+                                        "LineStackingStrategy": "BlockLineHeight",
+                                        "Foreground": "{DynamicResource ColorBrush1}",
+                                        "Text": "{DynamicResource Setup.Language.Banner.DescriptionLine3}",
+                                        "TextWrapping": "Wrap"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "StackPanel",
+                      "attrs": {
+                        "Margin": "0,10,0,0",
+                        "HorizontalAlignment": "Right",
+                        "Orientation": "Horizontal"
+                      },
+                      "children": [
+                        {
+                          "type": "PIconTextButton",
+                          "attrs": {
+                            "Name": "BtnTranslateWebsite",
+                            "Margin": "0,0,7,0",
+                            "Text": "{DynamicResource Setup.Language.Banner.TranslateWebsite}",
+                            "SvgIcon": "lucide/globe",
+                            "ColorType": "Highlight",
+                            "CustomEventService.EventType": "OpenUrl",
+                            "CustomEventService.EventData": "https://translate.pclc.cc/projects/pcl-ce/"
+                          }
+                        },
+                        {
+                          "type": "PIconTextButton",
+                          "attrs": {
+                            "Name": "BtnSubmitPullRequest",
+                            "Margin": "0,0,7,0",
+                            "Text": "{DynamicResource Setup.Language.Banner.SubmitPullRequest}",
+                            "SvgIcon": "lucide/git-pull-request-arrow",
+                            "CustomEventService.EventType": "OpenUrl",
+                            "CustomEventService.EventData": "https://github.com/PCL-Community/PCL-CE/pulls"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
