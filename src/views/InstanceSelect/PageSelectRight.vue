@@ -78,7 +78,7 @@ watch(
     <PLoading v-if="loading" :loading-text="text('Select.Instance.Loading')" />
     <PHint v-else-if="error" severity="error"
       >{{ error
-      }}<PButton inline :click="load">{{
+      }}<PButton inline @click="load">{{
         pclText('Launch.Homepage.LoadFailed.Retry')
       }}</PButton></PHint
     >
@@ -87,7 +87,7 @@ watch(
         <h2>{{ text('Select.Instance.Empty.Title') }}</h2>
         <hr />
         <p>{{ text('Select.Instance.Empty.Message') }}</p>
-        <PButton type="tint" :click="() => router.push('/download/game')">{{
+        <PButton type="tint" @click="() => router.push('/download/game')">{{
           text('Select.Instance.Empty.Download')
         }}</PButton>
       </div></PCard
@@ -107,7 +107,8 @@ watch(
           :title="item.name"
           :subtitle="item.version"
           :icon="showIconPath.grass"
-          :click="() => select(item)"
+          clickable
+          @click="() => select(item)"
         /></div
     ></PCard>
   </section>

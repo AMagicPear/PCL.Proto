@@ -100,7 +100,7 @@ watch(
     <PLoading v-if="loading" :loading-text="text('Download.Version.LoadingList')" />
     <PHint v-else-if="error" severity="error"
       >{{ error
-      }}<PButton inline :click="load">{{
+      }}<PButton inline @click="load">{{
         pclText('Launch.Homepage.LoadFailed.Retry')
       }}</PButton></PHint
     >
@@ -109,17 +109,17 @@ watch(
         <div class="intro">
           <PCompItem :data="item" />
           <div class="actions">
-            <PButton inline :click="openProject"><PSvgIcon name="lucide/globe" />Modrinth</PButton>
+            <PButton inline @click="openProject"><PSvgIcon name="lucide/globe" />Modrinth</PButton>
             <PButton
               inline
-              :click="
+              @click="
                 () => openUrl(`https://search.mcmod.cn/s?key=${encodeURIComponent(project!.title)}`)
               "
               >{{ text('Download.Comp.Detail.McMod') }}</PButton
             >
             <PButton
               inline
-              :click="
+              @click="
                 () =>
                   openUrl(
                     `https://translate.google.com/?sl=auto&amp;tl=zh-CN&amp;text=${encodeURIComponent(project!.description)}`,
@@ -127,10 +127,10 @@ watch(
               "
               >{{ text('Download.Comp.Detail.TranslateDescription') }}</PButton
             >
-            <PButton inline :click="() => copy(project!.title)">{{
+            <PButton inline @click="() => copy(project!.title)">{{
               text('Download.Comp.Detail.CopyName')
             }}</PButton>
-            <PButton inline :click="() => favorites.toggle(item!)"
+            <PButton inline @click="() => favorites.toggle(item!)"
               ><PSvgIcon
                 :name="favorites.has(project.id) ? 'lucide/heart-filled' : 'lucide/heart'"
               />{{
@@ -141,7 +141,7 @@ watch(
                 )
               }}</PButton
             >
-            <PButton inline :click="() => copy(projectUrl)">{{
+            <PButton inline @click="() => copy(projectUrl)">{{
               text('Download.Comp.Detail.CopyLink')
             }}</PButton>
           </div>

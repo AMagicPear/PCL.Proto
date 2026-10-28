@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
@@ -36,7 +38,7 @@ const props = withDefaults(
   }>(),
   { loading: false, datapacks: () => [] },
 )
-const { values, text, change, act } = usePageSettings('PageInstanceSavesDatapack', {
+const { values } = usePageSettings('PageInstanceSavesDatapack', {
   filter: 'All',
   SearchBox: '',
 })
@@ -56,6 +58,9 @@ const visibleDatapacks = computed(() =>
     )
   }),
 )
+
+const router = useRouter()
+const text = pclText
 </script>
 <template>
   <div class="pcl-page datapack-page">
@@ -80,7 +85,7 @@ const visibleDatapacks = computed(() =>
                 data-control="SearchBox"
                 style="margin: 15px 0px"
                 :placeholder="text('Instance.Resource.Search.Hint')"
-                @search="(query) => change('SearchBox', query || '')"
+                @search="(query) => (values.SearchBox = query || '')"
               />
               <PCard data-control="PanManage" style="margin: 0px 0px 15px 0px" hide-title>
                 <div
@@ -95,33 +100,33 @@ const visibleDatapacks = computed(() =>
                   <PButton
                     data-control="BtnManageOpen"
                     style="min-width: 110px; margin: 7px 15px 0px 0px; padding: 7px 13px"
-                    :click="() => act('BtnManageOpen', '', '', '')"
+                    @click="showUnavailable"
                     type="tint"
                     >{{ text('Common.Action.OpenFolder') }}</PButton
                   >
                   <PButton
                     data-control="BtnManageInstall"
                     style="min-width: 110px; margin: 7px 15px 0px 0px; padding: 7px 13px"
-                    :click="() => act('BtnManageInstall', '', '', '')"
+                    @click="showUnavailable"
                     >{{ text('Instance.Resource.InstallFromFiles') }}</PButton
                   >
                   <PButton
                     data-control="BtnManageDownload"
                     style="min-width: 110px; margin: 7px 15px 0px 0px; padding: 7px 13px"
-                    :click="() => act('BtnManageDownload', '', '', '')"
+                    @click="() => router.push('/download/datapack')"
                     >{{ text('Instance.Resource.Datapack.DownloadNew') }}</PButton
                   >
                   <PButton
                     data-control="BtnManageSelectAll"
                     style="min-width: 110px; margin: 7px 15px 0px 0px; padding: 7px 13px"
-                    :click="() => act('BtnManageSelectAll', '', '', '')"
+                    @click="showUnavailable"
                     >{{ text('Instance.Resource.SelectAll') }}</PButton
                   >
                   <PButton
                     data-control="BtnManageInfoExport"
                     style="min-width: 110px; margin: 7px 15px 0px 0px; padding: 7px 13px"
                     :title="text('Instance.Resource.Datapack.ExportInfo.ToolTip')"
-                    :click="() => act('BtnManageInfoExport', '', '', '')"
+                    @click="showUnavailable"
                     >{{ text('Instance.Resource.ExportInfo') }}</PButton
                   >
                 </div>
@@ -176,7 +181,7 @@ const visibleDatapacks = computed(() =>
                     align-items: center;
                   "
                 >
-                  <PButton data-control="BtnSort" :click="() => act('BtnSort', '', '', '')" inline
+                  <PButton data-control="BtnSort" @click="showUnavailable" inline
                     ><PSvgIcon name="lucide/arrow-up-down" :size="18" />{{
                       text('Instance.Resource.Sort.Text')
                     }}</PButton
@@ -243,20 +248,20 @@ const visibleDatapacks = computed(() =>
                 <PButton
                   data-control="BtnHintInstall"
                   style="height: 35px; min-width: 130px; margin: 0px 5px; padding: 0px 12px"
-                  :click="() => act('BtnHintInstall', '', '', '')"
+                  @click="showUnavailable"
                   type="tint"
                   >{{ text('Instance.Resource.InstallFromFiles') }}</PButton
                 >
                 <PButton
                   data-control="BtnHintDownload"
                   style="height: 35px; min-width: 130px; margin: 0px 5px; padding: 0px 12px"
-                  :click="() => act('BtnHintDownload', '', '', '')"
+                  @click="() => router.push('/download/datapack')"
                   >{{ text('Instance.Resource.Datapack.DownloadNew') }}</PButton
                 >
                 <PButton
                   data-control="BtnHintOpen"
                   style="height: 35px; min-width: 130px; margin: 0px 5px; padding: 0px 12px"
-                  :click="() => act('BtnHintOpen', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Common.Action.OpenFolder') }}</PButton
                 >
               </div>
@@ -268,13 +273,9 @@ const visibleDatapacks = computed(() =>
     <PCard v-if="selected.size" hide-title class="pcl-selection-toolbar"
       ><p>{{ text('Instance.Resource.SelectedCount', [selected.size]) }}</p>
       <div>
-        <PButton
-          v-for="action in selectionActions"
-          :key="action.id"
-          inline
-          :click="() => act(`BtnSelect${action.id}`)"
+        <PButton v-for="action in selectionActions" :key="action.id" inline @click="showUnavailable"
           ><PSvgIcon :name="`lucide/${action.icon}`" :size="18" />{{ text(action.key) }}</PButton
-        ><PButton inline :click="() => selected.clear()"
+        ><PButton inline @click="() => selected.clear()"
           ><PSvgIcon name="lucide/x" :size="18" />{{
             text('Instance.Resource.CancelSelection')
           }}</PButton

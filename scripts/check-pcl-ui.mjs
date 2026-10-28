@@ -89,11 +89,16 @@ const logo = Object.values(paths).find(
 )
 assert.equal(logo.style.fill, 'none')
 assert.equal(logo.style['stroke-width'], '2.2')
-assert.ok(
-  fs
-    .readFileSync(new URL('../src/assets/icons/TitleLogo.svg', import.meta.url), 'utf8')
-    .includes(logo.data),
+const titleLogo = fs.readFileSync(
+  new URL('../src/assets/icons/TitleLogo.svg', import.meta.url),
+  'utf8',
 )
+assert.match(
+  titleLogo,
+  /width="52" height="16" viewBox="0 0 52 16"/,
+  'retain the original Proto title logo proportions',
+)
+
 for (const [type, id, date, category] of [
   ['release', '1.21.1', '2024-08-08', 'release'],
   ['snapshot', '1.2', '2012-03-01', 'snapshot'],

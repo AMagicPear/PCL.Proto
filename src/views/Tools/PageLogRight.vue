@@ -10,7 +10,7 @@ import sideTip from '@/composables/sideTip'
 import { maxLogLines } from '@/util/logLines'
 const props = withDefaults(defineProps<{ log?: string; stack?: string }>(), { log: '', stack: '' })
 const text = pclText
-const { values } = usePageSettings('PageLogRight', { SliderMaxLog: 13 })
+const { values } = usePageSettings('PageLogRight', {})
 const cleared = ref(false)
 const autoScroll = ref(true)
 const logElement = ref<HTMLElement>()
@@ -51,16 +51,16 @@ function exportText(value: string, filename: string) {
           v-model="autoScroll"
           :label="text('LogPage.Action.Scroll')"
         />
-        <PButton inline :click="() => exportText(log, 'PCL.Proto.log')"
+        <PButton inline @click="() => exportText(log, 'PCL.Proto.log')"
           ><PSvgIcon name="lucide/save" />{{ text('LogPage.Action.Export') }}</PButton
         >
-        <PButton inline :click="() => (cleared = true)"
+        <PButton inline @click="() => (cleared = true)"
           ><PSvgIcon name="lucide/trash-2" />{{ text('LogPage.Action.Clear') }}</PButton
         >
-        <PButton inline :click="() => sideTip.show(pclText('Proto.NotImplemented.Processes'))"
+        <PButton inline @click="() => sideTip.show(pclText('Proto.NotImplemented.Processes'))"
           ><PSvgIcon name="lucide/x" />{{ text('LogPage.Action.KillProcess') }}</PButton
         >
-        <PButton inline :disabled="!stack" :click="() => exportText(stack, 'PCL.Proto-stack.log')"
+        <PButton inline :disabled="!stack" @click="() => exportText(stack, 'PCL.Proto-stack.log')"
           ><PSvgIcon name="lucide/package" />{{ text('LogPage.Action.ExportStack') }}</PButton
         >
       </div>

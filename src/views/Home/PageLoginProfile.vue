@@ -28,9 +28,10 @@ defineProps<{ createAndSelect?: boolean; requireMicrosoft?: boolean }>()
       v-if="account.username"
       :title="account.username"
       :subtitle="text('Launch.Account.Type.Offline')"
-      :click="() => router.push('/home')"
+      clickable
+      @click="() => router.push('/home')"
     />
-    <PCard hide-title class="create-card">
+    <PCard hide-title class="create-card" overflow-visible>
       <details>
         <summary
           :title="text('Launch.Account.Profile.Create')"
@@ -40,13 +41,13 @@ defineProps<{ createAndSelect?: boolean; requireMicrosoft?: boolean }>()
         </summary>
         <div class="account-types">
           <p>{{ text('Launch.Account.Profile.Create.SelectAuthType.Title') }}</p>
-          <PButton v-if="!requireMicrosoft" inline :click="() => router.push('/account/offline')">{{
+          <PButton v-if="!requireMicrosoft" inline @click="() => router.push('/account/offline')">{{
             text('Launch.Account.Type.Offline')
           }}</PButton
-          ><PButton inline :click="() => router.push('/account/microsoft')">{{
+          ><PButton inline @click="() => router.push('/account/microsoft')">{{
             text('Launch.Account.Type.Microsoft')
           }}</PButton
-          ><PButton v-if="!requireMicrosoft" inline :click="() => router.push('/account/auth')">{{
+          ><PButton v-if="!requireMicrosoft" inline @click="() => router.push('/account/auth')">{{
             text('Launch.Account.Type.ThirdParty')
           }}</PButton>
         </div>
@@ -81,10 +82,6 @@ defineProps<{ createAndSelect?: boolean; requireMicrosoft?: boolean }>()
 .create-card {
   align-self: center;
   margin-top: auto;
-  overflow: visible;
-}
-.create-card :deep(.mycard-content) {
-  overflow: visible;
 }
 details {
   position: relative;

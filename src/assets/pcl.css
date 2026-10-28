@@ -10,14 +10,6 @@
   padding: 0;
   display: block;
 }
-.pcl-page .mybutton {
-  min-height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  font: inherit;
-}
 .pcl-page input,
 .pcl-page select {
   font: inherit;
@@ -27,31 +19,9 @@
   width: 100%;
   min-width: 0;
 }
-.pcl-page .input-wrapper,
-.pcl-page .dropdown-wrapper {
-  min-width: 0;
-}
-.pcl-page .input-wrapper input,
-.pcl-page .dropdown-wrapper select {
-  height: 28px;
-  padding: 0 8px;
-}
-.pcl-page .hint-container {
-  margin-top: 0;
-  margin-bottom: 0;
-}
 .pcl-page img {
   object-fit: contain;
   max-width: 100%;
-}
-.pcl-page .mycard-title {
-  font-size: 13px;
-}
-.pcl-page [data-control='BannerInternationalization'] {
-  border-radius: 8px;
-  padding: 20px;
-  background: var(--color-background-soft);
-  box-shadow: var(--box-shadow);
 }
 .pcl-text {
   white-space: pre-wrap;
@@ -94,12 +64,6 @@
   }
 }
 
-.pcl-page .mycard-content {
-  font-size: 13px;
-}
-.pcl-page [style*='grid-template-columns: auto auto'] {
-  justify-content: start;
-}
 .pcl-selection-toolbar {
   position: sticky;
   bottom: 15px;
@@ -129,4 +93,11 @@
 .pcl-unavailable p {
   margin: 15px 0;
   white-space: pre-line;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  row-gap: 9px;
+  align-items: center;
 }

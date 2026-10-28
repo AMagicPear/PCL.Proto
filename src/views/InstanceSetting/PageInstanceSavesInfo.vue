@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { pclText } from '@/api/pclLocale'
-import { usePageSettings } from '@/composables/usePageSettings'
 import PCard from '@/components/widget/PCard.vue'
 withDefaults(defineProps<{ details?: Record<string, string | number> }>(), { details: () => ({}) })
-const { values, text, change, act, image } = usePageSettings('PageInstanceSavesInfo', {})
+
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">

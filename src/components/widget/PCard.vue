@@ -9,13 +9,13 @@ const props = withDefaults(
   defineProps<{
     hideTitle?: boolean
     defaultFoldStatus?: FoldStatus
-    swapLogoRight?: boolean
+    overflowVisible?: boolean
     title?: string
   }>(),
   {
     hideTitle: false,
     defaultFoldStatus: 'unfoldable',
-    swapLogoRight: false,
+    overflowVisible: false,
   },
 )
 
@@ -26,7 +26,7 @@ const shouldSpring = ref<boolean>(true)
 
 let observer: ResizeObserver | null = null
 
-function SwitchFoldState() {
+function toggleFold() {
   switch (foldState.value) {
     case 'unfold':
       foldState.value = 'fold'
@@ -55,14 +55,11 @@ onMounted(() => {
 })
 
 onUnmounted(() => observer?.disconnect())
-
-// allow outside state control
-defineExpose({ SwitchFoldState })
 </script>
 
 <template>
   <motion.div
-    :class="['mycard-container', foldState]"
+    :class="['mycard-container', foldState, { 'overflow-visible': overflowVisible }]"
     :animate="{ height: cardHeight }"
     :transition="{ type: shouldSpring ? 'spring' : 'tween', stiffness: 330, damping: 25, mass: 1 }"
   >
@@ -73,9 +70,9 @@ defineExpose({ SwitchFoldState })
         :role="foldState !== 'unfoldable' ? 'button' : undefined"
         :tabindex="foldState !== 'unfoldable' ? 0 : undefined"
         :aria-expanded="foldState !== 'fold'"
-        @keydown.enter="SwitchFoldState"
-        @keydown.space.prevent="SwitchFoldState"
-        @click="SwitchFoldState"
+        @keydown.enter="toggleFold"
+        @keydown.space.prevent="toggleFold"
+        @click="toggleFold"
       >
         <!-- 此处为兼容性设计：title插槽被设置时显示插槽内容，否则默认显示props中的title属性 -->
         <p>
@@ -119,6 +116,11 @@ defineExpose({ SwitchFoldState })
   box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   will-change: height;
+}
+
+.mycard-container.overflow-visible,
+.mycard-container.overflow-visible > .mycard > .mycard-content {
+  overflow: visible;
 }
 
 .mycard-container:hover {
@@ -187,5 +189,13 @@ defineExpose({ SwitchFoldState })
 
 .description {
   flex: 3;
+}
+
+.pcl-page .mycard-title {
+  font-size: 13px;
+}
+
+.pcl-page .mycard-content {
+  font-size: 13px;
 }
 </style>

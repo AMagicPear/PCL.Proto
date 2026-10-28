@@ -4,13 +4,14 @@ import { defineAsyncComponent } from 'vue'
 import { isTauri } from '@tauri-apps/api/core'
 import PHint from '@/components/widget/PHint.vue'
 import PCard from '@/components/widget/PCard.vue'
-import { usePageSettings } from '@/composables/usePageSettings'
 defineProps<{ launchLog?: string }>()
-const { text } = usePageSettings('PageLaunchRight')
+
 const website = !isTauri()
 const ComponentShowcase = defineAsyncComponent(
   () => import('@/components/website/ComponentShowcase.vue'),
 )
+
+const text = pclText
 </script>
 <template>
   <section class="pcl-page launch-cards" v-card-drop-children-animate>

@@ -1,35 +1,33 @@
 import sourceDefaults from '@/assets/setting-defaults.json'
 import { computed, reactive, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { pclImagePath } from '@/api/pclAssets'
 import { pclText } from '@/api/pclLocale'
-import { useSetup } from '@/stores/setup'
 import { useSelectedInstance } from '@/stores/gameLaunch'
 import sideTip from '@/composables/sideTip'
-import { useModal } from '@/composables/useModal'
 
-export function usePageSettings(
-  page: string,
-  defaults: Record<string, string | boolean | number> = {},
-) {
-  const pageDefaults =
-    (sourceDefaults as Record<string, Record<string, string | boolean | number>>)[page] || {}
-  // Runtime selectors use frontend IDs; retain those instead of source Java/font paths.
+type SettingValue = string | boolean | number
+type PageDefaults<Page extends string> = Page extends keyof typeof sourceDefaults
+  ? (typeof sourceDefaults)[Page]
+  : Record<never, never>
+type Settings<T> = {
+  [Key in keyof T]: T[Key] extends boolean ? boolean : T[Key] extends number ? number : string
+} & Record<string, SettingValue>
+
+export function usePageSettings<
+  Page extends string,
+  Defaults extends Record<string, SettingValue> = Record<never, never>,
+>(page: Page, defaults: Defaults = {} as Defaults) {
+  const pageDefaults = (sourceDefaults as Record<string, Record<string, SettingValue>>)[page] || {}
   const initialDefaults = {
-    ...defaults,
     ...Object.fromEntries(
       Object.entries(pageDefaults).filter(
         ([key]) => !['ComboArgumentJava', 'ComboUiFont', 'ComboUiMotdFont'].includes(key),
       ),
     ),
+    ...defaults,
   }
-  const route = useRoute()
-  const router = useRouter()
-  const setup = useSetup()
-  const instance = useSelectedInstance()
+  const instance = page.startsWith('PageInstance') ? useSelectedInstance() : null
   const storageKey = computed(
-    () =>
-      `pcl-ui:${page}:${page.startsWith('PageInstance') ? instance.instance_info?.id || 'none' : 'global'}`,
+    () => `pcl-ui:${page}:${instance ? instance.instance_info?.id || 'none' : 'global'}`,
   )
   function loadValues() {
     try {
@@ -37,159 +35,49 @@ export function usePageSettings(
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
         return Object.fromEntries(
           Object.entries(parsed).filter(
-            ([key, v]) =>
+            ([key, value]) =>
               !/password|token|secret|cdk/i.test(key) &&
-              ['string', 'number', 'boolean'].includes(typeof v),
+              ['string', 'number', 'boolean'].includes(typeof value) &&
+              (!(key in initialDefaults) || typeof value === typeof initialDefaults[String(key)]),
           ),
-        ) as Record<string, string | number | boolean>
+        )
     } catch {
-      /* Keep invalid saved UI preferences from preventing the page from opening. */
+      // Invalid saved preferences must not prevent the page from opening.
     }
     return {}
   }
-  const values = reactive<Record<string, string | boolean | number>>({
-    ...initialDefaults,
-    ...(page === 'PageSetupLaunch'
-      ? {
-          TextArgumentTitle: setup.launch.gameWindowTitle,
-          TextArgumentInfo: setup.launch.customInfo,
-        }
-      : {}),
-    ...loadValues(),
-  })
-  const launchFields: Record<string, keyof typeof setup.launch> = {
-    TextArgumentTitle: 'gameWindowTitle',
-    TextArgumentInfo: 'customInfo',
-  }
-  function save() {
-    if (page === 'PageSetupLaunch')
-      Object.entries(launchFields).forEach(
-        ([control, field]) => (setup.launch[field] = String(values[control] || '')),
-      )
-    try {
-      localStorage.setItem(
-        storageKey.value,
-        JSON.stringify(
-          Object.fromEntries(
-            Object.entries(values).filter(([key]) => !/password|token|secret|cdk/i.test(key)),
+  const values = reactive({ ...initialDefaults, ...loadValues() }) as Settings<
+    PageDefaults<Page> & Defaults
+  >
+  watch(
+    values,
+    () => {
+      try {
+        localStorage.setItem(
+          storageKey.value,
+          JSON.stringify(
+            Object.fromEntries(
+              Object.entries(values).filter(([key]) => !/password|token|secret|cdk/i.test(key)),
+            ),
           ),
-        ),
-      )
-    } catch {
-      sideTip.show(pclText('Proto.Storage.SettingsFailed'), 'warn')
-    }
-  }
-  watch(values, save, { deep: true })
+        )
+      } catch {
+        sideTip.show(pclText('Proto.Storage.SettingsFailed'), 'warn')
+      }
+    },
+    { deep: true },
+  )
   watch(storageKey, () => {
     Object.keys(values).forEach((key) => delete values[key])
     Object.assign(values, initialDefaults, loadValues())
   })
-  function change(id: string, value: string | number | boolean) {
-    if (id) values[id] = value
-  }
-  async function act(id: string, event = '', eventType = '', eventData = '') {
-    if (eventType === 'OpenUrl' || eventType === '打开网页') {
-      if (eventData && /^https?:\/\//i.test(eventData))
-        window.open(eventData, '_blank', 'noopener,noreferrer')
-      return
-    }
-    if (eventType === '复制文本') {
-      try {
-        await navigator.clipboard.writeText(eventData || '')
-        sideTip.show(pclText('Common.Hint.Copied'), 'success')
-      } catch {
-        sideTip.show(pclText('Proto.Clipboard.CopyFailed'), 'warn')
-      }
-      return
-    }
-    if (id === 'BtnHintClose') {
-      values.hideCommunityHint = true
-      return
-    }
-    if (
-      /Btn(?:EmptyDownload|DownloadNew|ManageDownload|HintDownload)/.test(id) ||
-      event === 'BtnDownloadNew_Click'
-    ) {
-      const targets: Record<string, string> = {
-        PageInstanceSaves: 'world',
-        PageInstanceSavesDatapack: 'datapack',
-        PageInstanceScreenshot: 'resourcepack',
-      }
-      const category = String(route.meta.downloadType || 'mod')
-      await router.push(
-        `/download/${targets[page] || (category === 'schematic' ? 'mod' : category)}`,
-      )
-      return
-    }
-    if (id === 'BtnBack' || id === 'BtnEmptyBack') {
-      router.back()
-      return
-    }
-    if (id === 'BtnDownload' && page === 'PageInstanceModDisabled') {
-      await router.push('/download/game')
-      return
-    }
-    if (id === 'BtnVersion' && page === 'PageInstanceModDisabled') {
-      await router.push('/instance_select')
-      return
-    }
-    if (id === 'BtnSchematicVersionSelect') {
-      await router.push('/instance_select')
-      return
-    }
-    if (id === 'BtnCheckAgain' || id === 'BtnChangelog') {
-      window.open(
-        'https://github.com/PCL-Community/PCL.Proto/releases',
-        '_blank',
-        'noopener,noreferrer',
-      )
-      return
-    }
-    if (id === 'BtnCustomTutorial') {
-      window.open(
-        'https://github.com/Hex-Dragon/PCL2/wiki/自定义主页',
-        '_blank',
-        'noopener,noreferrer',
-      )
-      return
-    }
-    if (id === 'BtnCustomRefresh') {
-      await router.push('/home')
-      return
-    }
-    if (id === 'BtnOverrideCancel') {
+  function reset(key?: keyof typeof values) {
+    if (key) {
+      Object.assign(values, { [key]: initialDefaults[String(key)] })
+    } else {
       Object.keys(values).forEach((key) => delete values[key])
       Object.assign(values, initialDefaults)
-      localStorage.removeItem(storageKey.value)
-      return
     }
-    if (id === 'BtnSwitch') {
-      await router.push(page === 'PageSetupLaunch' ? '/instance_setting/setting' : '/setup/launch')
-      return
-    }
-    if (id === 'BtnAdvanceJvmReset') {
-      change('TextAdvanceJvm', initialDefaults.TextAdvanceJvm || '')
-      return
-    }
-    if (event === 'Feedback_Click') {
-      window.open(
-        'https://github.com/PCL-Community/PCL.Proto/issues',
-        '_blank',
-        'noopener,noreferrer',
-      )
-      return
-    }
-    if (eventType === '今日人品') {
-      await router.push('/tools/wonderbox')
-      return
-    }
-    await useModal().open({
-      title: pclText('Common.Dialog.Title'),
-      content: pclText('Proto.NotImplemented.Action'),
-      buttons: [{ type: 'tint', content: pclText('Common.Action.Confirm') }],
-    })
   }
-  const text = pclText
-  const image = (value: string) => pclImagePath(value, import.meta.env.BASE_URL)
-  return { values, change, act, text, image }
+  return { values, reset }
 }

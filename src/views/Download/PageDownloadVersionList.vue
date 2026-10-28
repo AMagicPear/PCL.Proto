@@ -68,7 +68,7 @@ watch(minecraft, load)
     <PCard :title="text(`Download.Version.${localeName}.Intro.Title`)"
       ><div class="intro">
         <p>{{ text(`Download.Version.${localeName}.Intro.Description`) }}</p>
-        <PButton type="tint" :click="openWebsite">{{
+        <PButton type="tint" @click="openWebsite">{{
           text('Download.Version.OpenWebsite')
         }}</PButton>
       </div></PCard
@@ -84,7 +84,7 @@ watch(minecraft, load)
           :loading-text="text(`Download.Version.${localeName}.LoadingList`)" /></PCard
       ><PHint v-else-if="error" severity="error"
         >{{ error
-        }}<PButton inline :click="retry">{{
+        }}<PButton inline @click="retry">{{
           pclText('Launch.Homepage.LoadFailed.Retry')
         }}</PButton></PHint
       ><PCard v-else :title="minecraft || loader"
@@ -94,7 +94,8 @@ watch(minecraft, load)
             :key="version.version"
             :title="version.version"
             :subtitle="version.stable ? text('Download.Version.Type.Stable') : undefined"
-            :click="() => sideTip.show(pclText('Proto.NotImplemented.Installer'))"
+            clickable
+            @click="() => sideTip.show(pclText('Proto.NotImplemented.Installer'))"
           />
           <p v-if="!versions.length" class="pcl-empty">
             {{ pclText('Download.Install.State.NoAvailableVersion') }}

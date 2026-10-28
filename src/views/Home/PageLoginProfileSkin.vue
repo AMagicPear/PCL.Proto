@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { showUnavailable } from '@/util/showUnavailable'
 import PSkin from '@/components/widget/PSkin.vue'
 import PButton from '@/components/widget/PButton.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
@@ -6,8 +7,7 @@ import { useAccountInfo } from '@/stores/account'
 import { useRouter } from 'vue-router'
 import { pclText } from '@/api/pclLocale'
 import PCard from '@/components/widget/PCard.vue'
-import { usePageSettings } from '@/composables/usePageSettings'
-const { act } = usePageSettings('PageLoginProfileSkin')
+
 const account = useAccountInfo()
 const router = useRouter()
 const text = pclText
@@ -16,7 +16,7 @@ const text = pclText
   <div class="profile-skin">
     <PSkin /><strong>{{ account.username || 'Player' }}</strong
     ><span>{{ text('Launch.Account.Type.Offline') }}</span>
-    <PCard hide-title class="profile-actions-card"
+    <PCard hide-title class="profile-actions-card" overflow-visible
       ><div class="profile-actions">
         <details>
           <summary
@@ -31,7 +31,7 @@ const text = pclText
               v-for="action in ['ChangeSkin', 'SaveSkin', 'RefreshSkin', 'ChangeCape']"
               :key="action"
               inline
-              :click="() => act(`Btn${action}`)"
+              @click="showUnavailable"
               >{{ text(`Launch.Account.ProfileSkin.${action}`) }}</PButton
             >
           </div>
@@ -45,10 +45,10 @@ const text = pclText
             <PSvgIcon name="lucide/pencil" :size="14" />
           </summary>
           <div class="profile-menu">
-            <PButton inline :click="() => act('BtnEditPassword')">{{
+            <PButton inline @click="showUnavailable">{{
               text('Launch.Account.ProfileSkin.EditPassword')
             }}</PButton
-            ><PButton inline :click="() => router.push('/account/offline')">{{
+            ><PButton inline @click="() => router.push('/account/offline')">{{
               text('Launch.Account.ProfileSkin.EditUsername')
             }}</PButton>
           </div>
@@ -90,10 +90,6 @@ const text = pclText
 .profile-actions-card {
   margin-top: 8px;
   border-radius: 5px;
-  overflow: visible;
-}
-.profile-actions-card :deep(.mycard-content) {
-  overflow: visible;
 }
 .profile-action {
   width: 24px;

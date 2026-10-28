@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { usePageSettings } from '@/composables/usePageSettings'
+import { showUnavailable } from '@/util/showUnavailable'
+import { pclText } from '@/api/pclLocale'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import ServerCard from '@/components/widget/ServerCard.vue'
@@ -16,7 +17,8 @@ withDefaults(
   }>(),
   { servers: () => [] },
 )
-const { values, text, change, act, image } = usePageSettings('PageInstanceServer', {})
+
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -79,7 +81,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceServer
                   grid-column: 2 / span 1;
                   justify-self: center;
                 "
-                :click="() => act('BtnRefresh_Click', 'BtnRefresh_Click', '', '')"
+                @click="showUnavailable"
                 type="tint"
                 >{{ text('Instance.Server.RefreshInfo') }}</PButton
               >
@@ -94,7 +96,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceServer
                   grid-column: 3 / span 1;
                   justify-self: center;
                 "
-                :click="() => act('BtnAddServerTop', 'BtnAddServer_Click', '', '')"
+                @click="showUnavailable"
                 >{{ text('Instance.Server.AddServer') }}</PButton
               >
             </div>
@@ -111,22 +113,18 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceServer
           >
             <PCard :title="text('Instance.Server.QuickActions')"
               ><div class="server-actions">
-                <PButton :click="() => act('BtnRefreshAll')">{{
-                  text('Instance.Server.RefreshAll')
-                }}</PButton
-                ><PButton :click="() => act('BtnAddServerTop')">{{
-                  text('Instance.Server.AddServer')
-                }}</PButton>
+                <PButton @click="showUnavailable">{{ text('Instance.Server.RefreshAll') }}</PButton
+                ><PButton @click="showUnavailable">{{ text('Instance.Server.AddServer') }}</PButton>
               </div></PCard
             >
             <ServerCard
               v-for="server in servers"
               :key="server.address"
               v-bind="server"
-              @connect="act('BtnConnect')"
-              @refresh="act('BtnRefresh')"
-              @edit="act('BtnEdit')"
-              @remove="act('BtnRemove')"
+              @connect="showUnavailable()"
+              @refresh="showUnavailable()"
+              @edit="showUnavailable()"
+              @remove="showUnavailable()"
             />
           </div>
         </div>

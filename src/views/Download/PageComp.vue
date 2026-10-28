@@ -135,14 +135,14 @@ watch(() => props.projectType, reset, { immediate: true })
           @update:model-value="firstSearch"
         />
       </template>
-      <PButton inline :click="reset" :title="text('Common.Action.Reset')"
+      <PButton inline @click="reset" :title="text('Common.Action.Reset')"
         ><PSvgIcon name="lucide/rotate-ccw"
       /></PButton>
     </div>
     <PLoading v-if="loading" :loading-text="text('Download.Version.LoadingList')" />
     <PHint v-else-if="error" severity="error"
       >{{ error }}
-      <PButton inline :click="search">{{
+      <PButton inline @click="search">{{
         pclText('Launch.Homepage.LoadFailed.Retry')
       }}</PButton></PHint
     >
@@ -158,14 +158,14 @@ watch(() => props.projectType, reset, { immediate: true })
           <PButton
             inline
             :disabled="!page"
-            :click="() => turn(0)"
+            @click="() => turn(0)"
             :aria-label="pclText('Proto.Action.First')"
             ><PSvgIcon name="lucide/chevrons-left"
           /></PButton>
           <PButton
             inline
             :disabled="!page"
-            :click="() => turn(page - 1)"
+            @click="() => turn(page - 1)"
             :aria-label="pclText('Proto.Action.Previous')"
             ><PSvgIcon name="lucide/chevron-left"
           /></PButton>
@@ -173,7 +173,7 @@ watch(() => props.projectType, reset, { immediate: true })
           <PButton
             inline
             :disabled="(page + 1) * limit >= total"
-            :click="() => turn(page + 1)"
+            @click="() => turn(page + 1)"
             :aria-label="pclText('Proto.Action.Next')"
             ><PSvgIcon name="lucide/chevron-right"
           /></PButton></nav

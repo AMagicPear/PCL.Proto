@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import SetupItem from '@/components/widget/SetupItem.vue'
+import { useRouter } from 'vue-router'
+import { showUnavailable } from '@/util/showUnavailable'
+import { pclText } from '@/api/pclLocale'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { getJavaList, type IJavaRuntimeInfo } from '@/api/javaReq'
 import { usePageSettings } from '@/composables/usePageSettings'
@@ -15,34 +19,8 @@ const props = defineProps<{
   memoryOverLimit?: boolean
   canCreateProfile?: boolean
 }>()
-const { values, text, change, act, image } = usePageSettings('PageInstanceSetup', {
-  ComboArgumentIndieV2: '0',
-  TextArgumentTitle: '',
-  CheckArgumentTitleEmpty: false,
-  TextArgumentInfo: '',
+const { values } = usePageSettings('PageInstanceSetup', {
   ComboArgumentJava: '0',
-  VersionRamType: '2',
-  SliderRamCustom: 13.0,
-  SliderRamInitialCustom: 0.0,
-  ComboServerLoginRequire: '0',
-  TextServerAuthServer: '',
-  TextServerAuthRegister: '',
-  TextServerAuthName: '',
-  CheckAdvanceRunWait: false,
-  TextServerEnter: '',
-  ComboAdvanceRenderer: '0',
-  TextAdvanceJvm: '',
-  TextAdvanceGame: '',
-  TextAdvanceClasspathHead: '',
-  TextAdvanceRun: '',
-  CheckAdvanceDisableModUpdate: false,
-  CheckAdvanceJava: false,
-  CheckAdvanceAssetsV2: false,
-  CheckAdvanceUseProxyV2: false,
-  CheckAdvanceDisableJLW: false,
-  CheckAdvanceDisableLF: false,
-  CheckUseDebugLog4j2Config: false,
-  CheckAdvanceDisableLwjglUnsafeAgent: false,
 })
 const javaList = ref<IJavaRuntimeInfo[]>([])
 const javaLoading = ref(true)
@@ -92,6 +70,9 @@ async function setLittleSkin() {
   values.TextServerAuthRegister = 'https://littleskin.cn/auth/register'
   values.TextServerAuthName = text('Instance.Setup.Server.LittleSkin.Name')
 }
+
+const router = useRouter()
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -110,114 +91,63 @@ async function setLittleSkin() {
             :title="text('Setup.Launch.Options.Title')"
           >
             <div style="margin: 0px 25px 21px 25px; display: flex; flex-direction: column">
-              <div
-                style="
-                  display: grid;
-                  grid-template-columns: auto minmax(0, 1fr) 60px;
-                  grid-template-rows: 28px 9px 28px 9px auto auto 28px 9px 28px;
-                "
-              >
-                <span
-                  style="
-                    margin: 0px 25px 0px 0px;
-                    grid-row: 1 / span 1;
-                    grid-column: 1 / span 1;
-                    justify-self: start;
-                    align-self: center;
-                  "
-                  class="pcl-text"
-                  >{{ text('Instance.Setup.Options.InstanceIsolation') }}</span
-                >
-                <PComboBox
-                  data-control="ComboArgumentIndieV2"
-                  style="grid-row: 1 / span 1; grid-column: 2 / span 2"
-                  :options="[
-                    {
-                      key: '0',
-                      text: text('Instance.Setup.Options.InstanceIsolation.Enabled'),
-                      title: text('Instance.Setup.Options.InstanceIsolation.Enabled.ToolTip'),
-                    },
-                    {
-                      key: '1',
-                      text: text('Common.Action.Close'),
-                      title: text('Instance.Setup.Options.InstanceIsolation.Disabled.ToolTip'),
-                    },
-                  ]"
-                  :model-value="String(values['ComboArgumentIndieV2'])"
-                  @update:model-value="(value) => change('ComboArgumentIndieV2', value || '')"
-                />
-                <span
-                  style="
-                    margin: 0px 25px 0px 0px;
-                    grid-row: 3 / span 1;
-                    grid-column: 1 / span 1;
-                    justify-self: start;
-                    align-self: center;
-                  "
-                  class="pcl-text"
-                  >{{ text('Setup.Launch.Options.WindowTitle.Label') }}</span
-                >
-                <PTextBox
-                  data-control="TextArgumentTitle"
-                  :suggestions="[text('Setup.Launch.Options.WindowTitle.SampleFormat')]"
-                  style="grid-row: 3 / span 1; grid-column: 2 / span 2"
-                  :title="text('Instance.Setup.Options.WindowTitle.ToolTip')"
-                  :placeholder="text('')"
-                  :model-value="String(values['TextArgumentTitle'])"
-                  @update:model-value="(value) => change('TextArgumentTitle', value || '')"
-                />
+              <div class="settings-grid">
+                <SetupItem :label="text('Instance.Setup.Options.InstanceIsolation')" v-slot="{ id }"
+                  ><PComboBox
+                    :input-id="id"
+                    data-control="ComboArgumentIndieV2"
+                    :options="[
+                      {
+                        key: '0',
+                        text: text('Instance.Setup.Options.InstanceIsolation.Enabled'),
+                        title: text('Instance.Setup.Options.InstanceIsolation.Enabled.ToolTip'),
+                      },
+                      {
+                        key: '1',
+                        text: text('Common.Action.Close'),
+                        title: text('Instance.Setup.Options.InstanceIsolation.Disabled.ToolTip'),
+                      },
+                    ]"
+                    v-model="values.ComboArgumentIndieV2"
+                /></SetupItem>
+                <SetupItem :label="text('Setup.Launch.Options.WindowTitle.Label')" v-slot="{ id }"
+                  ><PTextBox
+                    :input-id="id"
+                    data-control="TextArgumentTitle"
+                    :suggestions="[text('Setup.Launch.Options.WindowTitle.SampleFormat')]"
+                    :title="text('Instance.Setup.Options.WindowTitle.ToolTip')"
+                    :placeholder="text('')"
+                    v-model="values.TextArgumentTitle"
+                /></SetupItem>
                 <PCheckBox
                   data-control="CheckArgumentTitleEmpty"
-                  style="margin: 0px 0px 9px 0px; grid-row: 5 / span 1; grid-column: 1 / span 3"
+                  style="margin: 0px 0px 9px 0px; grid-column: 1 / -1"
                   :title="text('Instance.Setup.Options.WindowTitle.Default.ToolTip')"
                   id="PageInstanceSetup-CheckArgumentTitleEmpty"
                   :label="text('Instance.Setup.Options.WindowTitle.Default')"
-                  :model-value="Boolean(values['CheckArgumentTitleEmpty'])"
-                  @update:model-value="(value) => change('CheckArgumentTitleEmpty', value)"
+                  v-model="values.CheckArgumentTitleEmpty"
                 />
-                <span
-                  style="
-                    margin: 0px 25px 0px 0px;
-                    grid-row: 7 / span 1;
-                    grid-column: 1 / span 1;
-                    justify-self: start;
-                    align-self: center;
-                  "
-                  class="pcl-text"
-                  >{{ text('Setup.Launch.Options.CustomInfo.Label') }}</span
-                >
-                <PTextBox
-                  data-control="TextArgumentInfo"
-                  style="grid-row: 7 / span 1; grid-column: 2 / span 2"
-                  :title="text('Instance.Setup.Options.CustomInfo.ToolTip')"
-                  :placeholder="text('Instance.Setup.FollowGlobal')"
-                  :model-value="String(values['TextArgumentInfo'])"
-                  @update:model-value="(value) => change('TextArgumentInfo', value || '')"
-                />
-                <span
-                  style="
-                    margin: 0px 25px 0px 0px;
-                    grid-row: 9 / span 1;
-                    grid-column: 1 / span 1;
-                    justify-self: start;
-                    align-self: center;
-                  "
-                  class="pcl-text"
-                  >{{ text('Instance.Setup.Options.Java') }}</span
-                >
-                <PComboBox
-                  data-control="ComboArgumentJava"
-                  style="grid-row: 9 / span 1; grid-column: 2 / span 2"
-                  :title="text('Instance.Setup.Options.Java.ToolTip')"
-                  :options="
-                    javaLoading
-                      ? [{ key: '0', text: text('Instance.Setup.Options.Java.Loading') }]
-                      : javaOptions
-                  "
-                  :disabled="javaLoading"
-                  :model-value="String(values['ComboArgumentJava'])"
-                  @update:model-value="(value) => change('ComboArgumentJava', value || '')"
-                />
+                <SetupItem :label="text('Setup.Launch.Options.CustomInfo.Label')" v-slot="{ id }"
+                  ><PTextBox
+                    :input-id="id"
+                    data-control="TextArgumentInfo"
+                    :title="text('Instance.Setup.Options.CustomInfo.ToolTip')"
+                    :placeholder="text('Instance.Setup.FollowGlobal')"
+                    v-model="values.TextArgumentInfo"
+                /></SetupItem>
+                <SetupItem :label="text('Instance.Setup.Options.Java')" v-slot="{ id }"
+                  ><PComboBox
+                    :input-id="id"
+                    data-control="ComboArgumentJava"
+                    :title="text('Instance.Setup.Options.Java.ToolTip')"
+                    :options="
+                      javaLoading
+                        ? [{ key: '0', text: text('Instance.Setup.Options.Java.Loading') }]
+                        : javaOptions
+                    "
+                    :disabled="javaLoading"
+                    v-model="values.ComboArgumentJava"
+                /></SetupItem>
               </div>
             </div>
           </PCard>
@@ -460,8 +390,7 @@ async function setLittleSkin() {
                     { key: '2', text: text('Instance.Setup.Server.LoginMethod.AuthOnly') },
                     { key: '3', text: text('Instance.Setup.Server.LoginMethod.MicrosoftOrAuth') },
                   ]"
-                  :model-value="String(values['ComboServerLoginRequire'])"
-                  @update:model-value="(value) => change('ComboServerLoginRequire', value || '')"
+                  v-model="values.ComboServerLoginRequire"
                 />
                 <template v-if="authVisible">
                   <label
@@ -524,8 +453,7 @@ async function setLittleSkin() {
                   style="grid-row: 6 / span 1; grid-column: 2 / span 2"
                   :title="text('Instance.Setup.Server.AutoJoin.ToolTip')"
                   :placeholder="text('')"
-                  :model-value="String(values['TextServerEnter'])"
-                  @update:model-value="(value) => change('TextServerEnter', value || '')"
+                  v-model="values.TextServerEnter"
                 />
               </div>
               <div
@@ -535,7 +463,7 @@ async function setLittleSkin() {
                 <PButton
                   data-control="BtnServerAuthLittle"
                   style="height: 35px; min-width: 150px; margin: 0"
-                  :click="setLittleSkin"
+                  @click="setLittleSkin"
                   :disabled="loginLocked"
                   type="tint"
                   >{{ text('Instance.Setup.Server.SetLittleSkin') }}</PButton
@@ -543,7 +471,7 @@ async function setLittleSkin() {
                 <PButton
                   data-control="BtnServerAuthLock"
                   style="height: 35px; min-width: 150px; margin: 0"
-                  :click="() => act('BtnServerAuthLock', '', '', '')"
+                  @click="showUnavailable"
                   disabled
                   >{{ text('Instance.Setup.Server.LockLoginMethod') }}</PButton
                 >
@@ -551,7 +479,7 @@ async function setLittleSkin() {
                   v-if="canCreateProfile"
                   data-control="BtnServerNewProfile"
                   style="height: 35px; min-width: 150px; margin: 0"
-                  :click="() => act('BtnServerNewProfile', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Setup.Server.CreateProfile') }}</PButton
                 >
               </div>
@@ -563,128 +491,61 @@ async function setLittleSkin() {
             :title="text('Setup.Launch.Advanced.Title')"
             default-fold-status="fold"
           >
-            <div
-              style="
-                margin: 0px 25px 15px 25px;
-                display: grid;
-                grid-template-columns: auto minmax(0, 1fr);
-                grid-template-rows: 28px 9px auto 9px 28px 9px 28px 9px 31px auto auto;
-              "
-            >
-              <span
-                style="
-                  margin: 0px 25px 0px 0px;
-                  grid-row: 1 / span 1;
-                  grid-column: 1 / span 1;
-                  justify-self: start;
-                  align-self: center;
-                "
-                class="pcl-text"
-                >{{ text('Setup.Launch.Advanced.Renderer.Label') }}</span
-              >
-              <PComboBox
-                data-control="ComboAdvanceRenderer"
-                style="grid-row: 1 / span 1; grid-column: 2 / span 2"
-                :options="[
-                  { key: '0', text: text('Instance.Setup.FollowGlobal') },
-                  { key: '1', text: text('Setup.Launch.Advanced.Renderer.GameDefault') },
-                  { key: '2', text: text('Setup.Launch.Advanced.Renderer.Software') },
-                  { key: '3', text: text('Setup.Launch.Advanced.Renderer.DirectX12') },
-                  { key: '4', text: text('Setup.Launch.Advanced.Renderer.Vulkan') },
-                ]"
-                :model-value="String(values['ComboAdvanceRenderer'])"
-                @update:model-value="(value) => change('ComboAdvanceRenderer', value || '')"
-              />
-              <span
-                style="
-                  margin: 0px 25px 0px 0px;
-                  grid-row: 3 / span 1;
-                  grid-column: 1 / span 1;
-                  justify-self: start;
-                  align-self: center;
-                "
-                class="pcl-text"
-                >{{ text('Setup.Launch.Advanced.JvmHead') }}</span
-              >
-              <PTextBox
-                multiline
-                data-control="TextAdvanceJvm"
-                style="
-                  height: 100px;
-                  padding: 5px 0px;
-                  grid-row: 3 / span 1;
-                  grid-column: 2 / span 2;
-                "
-                :title="text('Instance.Setup.Advanced.JvmArgs.ToolTip')"
-                :placeholder="text('Instance.Setup.FollowGlobal')"
-                :model-value="String(values['TextAdvanceJvm'])"
-                @update:model-value="(value) => change('TextAdvanceJvm', value || '')"
-              />
-              <span
-                style="
-                  margin: 0px 25px 0px 0px;
-                  grid-row: 5 / span 1;
-                  grid-column: 1 / span 1;
-                  justify-self: start;
-                  align-self: center;
-                "
-                class="pcl-text"
-                >{{ text('Setup.Launch.Advanced.GameTail') }}</span
-              >
-              <PTextBox
-                data-control="TextAdvanceGame"
-                style="grid-row: 5 / span 1; grid-column: 2 / span 2"
-                :title="text('Instance.Setup.Advanced.GameArgs.ToolTip')"
-                :placeholder="text('Instance.Setup.FollowGlobal')"
-                :model-value="String(values['TextAdvanceGame'])"
-                @update:model-value="(value) => change('TextAdvanceGame', value || '')"
-              />
-              <span
-                style="
-                  margin: 0px 25px 0px 0px;
-                  grid-row: 7 / span 1;
-                  grid-column: 1 / span 1;
-                  justify-self: start;
-                  align-self: center;
-                "
-                class="pcl-text"
-                >{{ text('Instance.Setup.Advanced.Classpath') }}</span
-              >
-              <PTextBox
-                data-control="TextAdvanceClasspathHead"
-                style="grid-row: 7 / span 1; grid-column: 2 / span 2"
-                :title="text('Instance.Setup.Advanced.Classpath.ToolTip')"
-                :placeholder="text('')"
-                :model-value="String(values['TextAdvanceClasspathHead'])"
-                @update:model-value="(value) => change('TextAdvanceClasspathHead', value || '')"
-              />
-              <span
-                style="
-                  margin: 0px 25px 3px 0px;
-                  grid-row: 9 / span 1;
-                  grid-column: 1 / span 1;
-                  justify-self: start;
-                  align-self: center;
-                "
-                class="pcl-text"
-                >{{ text('Setup.Launch.Advanced.PreLaunchCommand') }}</span
-              >
-              <PTextBox
-                data-control="TextAdvanceRun"
-                style="margin: 0px 0px 3px 0px; grid-row: 9 / span 1; grid-column: 2 / span 2"
-                :title="text('Instance.Setup.Advanced.PreLaunchCommand.ToolTip')"
-                :placeholder="text('')"
-                :model-value="String(values['TextAdvanceRun'])"
-                @update:model-value="(value) => change('TextAdvanceRun', value || '')"
-              />
+            <div class="settings-grid" style="margin: 0px 25px 15px 25px">
+              <SetupItem :label="text('Setup.Launch.Advanced.Renderer.Label')" v-slot="{ id }"
+                ><PComboBox
+                  :input-id="id"
+                  data-control="ComboAdvanceRenderer"
+                  :options="[
+                    { key: '0', text: text('Instance.Setup.FollowGlobal') },
+                    { key: '1', text: text('Setup.Launch.Advanced.Renderer.GameDefault') },
+                    { key: '2', text: text('Setup.Launch.Advanced.Renderer.Software') },
+                    { key: '3', text: text('Setup.Launch.Advanced.Renderer.DirectX12') },
+                    { key: '4', text: text('Setup.Launch.Advanced.Renderer.Vulkan') },
+                  ]"
+                  v-model="values.ComboAdvanceRenderer"
+              /></SetupItem>
+              <SetupItem :label="text('Setup.Launch.Advanced.JvmHead')" v-slot="{ id }"
+                ><PTextBox
+                  :input-id="id"
+                  multiline
+                  data-control="TextAdvanceJvm"
+                  style="height: 100px; padding: 5px 0px"
+                  :title="text('Instance.Setup.Advanced.JvmArgs.ToolTip')"
+                  :placeholder="text('Instance.Setup.FollowGlobal')"
+                  v-model="values.TextAdvanceJvm"
+              /></SetupItem>
+              <SetupItem :label="text('Setup.Launch.Advanced.GameTail')" v-slot="{ id }"
+                ><PTextBox
+                  :input-id="id"
+                  data-control="TextAdvanceGame"
+                  :title="text('Instance.Setup.Advanced.GameArgs.ToolTip')"
+                  :placeholder="text('Instance.Setup.FollowGlobal')"
+                  v-model="values.TextAdvanceGame"
+              /></SetupItem>
+              <SetupItem :label="text('Instance.Setup.Advanced.Classpath')" v-slot="{ id }"
+                ><PTextBox
+                  :input-id="id"
+                  data-control="TextAdvanceClasspathHead"
+                  :title="text('Instance.Setup.Advanced.Classpath.ToolTip')"
+                  :placeholder="text('')"
+                  v-model="values.TextAdvanceClasspathHead"
+              /></SetupItem>
+              <SetupItem :label="text('Setup.Launch.Advanced.PreLaunchCommand')" v-slot="{ id }"
+                ><PTextBox
+                  :input-id="id"
+                  data-control="TextAdvanceRun"
+                  style="margin: 0px 0px 3px 0px"
+                  :title="text('Instance.Setup.Advanced.PreLaunchCommand.ToolTip')"
+                  :placeholder="text('')"
+                  v-model="values.TextAdvanceRun"
+              /></SetupItem>
               <div
                 style="
                   margin: 8px 0px 4px 0px;
-                  grid-row: 10 / span 1;
-                  grid-column: 1 / span 2;
-                  justify-self: start;
                   display: flex;
                   flex-direction: column;
+                  grid-column: 1 / -1;
                 "
               >
                 <PCheckBox
@@ -693,8 +554,7 @@ async function setLittleSkin() {
                   style="margin: 0 0 8px"
                   id="PageInstanceSetup-CheckAdvanceRunWait"
                   :label="text('Setup.Launch.Advanced.PreLaunchCommand.Wait')"
-                  :model-value="Boolean(values.CheckAdvanceRunWait)"
-                  @update:model-value="(value) => change('CheckAdvanceRunWait', value)"
+                  v-model="values.CheckAdvanceRunWait"
                 />
 
                 <PCheckBox
@@ -703,8 +563,7 @@ async function setLittleSkin() {
                   :title="text('Setup.Ui.FeatureHide.Item.ModUpdate.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceDisableModUpdate"
                   :label="text('Instance.Setup.Advanced.DisableModUpdate')"
-                  :model-value="Boolean(values['CheckAdvanceDisableModUpdate'])"
-                  @update:model-value="(value) => change('CheckAdvanceDisableModUpdate', value)"
+                  v-model="values.CheckAdvanceDisableModUpdate"
                 />
                 <PCheckBox
                   data-control="CheckAdvanceJava"
@@ -712,8 +571,7 @@ async function setLittleSkin() {
                   :title="text('Instance.Setup.Advanced.IgnoreJavaCompatibility.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceJava"
                   :label="text('Instance.Setup.Advanced.IgnoreJavaCompatibility')"
-                  :model-value="Boolean(values['CheckAdvanceJava'])"
-                  @update:model-value="(value) => change('CheckAdvanceJava', value)"
+                  v-model="values.CheckAdvanceJava"
                 />
                 <PCheckBox
                   data-control="CheckAdvanceAssetsV2"
@@ -721,8 +579,7 @@ async function setLittleSkin() {
                   :title="text('Instance.Setup.Advanced.DisableFileVerification.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceAssetsV2"
                   :label="text('Instance.Setup.Advanced.DisableFileVerification')"
-                  :model-value="Boolean(values['CheckAdvanceAssetsV2'])"
-                  @update:model-value="(value) => change('CheckAdvanceAssetsV2', value)"
+                  v-model="values.CheckAdvanceAssetsV2"
                 />
                 <PCheckBox
                   data-control="CheckAdvanceUseProxyV2"
@@ -730,8 +587,7 @@ async function setLittleSkin() {
                   :title="text('Instance.Setup.Advanced.UseGlobalProxy.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceUseProxyV2"
                   :label="text('Instance.Setup.Advanced.UseGlobalProxy')"
-                  :model-value="Boolean(values['CheckAdvanceUseProxyV2'])"
-                  @update:model-value="(value) => change('CheckAdvanceUseProxyV2', value)"
+                  v-model="values.CheckAdvanceUseProxyV2"
                 />
                 <PCheckBox
                   data-control="CheckAdvanceDisableJLW"
@@ -739,8 +595,7 @@ async function setLittleSkin() {
                   :title="text('Setup.Launch.Advanced.DisableJlw.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceDisableJLW"
                   :label="text('Setup.Launch.Advanced.DisableJlw')"
-                  :model-value="Boolean(values['CheckAdvanceDisableJLW'])"
-                  @update:model-value="(value) => change('CheckAdvanceDisableJLW', value)"
+                  v-model="values.CheckAdvanceDisableJLW"
                 />
                 <PCheckBox
                   data-control="CheckAdvanceDisableLF"
@@ -748,16 +603,14 @@ async function setLittleSkin() {
                   :title="text('Setup.Launch.Advanced.DisableLF.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceDisableLF"
                   :label="text('Setup.Launch.Advanced.DisableLF')"
-                  :model-value="Boolean(values['CheckAdvanceDisableLF'])"
-                  @update:model-value="(value) => change('CheckAdvanceDisableLF', value)"
+                  v-model="values.CheckAdvanceDisableLF"
                 />
                 <PCheckBox
                   data-control="CheckUseDebugLog4j2Config"
                   style="height: 28px"
                   id="PageInstanceSetup-CheckUseDebugLog4j2Config"
                   :label="text('Instance.Setup.Advanced.UseDebugLog4j')"
-                  :model-value="Boolean(values['CheckUseDebugLog4j2Config'])"
-                  @update:model-value="(value) => change('CheckUseDebugLog4j2Config', value)"
+                  v-model="values.CheckUseDebugLog4j2Config"
                 />
                 <PCheckBox
                   data-control="CheckAdvanceDisableLwjglUnsafeAgent"
@@ -765,10 +618,7 @@ async function setLittleSkin() {
                   :title="text('Setup.Launch.Advanced.DisableLwjglUnsafeAgent.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceDisableLwjglUnsafeAgent"
                   :label="text('Setup.Launch.Advanced.DisableLwjglUnsafeAgent')"
-                  :model-value="Boolean(values['CheckAdvanceDisableLwjglUnsafeAgent'])"
-                  @update:model-value="
-                    (value) => change('CheckAdvanceDisableLwjglUnsafeAgent', value)
-                  "
+                  v-model="values.CheckAdvanceDisableLwjglUnsafeAgent"
                 />
               </div>
             </div>
@@ -776,7 +626,7 @@ async function setLittleSkin() {
           <PButton
             data-control="BtnSwitch"
             style="margin: -5px 0px 0px 0px"
-            :click="() => act('BtnSwitch', '', '', '')"
+            @click="() => router.push('/setup/launch')"
             inline
             ><PSvgIcon name="lucide/arrow-right" :size="18" />{{
               text('Instance.Setup.OpenGlobalSettings')

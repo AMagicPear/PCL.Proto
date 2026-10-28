@@ -54,29 +54,29 @@ async function showDialog(withInput: boolean) {
 
 <template>
   <div class="component-showcase" v-card-drop-children-animate>
-    <PButton type="tint" :click="() => sideTip.show(pclText('Proto.Demo.Clicked', [++count]))">{{
+    <PButton type="tint" @click="() => sideTip.show(pclText('Proto.Demo.Clicked', [++count]))">{{
       pclText('Proto.Demo.ClickHint')
     }}</PButton>
     <PCard :title="pclText('Proto.Demo.Buttons')" default-fold-status="unfold">
       <div class="demo-content">
         <p>{{ pclText('Proto.Demo.InteractionHint') }}</p>
         <div class="demo-row">
-          <PButton :click="() => sideTip.show(pclText('Proto.Demo.Notification'))">{{
+          <PButton @click="() => sideTip.show(pclText('Proto.Demo.Notification'))">{{
             pclText('Proto.Demo.ButtonDefault')
           }}</PButton>
           <PButton
             type="tint"
-            :click="() => sideTip.show(pclText('Proto.Demo.Success'), 'success')"
+            @click="() => sideTip.show(pclText('Proto.Demo.Success'), 'success')"
             >{{ pclText('Proto.Demo.ButtonHighlight') }}</PButton
           >
-          <PButton type="warn" :click="() => sideTip.show(pclText('Proto.Demo.Warning'), 'warn')">{{
+          <PButton type="warn" @click="() => sideTip.show(pclText('Proto.Demo.Warning'), 'warn')">{{
             pclText('Proto.Demo.ButtonWarning')
           }}</PButton>
           <PButton disabled>{{ pclText('Proto.Demo.ButtonDisabled') }}</PButton>
           <PButton
             inline
             :tooltip="pclText('Proto.Demo.Tooltip')"
-            :click="() => sideTip.show(pclText('Proto.Demo.IconHint'))"
+            @click="() => sideTip.show(pclText('Proto.Demo.IconHint'))"
             ><PSvgIcon name="lucide/heart" :size="16" />{{
               pclText('Proto.Demo.IconButton')
             }}</PButton
@@ -122,10 +122,10 @@ async function showDialog(withInput: boolean) {
           :loading-text="pclText('Proto.Demo.LoadingText')"
         />
         <div class="demo-row">
-          <PButton type="tint" :click="() => (loading = 'loading')">{{
+          <PButton type="tint" @click="() => (loading = 'loading')">{{
             pclText('Proto.Demo.SetLoading')
           }}</PButton>
-          <PButton type="warn" :click="() => (loading = 'error')">{{
+          <PButton type="warn" @click="() => (loading = 'error')">{{
             pclText('Proto.Demo.SetError')
           }}</PButton>
         </div>
@@ -135,10 +135,10 @@ async function showDialog(withInput: boolean) {
       <div class="demo-content">
         <p>{{ pclText('Proto.Demo.ModalHint') }}</p>
         <div class="demo-row">
-          <PButton :click="() => showDialog(false)">{{
+          <PButton @click="() => showDialog(false)">{{
             pclText('Proto.Demo.ConfirmDialog')
           }}</PButton>
-          <PButton type="tint" :click="() => showDialog(true)">{{
+          <PButton type="tint" @click="() => showDialog(true)">{{
             pclText('Proto.Demo.InputDialog')
           }}</PButton>
         </div>

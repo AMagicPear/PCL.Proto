@@ -167,7 +167,7 @@ watch(versionId, (id) => {
       <PLoading v-if="loading" :loading-text="text('Download.Version.LoadingList')" />
       <PHint v-else-if="error" severity="error"
         >{{ error }}
-        <PButton inline :click="load">{{
+        <PButton inline @click="load">{{
           pclText('Launch.Homepage.LoadFailed.Retry')
         }}</PButton></PHint
       >
@@ -180,7 +180,8 @@ watch(versionId, (id) => {
               :title="version.id"
               :icon="version.type === 'release' ? showIconPath.grass : showIconPath.command"
               :subtitle="text(`Download.Version.Latest.${version.label}`, [version.releaseTime])"
-              :click="() => choose(version.id, version.type)"
+              clickable
+              @click="() => choose(version.id, version.type)"
             />
           </div>
         </PCard>
@@ -197,7 +198,8 @@ watch(versionId, (id) => {
                 :title="version.id"
                 :icon="category.icon"
                 :subtitle="version.releaseTime"
-                :click="() => choose(version.id, category.key)"
+                clickable
+                @click="() => choose(version.id, category.key)"
               />
             </div>
           </PCard>
@@ -209,7 +211,7 @@ watch(versionId, (id) => {
         <div class="instance-name-row">
           <PButton
             inline
-            :click="() => router.push('/download/game')"
+            @click="() => router.push('/download/game')"
             :aria-label="pclText('Common.Action.Back')"
             ><PSvgIcon name="lucide/arrow-left"
           /></PButton>
@@ -249,7 +251,7 @@ watch(versionId, (id) => {
             <PButton
               v-if="selected[loader]"
               inline
-              :click="() => selectLoader(selected, loader, '')"
+              @click="() => selectLoader(selected, loader, '')"
               >{{ pclText('Proto.Action.ClearSelection') }}</PButton
             >
             <PListItem
@@ -257,7 +259,8 @@ watch(versionId, (id) => {
               :key="version.version"
               :title="version.version"
               :subtitle="version.stable ? text('Download.Version.Type.Stable') : undefined"
-              :click="() => selectLoader(selected, loader, version.version)"
+              clickable
+              @click="() => selectLoader(selected, loader, version.version)"
             />
           </template>
           <p v-else class="pcl-empty">
@@ -269,7 +272,7 @@ watch(versionId, (id) => {
           </p>
         </div>
       </PCard>
-      <PButton type="tint" class="install-start" :disabled="installing" :click="install"
+      <PButton type="tint" class="install-start" :disabled="installing" @click="install"
         ><PSvgIcon name="lucide/download" />{{
           text(modify ? 'Instance.Install.Action.StartModify' : 'Download.Install.StartDownload')
         }}</PButton

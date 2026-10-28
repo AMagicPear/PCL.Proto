@@ -73,14 +73,14 @@ function settings() {
       </dl>
       <h3>{{ text('Launch.Status.Trivia') }}</h3>
       <p>{{ launching.trivia || text('Launch.Status.Trivia.Placeholder') }}</p>
-      <PButton :click="() => sideTip.show(pclText('Proto.NotImplemented.CancelLaunch'))">{{
+      <PButton @click="() => sideTip.show(pclText('Proto.NotImplemented.CancelLaunch'))">{{
         text('Common.Action.Cancel')
       }}</PButton>
     </div>
     <template v-else
       ><div class="login-panel"><component :is="accountView" /></div>
       <div class="launch-actions">
-        <PButton class="launch" type="tint" :click="launch" :disabled="loadingInstances"
+        <PButton class="launch" type="tint" @click="launch" :disabled="loadingInstances"
           ><span>{{
             text(
               loadingInstances
@@ -95,10 +95,10 @@ function settings() {
               ? text('Launch.Home.VersionList.Loading')
               : instance.instance_info?.name || text('Select.Instance.Empty.Title')
           }}</small></PButton
-        ><PButton :click="() => router.push('/instance_select')">{{
+        ><PButton @click="() => router.push('/instance_select')">{{
           text('Launch.Home.SelectInstance')
         }}</PButton
-        ><PButton :click="settings">{{ text('Launch.Home.InstanceSettings') }}</PButton>
+        ><PButton @click="settings">{{ text('Launch.Home.InstanceSettings') }}</PButton>
       </div></template
     >
   </aside>

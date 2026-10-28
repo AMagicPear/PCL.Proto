@@ -1,26 +1,44 @@
 <script setup lang="ts">
-import { useAttrs } from 'vue'
-const attrs = useAttrs()
+import { useAttrs, useId, type HTMLAttributes } from 'vue'
+defineOptions({ inheritAttrs: false })
+const attrs = useAttrs() as HTMLAttributes & Record<string, unknown>
+const controlId = useId()
+function controlAttrs() {
+  const { class: _class, style: _style, 'data-control': _control, ...inputAttrs } = attrs
+  return inputAttrs
+}
 import IconUnfold from '../icons/control/IconUnfold.vue'
 import { type ISetupOption } from '@/stores/setup'
 
 defineProps<{
   options: ISetupOption[]
+  inputId?: string
   disabled?: boolean
 }>()
 
 const model = defineModel<string>()
 </script>
 
-<template lang="pug">
-    .dropdown-wrapper
-        select(v-model="model" :disabled="disabled" :aria-label="String(attrs['aria-label'] || attrs.title || '')")
-            option(v-for="option in options" 
-                :key="option.key" 
-                :title="option.title"
-                :value="option.key")
-                | {{ option.text }}
-        i: IconUnfold
+<template>
+  <div
+    class="dropdown-wrapper"
+    :class="attrs.class"
+    :style="attrs.style"
+    :data-control="attrs['data-control']"
+  >
+    <select
+      v-bind="controlAttrs()"
+      :id="inputId || String(attrs.id || controlId)"
+      v-model="model"
+      :disabled="disabled"
+      :aria-label="attrs['aria-label'] || (attrs['aria-labelledby'] ? undefined : attrs.title)"
+    >
+      <option v-for="option in options" :key="option.key" :title="option.title" :value="option.key">
+        {{ option.text }}
+      </option>
+    </select>
+    <i><IconUnfold /></i>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -63,5 +81,13 @@ select {
   &::-ms-expand {
     display: none;
   }
+}
+
+.pcl-page .dropdown-wrapper {
+  min-width: 0;
+}
+.pcl-page .dropdown-wrapper select {
+  height: 28px;
+  padding: 0 8px;
 }
 </style>

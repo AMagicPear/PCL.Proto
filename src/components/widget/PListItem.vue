@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import { pclText } from '@/api/pclLocale'
-import IconButtonSave from '../icons/control/IconButtonSave.vue'
-import IconInfo from '../icons/control/IconInfo.vue'
-import IconServer from '../icons/control/IconServer.vue'
 import PButton from './PButton.vue'
 
 withDefaults(
@@ -10,27 +6,27 @@ withDefaults(
     icon?: string
     title: string
     subtitle?: string
-    isGameInfo?: boolean
     roundImg?: boolean
     hoverEffect?: boolean
     btn?: {
       text: string
       link: string
     }
-    click?: () => void
+    clickable?: boolean
     pixelatedIcon?: boolean
   }>(),
   {
-    isGameInfo: false,
     hoverEffect: true,
+    clickable: false,
     roundImg: false,
     pixelatedIcon: false,
   },
 )
+const emit = defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
 </script>
 
 <template lang="pug">
-    .gameinfo-container(@click="click?.()" :role="click ? 'button' : undefined" :tabindex="click ? 0 : undefined" @keydown.enter="click?.()" @keydown.space.prevent="click?.()" :class="{'game-info': isGameInfo, 'hover-effect': hoverEffect, 'round-img': roundImg, 'clickable': click }")
+    .gameinfo-container(@click="clickable && emit('click', $event)" :role="clickable ? 'button' : undefined" :tabindex="clickable ? 0 : undefined" @keydown.enter.self="clickable && emit('click', $event)" @keydown.space.self.prevent="clickable && emit('click', $event)" :class="{'hover-effect': hoverEffect, 'round-img': roundImg, 'clickable': clickable }")
         .left
             slot(name="icon")
                 img(:src="icon" v-if="icon" :style="{ 'image-rendering': pixelatedIcon ? 'pixelated' : 'auto' }")
@@ -39,9 +35,6 @@ withDefaults(
                 .subtitle {{ subtitle }}
         .right(@click.stop)
             slot(name="actions")
-            a(v-if="isGameInfo"): i(:title="pclText('Download.Version.SaveAs')"): IconButtonSave
-            a(v-if="isGameInfo" :href="'https://zh.minecraft.wiki/w/Special:Search?search=' + encodeURIComponent(title)" target="_blank" rel="noopener noreferrer"): i(:title="pclText('Common.Action.UpdateLog')"): IconInfo
-            a(v-if="isGameInfo"): i(:title="pclText('Download.Version.DownloadServer')"): IconServer
             a(v-if="btn" :href="btn.link"): PButton(:inline="true") {{btn.text}}
 
 </template>
@@ -49,6 +42,7 @@ withDefaults(
 <style lang="scss" scoped>
 .gameinfo-container {
   display: flex;
+  min-height: var(--list-min-height, auto);
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
@@ -73,6 +67,9 @@ withDefaults(
   }
 
   > .right {
+    display: flex;
+    align-items: center;
+    gap: var(--list-actions-gap, 6px);
     > a {
       > i {
         transition: color 0.4s;
@@ -89,15 +86,6 @@ withDefaults(
     }
   }
 
-  &.game-info > .right {
-    margin-right: 6px;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    display: flex;
-    align-items: center;
-    gap: 9.5px;
-  }
-
   > .left {
     display: flex;
     justify-content: center;
@@ -111,8 +99,9 @@ withDefaults(
     }
 
     > img {
-      width: 30px;
-      height: 30px;
+      width: var(--list-icon-size, 30px);
+      height: var(--list-icon-size, 30px);
+      border-radius: var(--list-icon-radius, 0);
       /* fix #3 图标模糊 */
       /* image-rendering: pixelated; */
     }
@@ -128,7 +117,7 @@ withDefaults(
 }
 
 .title {
-  font-size: 13px;
+  font-size: var(--list-title-size, 13px);
   line-height: 1.1rem;
 }
 

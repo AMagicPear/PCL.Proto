@@ -35,11 +35,11 @@ const handleButtonClick = async (btn: ModalButtonOption) => {
               v-for="(btn, idx) in options.buttons"
               :key="idx"
               :type="btn.type"
-              :click="() => handleButtonClick(btn)"
+              @click="() => handleButtonClick(btn)"
             ) {{ btn.content }}
           template(v-else)
-            PButton(:click="() => close(true)" type="tint") {{ pclText('Proto.Action.Confirm') }}
-            PButton(:click="() => close(false)" type="warn") {{ pclText('Common.Action.Cancel') }}
+            PButton(@click="() => close(true)" type="tint") {{ pclText('Proto.Action.Confirm') }}
+            PButton(@click="() => close(false)" type="warn") {{ pclText('Common.Action.Cancel') }}
 
 </template>
 

@@ -11,7 +11,7 @@ import PListItem from '@/components/widget/PListItem.vue'
 import sideTip from '@/composables/sideTip'
 import { useModal } from '@/composables/useModal'
 import useTerracottaStore from '@/stores/terracotta'
-import { invoke, isTauri } from '@tauri-apps/api/core'
+import { isTauri } from '@tauri-apps/api/core'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAccountInfo } from '@/stores/account'
@@ -26,7 +26,7 @@ const router = useRouter()
 const route = useRoute()
 const account = useAccountInfo()
 const terracotta = useTerracottaStore()
-const values = reactive<Record<string, string | number | boolean>>({ TextJoinLobbyId: '' })
+const values = reactive({ TextJoinLobbyId: '' })
 const selectedPort = ref('')
 const error = ref('')
 const roomCode = computed(() => String(route.query.code || terracotta.room || ''))
@@ -38,6 +38,7 @@ watch(options, (list) => {
     selectedPort.value = list[0]?.key || ''
 })
 async function connect(code: string) {
+  error.value = ''
   code = code.trim()
   if (!code) {
     sideTip.show(pclText('Proto.Lobby.EnterCode'), 'warn')
@@ -57,6 +58,7 @@ async function connect(code: string) {
   }
 }
 async function create(port: string) {
+  error.value = ''
   const n = Number(port)
   if (!/^\d+$/.test(port) || !Number.isInteger(n) || n < 1 || n > 65535) {
     sideTip.show(pclText('Proto.Lobby.InvalidPort'), 'warn')
@@ -77,6 +79,7 @@ async function create(port: string) {
   }
 }
 async function copy(text: string) {
+  error.value = ''
   try {
     await navigator.clipboard.writeText(text)
     sideTip.show(pclText('Proto.Clipboard.CopySuccess'), 'success')
@@ -84,69 +87,64 @@ async function copy(text: string) {
     sideTip.show(pclText('Proto.Clipboard.CopyFailed'), 'warn')
   }
 }
-async function action({ id, attrs }: { id: string; attrs: Record<string, string> }) {
+async function refreshPorts() {
   error.value = ''
-  switch (id) {
-    case 'BtnJoin':
-      await connect(String(values.TextJoinLobbyId || ''))
-      return
-    case 'BtnCreate':
-      await create(selectedPort.value)
-      return
-    case 'BtnRefresh':
-      if (!(await terracotta.setHostScanning())) error.value = pclText('Proto.Lobby.ScanFailed')
-      return
-    case 'BtnClearLobbyId':
-      values.TextJoinLobbyId = ''
-      return
-    case 'BtnPaste':
-      try {
-        values.TextJoinLobbyId = await navigator.clipboard.readText()
-      } catch {
-        sideTip.show(pclText('Proto.Clipboard.ReadLobbyFailed'), 'warn')
-      }
-      return
-    case 'BtnInputPort': {
-      const modal = useModal()
-      const result = await modal.open({
-        title: pclText('Proto.Lobby.EnterPort'),
-        showInput: true,
-        buttons: [
-          {
-            type: 'tint',
-            content: pclText('Launch.Account.Offline.Create'),
-            operation: () => modal.close(true),
-          },
-          {
-            type: 'default',
-            content: pclText('Common.Action.Cancel'),
-            operation: () => modal.close(false),
-          },
-        ],
-      })
-      if (result.confirmed && result.input) await create(result.input)
-      return
-    }
-    case 'BtnFinishCopy':
-      await copy(roomCode.value)
-      return
-    case 'BtnFinishCopyIp':
-      if (terracotta.url) await copy(terracotta.url)
-      else sideTip.show(pclText('Proto.Lobby.NoVirtualIP'), 'warn')
-      return
-    case 'BtnFinishExit':
-      try {
-        await terracotta.setWaiting()
-        await router.push('/tools/lobby')
-      } catch (err) {
-        error.value = pclText('Proto.Lobby.LeaveFailed', [err])
-      }
-      return
+  if (!(await terracotta.setHostScanning())) error.value = pclText('Proto.Lobby.ScanFailed')
+}
+function clearLobbyId() {
+  error.value = ''
+  values.TextJoinLobbyId = ''
+}
+async function pasteLobbyId() {
+  error.value = ''
+  try {
+    values.TextJoinLobbyId = await navigator.clipboard.readText()
+  } catch {
+    sideTip.show(pclText('Proto.Clipboard.ReadLobbyFailed'), 'warn')
   }
-  const url = attrs['CustomEventService.EventData']
-  if (attrs['CustomEventService.EventType'] === 'OpenUrl' && /^https?:\/\//.test(url || ''))
-    window.open(url, '_blank', 'noopener,noreferrer')
-  else sideTip.show(pclText('Proto.NotImplemented.Action'))
+}
+async function inputPort() {
+  error.value = ''
+  const modal = useModal()
+  const result = await modal.open({
+    title: pclText('Proto.Lobby.EnterPort'),
+    showInput: true,
+    buttons: [
+      {
+        type: 'tint',
+        content: pclText('Launch.Account.Offline.Create'),
+        operation: () => modal.close(true),
+      },
+      {
+        type: 'default',
+        content: pclText('Common.Action.Cancel'),
+        operation: () => modal.close(false),
+      },
+    ],
+  })
+  if (result.confirmed && result.input) await create(result.input)
+}
+async function copyIp() {
+  error.value = ''
+  if (terracotta.url) await copy(terracotta.url)
+  else sideTip.show(pclText('Proto.Lobby.NoVirtualIP'), 'warn')
+}
+async function leave() {
+  error.value = ''
+  try {
+    await terracotta.setWaiting()
+    await router.push('/tools/lobby')
+  } catch (err) {
+    error.value = pclText('Proto.Lobby.LeaveFailed', [err])
+  }
+}
+function openWebsite(url: string) {
+  error.value = ''
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+function disableLobby() {
+  error.value = ''
+  sideTip.show(pclText('Proto.NotImplemented.Action'))
 }
 let disposed = false
 onMounted(async () => {
@@ -166,15 +164,6 @@ onUnmounted(() => {
 
 import { pclText } from '@/api/pclLocale'
 const text = pclText
-function change(id: string, value: string | boolean | number) {
-  values[id] = value
-}
-function act(id: string, event = '', type = '', data = '') {
-  return action({
-    id,
-    attrs: { 'CustomEventService.EventType': type, 'CustomEventService.EventData': data },
-  })
-}
 </script>
 <template>
   <section class="pcl-page">
@@ -252,27 +241,26 @@ function act(id: string, event = '', type = '', data = '') {
                     <PButton
                       data-control="BtnJoin"
                       style="width: 50px; margin: 0px 0px 0px 10px"
-                      :click="() => act('BtnJoin', 'BtnJoin_Click', '', '')"
+                      @click="connect(values.TextJoinLobbyId)"
                       type="tint"
                       >{{ text('Tools.GameLink.Join.Action') }}</PButton
                     >
                     <PButton
                       data-control="BtnPaste"
                       style="width: 50px; margin: 0px 0px 0px 10px"
-                      :click="() => act('BtnPaste', 'PasteLobbyId', '', '')"
+                      @click="pasteLobbyId"
                       >{{ text('Tools.GameLink.Join.Paste') }}</PButton
                     >
                     <PButton
                       data-control="BtnClearLobbyId"
                       style="width: 50px; margin: 0px 0px 0px 10px"
-                      :click="() => act('BtnClearLobbyId', 'ClearLobbyId', '', '')"
+                      @click="clearLobbyId"
                       >{{ text('Tools.GameLink.Join.Clear') }}</PButton
                     >
                     <PTextBox
                       data-control="TextJoinLobbyId"
                       :placeholder="text('Tools.GameLink.Join.IdHint')"
-                      :model-value="String(values['TextJoinLobbyId'])"
-                      @update:model-value="(value) => change('TextJoinLobbyId', value || '')"
+                      v-model="values.TextJoinLobbyId"
                     />
                   </div>
                 </div>
@@ -291,20 +279,20 @@ function act(id: string, event = '', type = '', data = '') {
                     <PButton
                       data-control="BtnCreate"
                       style="width: 50px; margin: 0px 0px 0px 10px"
-                      :click="() => act('BtnCreate', 'BtnCreate_Click', '', '')"
+                      @click="create(selectedPort)"
                       type="tint"
                       >{{ text('Tools.GameLink.Create.Action') }}</PButton
                     >
                     <PButton
                       data-control="BtnRefresh"
                       style="width: 50px; margin: 0px 0px 0px 10px"
-                      :click="() => act('BtnRefresh', 'BtnRefresh_Click', '', '')"
+                      @click="refreshPorts"
                       >{{ text('Common.Action.Refresh') }}</PButton
                     >
                     <PButton
                       data-control="BtnInputPort"
                       style="width: 80px; margin: 0px 0px 0px 10px"
-                      :click="() => act('BtnInputPort', 'BtnInputPort_Click', '', '')"
+                      @click="inputPort"
                       >{{ text('Tools.GameLink.Create.ManualInput') }}</PButton
                     >
                     <div><PComboBox :options="options" v-model="selectedPort" /></div>
@@ -321,78 +309,35 @@ function act(id: string, event = '', type = '', data = '') {
                 <div
                   style="margin: 6px 15px; display: flex; flex-direction: row; align-items: center"
                 >
-                  <PButton
-                    :click="
-                      () =>
-                        act(
-                          '{DynamicResource Tools.GameLink.Link.Report}',
-                          '',
-                          'OpenUrl',
-                          'https://qm.qq.com/q/zfml1KaPWS',
-                        )
-                    "
-                    inline
-                    >{{ text('Tools.GameLink.Link.Report') }}</PButton
-                  >
+                  <PButton @click="openWebsite('https://qm.qq.com/q/zfml1KaPWS')" inline>{{
+                    text('Tools.GameLink.Link.Report')
+                  }}</PButton>
+                  <span class="pcl-text">{{ text(' | ') }}</span>
+                  <PButton @click="openWebsite('https://account.naids.com/policy')" inline>{{
+                    text('Tools.GameLink.Link.Terms')
+                  }}</PButton>
                   <span class="pcl-text">{{ text(' | ') }}</span>
                   <PButton
-                    :click="
-                      () =>
-                        act(
-                          '{DynamicResource Tools.GameLink.Link.Terms}',
-                          '',
-                          'OpenUrl',
-                          'https://account.naids.com/policy',
-                        )
-                    "
-                    inline
-                    >{{ text('Tools.GameLink.Link.Terms') }}</PButton
-                  >
-                  <span class="pcl-text">{{ text(' | ') }}</span>
-                  <PButton
-                    :click="
-                      () =>
-                        act(
-                          '{DynamicResource Tools.GameLink.Link.Privacy}',
-                          '',
-                          'OpenUrl',
-                          'https://www.pclc.cc/privacy/personal-info-brief.html',
-                        )
-                    "
+                    @click="openWebsite('https://www.pclc.cc/privacy/personal-info-brief.html')"
                     inline
                     >{{ text('Tools.GameLink.Link.Privacy') }}</PButton
                   >
                   <span class="pcl-text">{{ text(' | ') }}</span>
-                  <PButton
-                    data-control="BtnEulaStop"
-                    :click="() => act('BtnEulaStop', 'BtnEulaStop_Click', '', '')"
-                    inline
-                    >{{ text('Tools.GameLink.Link.Disable') }}</PButton
-                  >
+                  <PButton data-control="BtnEulaStop" @click="disableLobby" inline>{{
+                    text('Tools.GameLink.Link.Disable')
+                  }}</PButton>
                 </div>
                 <div
                   style="margin: 6px 15px; display: flex; flex-direction: row; align-items: center"
                 >
                   <span class="pcl-text">{{ text('Tools.GameLink.Link.Friends') }}</span>
-                  <PButton
-                    :click="
-                      () =>
-                        act(
-                          '{DynamicResource Tools.GameLink.Link.EasyTier}',
-                          '',
-                          'OpenUrl',
-                          'https://easytier.cn/',
-                        )
-                    "
-                    inline
-                    >{{ text('Tools.GameLink.Link.EasyTier') }}</PButton
-                  >
+                  <PButton @click="openWebsite('https://easytier.cn/')" inline>{{
+                    text('Tools.GameLink.Link.EasyTier')
+                  }}</PButton>
                   <span class="pcl-text">{{ text(' | ') }}</span>
-                  <PButton
-                    :click="() => act('Pysio\'s Home', '', 'OpenUrl', 'https://pysio.online/')"
-                    inline
-                    >{{ text("Pysio's Home") }}</PButton
-                  >
+                  <PButton @click="openWebsite('https://pysio.online/')" inline>{{
+                    text("Pysio's Home")
+                  }}</PButton>
                 </div>
               </div>
             </PCard>
@@ -529,7 +474,7 @@ function act(id: string, event = '', type = '', data = '') {
                   <PButton
                     data-control="BtnFinishCopyIp"
                     style="margin: 1px -2px"
-                    :click="() => act('BtnFinishCopyIp', 'BtnFinishCopyIp_Click', '', '')"
+                    @click="copyIp"
                     inline
                     ><PSvgIcon name="lucide/copy" :size="18" />{{
                       text('Tools.GameLink.Finish.CopyVirtualIp')
@@ -538,7 +483,7 @@ function act(id: string, event = '', type = '', data = '') {
                   <PButton
                     data-control="BtnFinishCopy"
                     style="margin: 1px -2px"
-                    :click="() => act('BtnFinishCopy', 'BtnFinishCopy_Click', '', '')"
+                    @click="copy(roomCode)"
                     inline
                     ><PSvgIcon name="lucide/copy" :size="18" />{{
                       text('Tools.GameLink.Finish.CopyLobbyId')
@@ -547,7 +492,7 @@ function act(id: string, event = '', type = '', data = '') {
                   <PButton
                     data-control="BtnFinishExit"
                     style="margin: 1px -2px"
-                    :click="() => act('BtnFinishExit', 'BtnFinishExit_Click', '', '')"
+                    @click="leave"
                     inline
                     ><PSvgIcon name="lucide/power" :size="18" />{{
                       text('Tools.GameLink.Finish.Exit')

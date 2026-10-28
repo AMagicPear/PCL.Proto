@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
-import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import { computed, ref } from 'vue'
@@ -51,7 +52,7 @@ function select(id: string, value: boolean) {
   if (value) selected.value.add(id)
   else selected.value.delete(id)
 }
-const { values, text, change, act, image } = usePageSettings('PageInstanceCompResource', {})
+
 const selectionActions = [
   { id: 'Update', key: 'Instance.Resource.Update', icon: 'upload' },
   { id: 'Enable', key: 'Instance.Resource.Enable', icon: 'circle-check' },
@@ -60,6 +61,13 @@ const selectionActions = [
   { id: 'Share', key: 'Instance.Resource.ShareSelected', icon: 'share-2' },
   { id: 'Delete', key: 'Common.Action.Delete', icon: 'trash-2' },
 ]
+function downloadResources() {
+  const category = String(route.meta.downloadType || 'mod')
+  return router.push(`/download/${category === 'schematic' ? 'mod' : category}`)
+}
+
+const router = useRouter()
+const text = pclText
 </script>
 <template>
   <div class="pcl-page resource-page">
@@ -73,10 +81,10 @@ const selectionActions = [
         <div class="pcl-divider" />
         <p>{{ text('Instance.Resource.Schematic.Unavailable.Message') }}</p>
         <div class="resource-actions">
-          <PButton type="tint" :click="() => act('BtnHintDownload')">{{
+          <PButton type="tint" @click="downloadResources">{{
             text('Instance.Resource.Schematic.DownloadMod')
           }}</PButton
-          ><PButton :click="() => act('BtnSchematicVersionSelect')">{{
+          ><PButton @click="() => router.push('/instance_select')">{{
             text('Instance.Resource.Mod.Disabled.SelectInstance')
           }}</PButton>
         </div></PCard
@@ -98,14 +106,18 @@ const selectionActions = [
                     v-for="action in [
                       { id: 'BtnManageOpen', key: 'Common.Action.OpenFolder' },
                       { id: 'BtnManageInstall', key: 'Instance.Resource.InstallFromFiles' },
-                      { id: 'BtnManageDownload', key: 'Instance.Resource.DownloadNew' },
+                      {
+                        id: 'BtnManageDownload',
+                        key: 'Instance.Resource.DownloadNew',
+                        run: downloadResources,
+                      },
                       { id: 'BtnManageInfoExport', key: 'Instance.Resource.ExportInfo' },
                       { id: 'BtnManageCheck', key: 'Instance.Resource.CheckMods' },
                     ]"
                     :key="action.id"
-                    :click="() => act(action.id)"
+                    @click="(action.run || showUnavailable)()"
                     >{{ text(action.key) }}</PButton
-                  ><PButton :click="() => visibleItems.forEach((item) => selected.add(item.id))">{{
+                  ><PButton @click="() => visibleItems.forEach((item) => selected.add(item.id))">{{
                     text('Instance.Resource.SelectAll')
                   }}</PButton
                   ><RouterLink
@@ -127,7 +139,7 @@ const selectionActions = [
                         }),
                       )
                     "
-                  /><PButton inline :click="() => (sorted = !sorted)">{{
+                  /><PButton inline @click="() => (sorted = !sorted)">{{
                     text('Instance.Resource.Sort.Text')
                   }}</PButton>
                 </div>
@@ -138,8 +150,8 @@ const selectionActions = [
                     v-bind="item"
                     :selected="selected.has(item.id)"
                     @select="(value) => select(item.id, value)"
-                    @toggle="act('BtnToggle')"
-                    @update="act('BtnUpdate')"
+                    @toggle="showUnavailable()"
+                    @update="showUnavailable()"
                   />
                   <p v-if="!visibleItems.length" class="pcl-empty">
                     {{ pclText('Download.Comp.List.NoMatchingResults') }}
@@ -150,7 +162,7 @@ const selectionActions = [
           </div>
           <PHint v-if="error" severity="error" class="resource-status"
             >{{ error
-            }}<PButton inline :click="() => act('BtnRefresh')">{{
+            }}<PButton inline @click="showUnavailable">{{
               text('Common.Action.Refresh')
             }}</PButton></PHint
           >
@@ -192,20 +204,20 @@ const selectionActions = [
                 <PButton
                   data-control="BtnHintInstall"
                   style="height: 35px; min-width: 130px; margin: 0px 5px; padding: 0px 12px"
-                  :click="() => act('BtnHintInstall', '', '', '')"
+                  @click="showUnavailable"
                   type="tint"
                   >{{ text('Instance.Resource.InstallFromFiles') }}</PButton
                 >
                 <PButton
                   data-control="BtnHintDownload"
                   style="height: 35px; min-width: 130px; margin: 0px 5px; padding: 0px 12px"
-                  :click="() => act('BtnHintDownload', '', '', '')"
+                  @click="downloadResources"
                   >{{ text('Instance.Resource.DownloadNew') }}</PButton
                 >
                 <PButton
                   data-control="BtnHintOpen"
                   style="height: 35px; min-width: 130px; margin: 0px 5px; padding: 0px 12px"
-                  :click="() => act('BtnHintOpen', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Common.Action.OpenFolder') }}</PButton
                 >
               </div>
@@ -217,13 +229,9 @@ const selectionActions = [
     <PCard v-if="selected.size" hide-title class="pcl-selection-toolbar"
       ><p>{{ text('Instance.Resource.SelectedCount', [selected.size]) }}</p>
       <div>
-        <PButton
-          v-for="action in selectionActions"
-          :key="action.id"
-          inline
-          :click="() => act(`BtnSelect${action.id}`)"
+        <PButton v-for="action in selectionActions" :key="action.id" inline @click="showUnavailable"
           ><PSvgIcon :name="`lucide/${action.icon}`" :size="18" />{{ text(action.key) }}</PButton
-        ><PButton inline :click="() => selected.clear()"
+        ><PButton inline @click="() => selected.clear()"
           ><PSvgIcon name="lucide/x" :size="18" />{{
             text('Instance.Resource.CancelSelection')
           }}</PButton

@@ -41,29 +41,29 @@ function login() {
         >{{ text('Launch.Account.Auth.Password')
         }}<input type="password" v-model="password" autocomplete="off"
       /></label>
-      <PButton v-if="registerUrl" inline :click="() => open(registerUrl)">{{
+      <PButton v-if="registerUrl" inline @click="() => open(registerUrl)">{{
         text('Launch.Account.Auth.Register')
       }}</PButton>
-      <PButton inline :click="() => (oauthMode = true)">{{
+      <PButton inline @click="() => (oauthMode = true)">{{
         text('Launch.Account.Auth.UseOAuth')
       }}</PButton>
     </template>
     <div v-else class="oauth-login">
-      <PPath :data="loginShape" /><PButton type="tint" :click="login">{{
+      <PPath :data="loginShape" /><PButton type="tint" @click="login">{{
         text('Launch.Account.Auth.OAuthLogin')
       }}</PButton
-      ><PButton inline :click="() => (oauthMode = false)">{{
+      ><PButton inline @click="() => (oauthMode = false)">{{
         text('Launch.Account.Auth.UsePassword')
       }}</PButton>
     </div>
-    <PButton v-if="website" inline :click="() => open(website)">{{
+    <PButton v-if="website" inline @click="() => open(website)">{{
       text('Launch.Account.Microsoft.Website')
     }}</PButton>
     <div>
-      <PButton :click="() => router.push('/account')">{{
+      <PButton @click="() => router.push('/account')">{{
         text('Launch.Account.Auth.Back')
       }}</PButton
-      ><PButton v-if="!oauthMode" type="tint" :click="login">{{
+      ><PButton v-if="!oauthMode" type="tint" @click="login">{{
         text('Launch.Account.Auth.Login')
       }}</PButton>
     </div>

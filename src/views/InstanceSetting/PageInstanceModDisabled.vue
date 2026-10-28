@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { usePageSettings } from '@/composables/usePageSettings'
+import { useRouter } from 'vue-router'
+import { pclText } from '@/api/pclLocale'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
-const { values, text, change, act, image } = usePageSettings('PageInstanceModDisabled', {})
+
+const router = useRouter()
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -53,7 +56,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceModDis
               grid-column: 2 / span 1;
               justify-self: center;
             "
-            :click="() => act('BtnDownload', '', '', '')"
+            @click="() => router.push('/download/game')"
             type="tint"
             >{{ text('Instance.Resource.Mod.Disabled.GoDownload') }}</PButton
           >
@@ -68,7 +71,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceModDis
               grid-column: 3 / span 1;
               justify-self: center;
             "
-            :click="() => act('BtnVersion', '', '', '')"
+            @click="() => router.push('/instance_select')"
             >{{ text('Instance.Resource.Mod.Disabled.SelectInstance') }}</PButton
           >
         </div>

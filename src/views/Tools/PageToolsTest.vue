@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
 import { ref, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
@@ -15,13 +16,8 @@ import PTextBox from '@/components/widget/PTextBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PButton from '@/components/widget/PButton.vue'
-const {
-  values,
-  text,
-  change,
-  act: fallback,
-  image,
-} = usePageSettings('PageToolsTest', {
+const { values } = usePageSettings('PageToolsTest', {
+  TextSkinID: '',
   TextDownloadUrl: '',
   TextDownloadFolder: '',
   TextDownloadName: '',
@@ -31,45 +27,42 @@ const {
   AchievementString2TextBox: '',
   CmbHeadSize: '0',
 })
-async function act(id: string, event = '', type = '', data = '') {
-  if (event === 'BtnLuck_Click') {
-    try {
-      const luck = await invoke<number>('get_lucky_today')
-      await useModal().open({
-        title: text('Tools.Test.Luck.Title'),
-        content: pclText('Proto.Tools.Luck', [luck]),
-        buttons: [{ type: 'tint', content: pclText('Common.Action.Confirm') }],
-      })
-    } catch (err) {
-      sideTip.show(pclText('Proto.Tools.LuckFailed', [String(err)]), 'warn')
-    }
-    return
+async function showLuck() {
+  try {
+    const luck = await invoke<number>('get_lucky_today')
+    await useModal().open({
+      title: text('Tools.Test.Luck.Title'),
+      content: pclText('Proto.Tools.Luck', [luck]),
+      buttons: [{ type: 'tint', content: pclText('Common.Action.Confirm') }],
+    })
+  } catch (err) {
+    sideTip.show(pclText('Proto.Tools.LuckFailed', [String(err)]), 'warn')
   }
-  if (id === 'BtnSkinSave') {
-    const name = String(values.TextSkinID || '').trim()
-    if (!/^[A-Za-z0-9_]{3,16}$/.test(name)) {
-      sideTip.show(pclText('Proto.Tools.InvalidPlayer'), 'warn')
-      return
-    }
-    try {
-      await getSkinUrl(
-        name,
-        (url) => {
-          skin.value = url
-          const link = document.createElement('a')
-          link.href = url
-          link.download = `${name}.png`
-          link.click()
-        },
-        'username',
-      )
-    } catch (err) {
-      sideTip.show(pclText('Proto.Tools.SkinFailed', [String(err)]), 'warn')
-    }
-    return
-  }
-  await fallback(id, event, type, data)
 }
+async function saveSkin() {
+  const name = String(values.TextSkinID || '').trim()
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(name)) {
+    sideTip.show(pclText('Proto.Tools.InvalidPlayer'), 'warn')
+    return
+  }
+  try {
+    await getSkinUrl(
+      name,
+      (url) => {
+        skin.value = url
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${name}.png`
+        link.click()
+      },
+      'username',
+    )
+  } catch (err) {
+    sideTip.show(pclText('Proto.Tools.SkinFailed', [String(err)]), 'warn')
+  }
+}
+
+const text = pclText
 </script>
 <template>
   <section class="pcl-page">
@@ -91,30 +84,28 @@ async function act(id: string, event = '', type = '', data = '') {
             >
               <PButton
                 style="min-width: 120px; margin: 0px 15px 15px 0px"
-                :click="() => router.push('/homepageeditor')"
+                @click="() => router.push('/homepageeditor')"
                 >{{ pclText('Proto.Title.HomepageEditor') }}</PButton
               >
               <PButton
                 data-control="BtnClear"
                 style="min-width: 120px; margin: 0px 15px 15px 0px"
                 :title="text('Tools.Test.Clean.ToolTip')"
-                :click="() => act('BtnClear', 'BtnClear_Click', '', '')"
+                @click="showUnavailable"
                 >{{ text('Tools.Test.Clean.Title') }}</PButton
               >
-              <PButton
-                style="min-width: 100px; margin: 0px 15px 15px 0px"
-                :click="() => act('BtnLuck_Click', 'BtnLuck_Click', '', '')"
-                >{{ text('Tools.Test.Luck.Title') }}</PButton
-              >
+              <PButton style="min-width: 100px; margin: 0px 15px 15px 0px" @click="showLuck">{{
+                text('Tools.Test.Luck.Title')
+              }}</PButton>
               <PButton
                 style="min-width: 120px; margin: 0px 15px 15px 0px"
                 :title="text('Tools.Test.Shortcut.ToolTip')"
-                :click="() => act('BtnCreateShortcut_Click', 'BtnCreateShortcut_Click', '', '')"
+                @click="showUnavailable"
                 >{{ text('Tools.Test.Shortcut.Title') }}</PButton
               >
               <PButton
                 style="min-width: 120px; margin: 0px 15px 15px 0px"
-                :click="() => act('BtnLaunchCount_Click', 'BtnLaunchCount_Click', '', '')"
+                @click="showUnavailable"
                 >{{ text('Tools.Test.LaunchCount.Title') }}</PButton
               >
             </div>
@@ -144,8 +135,7 @@ async function act(id: string, event = '', type = '', data = '') {
                   data-control="TextDownloadUrl"
                   style="grid-row: 1 / span 1; grid-column: 2 / span 2"
                   :placeholder="text('')"
-                  :model-value="String(values['TextDownloadUrl'])"
-                  @update:model-value="(value) => change('TextDownloadUrl', value || '')"
+                  v-model="values.TextDownloadUrl"
                 />
                 <span
                   style="
@@ -161,8 +151,7 @@ async function act(id: string, event = '', type = '', data = '') {
                   data-control="TextDownloadFolder"
                   style="margin: 10px 0px; grid-row: 3 / span 1; grid-column: 2 / span 1"
                   :placeholder="text('')"
-                  :model-value="String(values['TextDownloadFolder'])"
-                  @update:model-value="(value) => change('TextDownloadFolder', value || '')"
+                  v-model="values.TextDownloadFolder"
                 />
                 <PButton
                   style="
@@ -171,7 +160,7 @@ async function act(id: string, event = '', type = '', data = '') {
                     grid-column: 3 / span 1;
                     align-self: center;
                   "
-                  :click="() => act('MyTextButton_Click', 'MyTextButton_Click', '', '')"
+                  @click="showUnavailable"
                   inline
                   >{{ text('Tools.Test.CustomDownload.Select') }}</PButton
                 >
@@ -189,8 +178,7 @@ async function act(id: string, event = '', type = '', data = '') {
                   data-control="TextDownloadName"
                   style="grid-row: 4 / span 1; grid-column: 2 / span 2"
                   :placeholder="text('')"
-                  :model-value="String(values['TextDownloadName'])"
-                  @update:model-value="(value) => change('TextDownloadName', value || '')"
+                  v-model="values.TextDownloadName"
                 />
               </div>
               <div
@@ -210,7 +198,7 @@ async function act(id: string, event = '', type = '', data = '') {
                     grid-column: 1 / span 1;
                     justify-self: end;
                   "
-                  :click="() => act('BtnDownloadStart', 'BtnDownloadStart_Click', '', '')"
+                  @click="showUnavailable"
                   type="tint"
                   >{{ text('Tools.Test.CustomDownload.Start') }}</PButton
                 >
@@ -223,7 +211,7 @@ async function act(id: string, event = '', type = '', data = '') {
                     grid-column: 2 / span 1;
                     justify-self: start;
                   "
-                  :click="() => act('BtnDownloadOpen', 'BtnDownloadOpen_Click', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Common.Action.OpenFolder') }}</PButton
                 >
               </div>
@@ -247,7 +235,7 @@ async function act(id: string, event = '', type = '', data = '') {
                   <label>{{ text('Tools.Test.Skin.PlayerName') }}</label
                   ><PTextBox
                     :model-value="String(values.TextSkinID || '')"
-                    @update:model-value="(value) => change('TextSkinID', value || '')"
+                    @update:model-value="(value) => (values.TextSkinID = value || '')"
                   />
                 </div>
                 <PButton
@@ -259,7 +247,7 @@ async function act(id: string, event = '', type = '', data = '') {
                     grid-column: 1 / -1;
                     margin-top: 14px;
                   "
-                  :click="() => act('BtnSkinSave')"
+                  @click="saveSkin"
                   >{{ text('Tools.Test.Skin.Save') }}</PButton
                 ><SkinViewer v-if="skin" :skin-url="skin" />
               </div>
@@ -297,8 +285,7 @@ async function act(id: string, event = '', type = '', data = '') {
                   data-control="AchievementBlockTextBox"
                   style="margin: 10px 0px; grid-row: 1 / span 1; grid-column: 2 / span 2"
                   :placeholder="text('')"
-                  :model-value="String(values['AchievementBlockTextBox'])"
-                  @update:model-value="(value) => change('AchievementBlockTextBox', value || '')"
+                  v-model="values.AchievementBlockTextBox"
                 />
                 <span
                   style="
@@ -315,8 +302,7 @@ async function act(id: string, event = '', type = '', data = '') {
                   data-control="AchievementTitleTextBox"
                   style="grid-row: 2 / span 1; grid-column: 2 / span 2"
                   :placeholder="text('')"
-                  :model-value="String(values['AchievementTitleTextBox'])"
-                  @update:model-value="(value) => change('AchievementTitleTextBox', value || '')"
+                  v-model="values.AchievementTitleTextBox"
                 />
                 <span
                   style="
@@ -333,8 +319,7 @@ async function act(id: string, event = '', type = '', data = '') {
                   data-control="AchievementString1TextBox"
                   style="margin: 10px 0px; grid-row: 3 / span 1; grid-column: 2 / span 2"
                   :placeholder="text('')"
-                  :model-value="String(values['AchievementString1TextBox'])"
-                  @update:model-value="(value) => change('AchievementString1TextBox', value || '')"
+                  v-model="values.AchievementString1TextBox"
                 />
                 <span
                   style="
@@ -351,8 +336,7 @@ async function act(id: string, event = '', type = '', data = '') {
                   data-control="AchievementString2TextBox"
                   style="grid-row: 4 / span 1; grid-column: 2 / span 2"
                   :placeholder="text('')"
-                  :model-value="String(values['AchievementString2TextBox'])"
-                  @update:model-value="(value) => change('AchievementString2TextBox', value || '')"
+                  v-model="values.AchievementString2TextBox"
                 />
               </div>
               <div
@@ -372,7 +356,7 @@ async function act(id: string, event = '', type = '', data = '') {
                     grid-column: 1 / span 1;
                     justify-self: end;
                   "
-                  :click="() => act('BtnAchievementPreview', 'BtnAchievementPreview_Click', '', '')"
+                  @click="showUnavailable"
                   type="tint"
                   >{{ text('Tools.Test.Achievement.Preview') }}</PButton
                 >
@@ -385,7 +369,7 @@ async function act(id: string, event = '', type = '', data = '') {
                     grid-column: 2 / span 1;
                     justify-self: start;
                   "
-                  :click="() => act('BtnAchievementSave', 'BtnAchievementSave_Click', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Tools.Test.Achievement.Save') }}</PButton
                 >
               </div>
@@ -423,8 +407,7 @@ async function act(id: string, event = '', type = '', data = '') {
                       text: size,
                     }))
                   "
-                  :model-value="String(values['CmbHeadSize'])"
-                  @update:model-value="(value) => change('CmbHeadSize', value || '')"
+                  v-model="values.CmbHeadSize"
                 />
               </div>
               <div
@@ -442,12 +425,12 @@ async function act(id: string, event = '', type = '', data = '') {
                     grid-row: 1 / span 1;
                     grid-column: 2 / span 1;
                   "
-                  :click="() => act('BtnSelectSkin', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Tools.Test.Avatar.SelectSkin') }}</PButton
                 >
                 <PButton
                   style="width: 140px; height: 35px; grid-row: 1 / span 1; grid-column: 3 / span 1"
-                  :click="() => act('BtnSaveHead_Click', 'BtnSaveHead_Click', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Tools.Test.Avatar.Save') }}</PButton
                 >
               </div>

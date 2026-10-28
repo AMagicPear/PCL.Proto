@@ -1,18 +1,16 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PCard from '@/components/widget/PCard.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
-const { values, text, change, act, image } = usePageSettings('PageSetupGameLink', {
-  TextLinkUsername: '',
+const { values } = usePageSettings('PageSetupGameLink', {
   ComboPreferProtocol: '0',
-  CheckLatencyFirstMode: false,
-  CheckTryPunchSym: false,
-  CheckEnableIPv6: false,
-  CheckEnableCliOutput: false,
 })
+
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -50,8 +48,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameLink'
                   style="grid-row: 1 / span 1; grid-column: 3 / span 2"
                   :title="text('Setup.GameLink.Username.ToolTip')"
                   :placeholder="text('')"
-                  :model-value="String(values['TextLinkUsername'])"
-                  @update:model-value="(value) => change('TextLinkUsername', value || '')"
+                  v-model="values.TextLinkUsername"
                 />
                 <span
                   style="
@@ -67,11 +64,18 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameLink'
                   data-control="ComboPreferProtocol"
                   style="grid-row: 3 / span 1; grid-column: 3 / span 1"
                   :options="[
-                    { key: '0', text: text('Setup.GameLink.Protocol.Tcp'), title: text('Setup.GameLink.Protocol.Tcp.ToolTip') },
-                    { key: '1', text: text('Setup.GameLink.Protocol.Udp'), title: text('Setup.GameLink.Protocol.Udp.ToolTip') },
+                    {
+                      key: '0',
+                      text: text('Setup.GameLink.Protocol.Tcp'),
+                      title: text('Setup.GameLink.Protocol.Tcp.ToolTip'),
+                    },
+                    {
+                      key: '1',
+                      text: text('Setup.GameLink.Protocol.Udp'),
+                      title: text('Setup.GameLink.Protocol.Udp.ToolTip'),
+                    },
                   ]"
-                  :model-value="String(values['ComboPreferProtocol'])"
-                  @update:model-value="(value) => change('ComboPreferProtocol', value || '')"
+                  v-model="values.ComboPreferProtocol"
                 />
                 <PCheckBox
                   data-control="CheckLatencyFirstMode"
@@ -79,8 +83,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameLink'
                   :title="text('Setup.GameLink.LatencyFirstMode.ToolTip')"
                   id="PageSetupGameLink-CheckLatencyFirstMode"
                   :label="text('Setup.GameLink.LatencyFirstMode')"
-                  :model-value="Boolean(values['CheckLatencyFirstMode'])"
-                  @update:model-value="(value) => change('CheckLatencyFirstMode', value)"
+                  v-model="values.CheckLatencyFirstMode"
                 />
                 <PCheckBox
                   data-control="CheckTryPunchSym"
@@ -88,8 +91,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameLink'
                   :title="text('Setup.GameLink.PortGuessNat.ToolTip')"
                   id="PageSetupGameLink-CheckTryPunchSym"
                   :label="text('Setup.GameLink.PortGuessNat')"
-                  :model-value="Boolean(values['CheckTryPunchSym'])"
-                  @update:model-value="(value) => change('CheckTryPunchSym', value)"
+                  v-model="values.CheckTryPunchSym"
                 />
                 <PCheckBox
                   data-control="CheckEnableIPv6"
@@ -97,8 +99,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameLink'
                   :title="text('Setup.GameLink.EnableIPv6.ToolTip')"
                   id="PageSetupGameLink-CheckEnableIPv6"
                   :label="text('Setup.GameLink.EnableIPv6')"
-                  :model-value="Boolean(values['CheckEnableIPv6'])"
-                  @update:model-value="(value) => change('CheckEnableIPv6', value)"
+                  v-model="values.CheckEnableIPv6"
                 />
                 <PCheckBox
                   data-control="CheckEnableCliOutput"
@@ -106,8 +107,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameLink'
                   :title="text('Setup.GameLink.CliDebugOutput.ToolTip')"
                   id="PageSetupGameLink-CheckEnableCliOutput"
                   :label="text('Setup.GameLink.CliDebugOutput')"
-                  :model-value="Boolean(values['CheckEnableCliOutput'])"
-                  @update:model-value="(value) => change('CheckEnableCliOutput', value)"
+                  v-model="values.CheckEnableCliOutput"
                 />
               </div>
             </div>

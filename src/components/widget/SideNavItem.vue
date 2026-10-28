@@ -53,7 +53,7 @@ a {
   height: 36px;
   background-color: transparent;
   transition: 0.4s;
-  padding-inline-end: 10px;
+  padding-inline-end: 40px;
 }
 
 a:hover {
@@ -66,7 +66,7 @@ a.router-link-active {
 
 a.custom {
   /* left: 11px gap + 4px width */
-  padding-inline: 15px 22px;
+  padding-inline-start: 15px;
   cursor: pointer;
 }
 

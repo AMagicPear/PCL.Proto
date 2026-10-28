@@ -40,10 +40,10 @@ function create() {
     </div>
     <label v-if="uuidType === 'custom'">UUID<PTextBox v-model="uuid" /></label>
     <div class="form-actions">
-      <PButton :click="() => router.push('/account')">{{
+      <PButton @click="() => router.push('/account')">{{
         text('Launch.Account.Offline.Back')
       }}</PButton
-      ><PButton type="tint" :click="create">{{ text('Launch.Account.Offline.Create') }}</PButton>
+      ><PButton type="tint" @click="create">{{ text('Launch.Account.Offline.Create') }}</PButton>
     </div>
   </form>
 </template>

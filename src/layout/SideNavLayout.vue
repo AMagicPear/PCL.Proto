@@ -1,100 +1,105 @@
-<script lang="ts">
+<script setup lang="ts">
 import { pclText } from '@/api/pclLocale'
-import { defineComponent, onMounted, onUnmounted, useTemplateRef, ref, provide } from 'vue'
+import { onMounted, onUnmounted, useTemplateRef, ref, provide } from 'vue'
 import useSideNavState from '@/stores/windowState'
-import SideGroup from '@/components/widget/SideGroup.vue'
+import SideNavItem from '@/components/widget/SideNavItem.vue'
 import { type INavItemGroup } from '@/types/naviOptions'
 import cardDropAnimate, { getPageAnimationElements } from '@/util/cardDropAnimate'
 import { useModal } from '@/composables/useModal'
 import { useRoute } from 'vue-router'
 
-export default defineComponent({
-  name: 'SideNavLayout',
-  components: {
-    SideGroup,
-  },
-  props: {
-    sideNavGroups: {
-      type: Array as () => INavItemGroup[],
-      required: true,
-    },
-  },
-  setup() {
-    const route = useRoute()
-    let animatedPath = ''
-    const revision = ref(0)
-    provide('navAction', (kind: string) => {
-      if (kind === 'refresh') revision.value++
-      else
-        void useModal().open({
-          title: pclText('Common.Dialog.Title'),
-          content: pclText('Proto.NotImplemented.Initialize'),
-          plainText: true,
-        })
+defineProps<{ sideNavGroups: INavItemGroup[] }>()
+
+const route = useRoute()
+let animatedPath = ''
+const revision = ref(0)
+provide('navAction', (kind: string) => {
+  if (kind === 'refresh') revision.value++
+  else
+    void useModal().open({
+      title: pclText('Common.Dialog.Title'),
+      content: pclText('Proto.NotImplemented.Initialize'),
+      plainText: true,
     })
-    let observer: ResizeObserver | null = null
-    const asideRef = useTemplateRef<HTMLElement>('asideRef')
-    const subviewRef = useTemplateRef<HTMLElement>('subviewRef')
-    const sideNavState = useSideNavState()
+})
+let observer: ResizeObserver | null = null
+const asideRef = useTemplateRef<HTMLElement>('asideRef')
+const subviewRef = useTemplateRef<HTMLElement>('subviewRef')
+const sideNavState = useSideNavState()
 
-    function updateAsideBackgroundWidth() {
-      if (asideRef.value) {
-        sideNavState.setWidth(asideRef.value.offsetWidth)
-      }
-    }
+function updateAsideBackgroundWidth() {
+  if (asideRef.value) {
+    sideNavState.setWidth(asideRef.value.offsetWidth)
+  }
+}
 
-    function animateSubview() {
-      if (subviewRef.value) {
-        cardDropAnimate(getPageAnimationElements(subviewRef.value))
-        animatedPath = route.path
-      }
-    }
+function animateSubview() {
+  if (subviewRef.value) {
+    cardDropAnimate(getPageAnimationElements(subviewRef.value))
+    animatedPath = route.path
+  }
+}
 
-    function animateOnNavigation() {
-      if (animatedPath !== route.path) animateSubview()
-    }
+function animateOnNavigation() {
+  if (animatedPath !== route.path) animateSubview()
+}
 
-    onMounted(async () => {
-      asideRef.value?.querySelectorAll('.sidenav-line').forEach((el_, i) => {
-        let el = el_ as HTMLDivElement
-        el.style.animationPlayState = 'paused'
-        el.style.animationDelay = `${i * 0.02}s`
-        requestAnimationFrame(() => {
-          el.style.animationPlayState = 'running'
-        })
-      })
-      observer = new ResizeObserver(updateAsideBackgroundWidth)
-      observer.observe(asideRef.value!)
+onMounted(() => {
+  asideRef.value?.querySelectorAll('.sidenav-line').forEach((el_, i) => {
+    let el = el_ as HTMLDivElement
+    el.style.animationPlayState = 'paused'
+    el.style.animationDelay = `${i * 0.02}s`
+    requestAnimationFrame(() => {
+      el.style.animationPlayState = 'running'
     })
+  })
+  observer = new ResizeObserver(updateAsideBackgroundWidth)
+  observer.observe(asideRef.value!)
+})
 
-    onUnmounted(() => {
-      observer?.disconnect()
-    })
-
-    return {
-      asideRef,
-      subviewRef,
-      animateSubview,
-      animateOnNavigation,
-      revision,
-    }
-  },
+onUnmounted(() => {
+  observer?.disconnect()
 })
 </script>
 
-<template lang="pug">
-.view-content
-    aside(ref="asideRef")
-        SideGroup(
-            v-for="group in sideNavGroups"
-            v-bind="group"
-        )
-    article.subview(ref="subviewRef")
-        RouterView(:key="revision" v-slot="{ Component }")
-            component(:is="Component" @vue:mounted="animateSubview" @vue:updated="animateOnNavigation")
+<template>
+  <div class="view-content">
+    <aside ref="asideRef">
+      <div v-for="(group, index) in sideNavGroups" :key="group.title || index">
+        <p v-if="group.title" class="side-group-title sidenav-line">{{ group.title }}</p>
+        <div class="side-group-content">
+          <SideNavItem
+            v-for="item in group.content"
+            :key="item.linkto || item.text"
+            v-bind="item"
+          />
+        </div>
+      </div>
+    </aside>
+    <article class="subview" ref="subviewRef">
+      <RouterView :key="revision" v-slot="{ Component }">
+        <component
+          :is="Component"
+          @vue:mounted="animateSubview"
+          @vue:updated="animateOnNavigation"
+        />
+      </RouterView>
+    </article>
+  </div>
 </template>
 
 <style scoped>
+.side-group-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.side-group-title {
+  margin: 6px 5px 4px 13px;
+  font-size: 12px;
+  color: var(--color-text-grey);
+}
+
 article {
   flex: 1 1 auto;
   min-width: 0;
@@ -103,7 +108,8 @@ article {
 
 aside {
   padding: 12px 0 0;
-  width: 152px;
+  width: max-content;
+  white-space: nowrap;
   overflow-y: auto;
   height: 100%;
   flex: 0 0 auto;

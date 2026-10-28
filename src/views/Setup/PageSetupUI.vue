@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
@@ -11,66 +13,20 @@ withDefaults(defineProps<{ hasBackground?: boolean; hasMusic?: boolean }>(), {
   hasBackground: false,
   hasMusic: false,
 })
-const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
+const { values } = usePageSettings('PageSetupUI', {
   ComboUiFont: 'system-ui',
   ComboUiMotdFont: 'system-ui',
-  CheckLogoLeft: false,
-  ComboBackgroundSuit: '0',
-  SliderBackgroundOpacity: 1000,
-  SliderBackgroundBlur: 0,
-  SliderMusicVolume: 1000,
-  CheckMusicRandom: false,
-  CheckMusicAuto: false,
-  CheckMusicStart: false,
-  CheckMusicStop: false,
-  CheckMusicSMTC: false,
-  SliderLauncherOpacity: 0.0,
   ComboDarkMode: '0',
   ComboLightColor: '0',
   ComboDarkColor: '0',
-  CheckLauncherLogo: false,
-  CheckLockWindowSize: false,
-  CheckShowLaunchingHint: false,
-  CheckBlur: false,
-  SliderBlurValue: 0.0,
-  SliderBlurSamplingRate: 0.0,
-  ComboBlurType: '0',
-  CheckAutoPauseVideo: false,
-  CheckBackgroundColorful: false,
   UiLogoType: '0',
-  TextLogoText: '',
-  UiCustomType: '0',
-  TextCustomNet: '',
-  ComboCustomPreset: '0',
-  CheckHiddenPageDownload: false,
-  CheckHiddenPageSetup: false,
-  CheckHiddenPageTools: false,
-  CheckHiddenSetupLaunch: false,
-  CheckHiddenSetupJava: false,
-  CheckHiddenSetupGameManage: false,
-  CheckHiddenSetupGameLink: false,
-  CheckHiddenSetupUI: false,
-  CheckHiddenSetupLauncherLanguage: false,
-  CheckHiddenLauncherMisc: false,
-  CheckHiddenSetupUpdate: false,
-  CheckHiddenSetupAbout: false,
-  CheckHiddenSetupFeedback: false,
-  CheckHiddenSetupLog: false,
-  CheckHiddenToolsGameLink: false,
-  CheckHiddenToolsTest: false,
-  CheckHiddenVersionEdit: false,
-  CheckHiddenVersionExport: false,
-  CheckHiddenVersionSave: false,
-  CheckHiddenVersionScreenshot: false,
-  CheckHiddenVersionMod: false,
-  CheckHiddenVersionResourcePack: false,
-  CheckHiddenVersionShader: false,
-  CheckHiddenVersionSchematic: false,
-  CheckHiddenVersionServer: false,
-  CheckHiddenFunctionSelect: false,
-  CheckHiddenFunctionModUpdate: false,
-  CheckHiddenFunctionHidden: false,
 })
+
+const router = useRouter()
+const text = pclText
+function openWebsite(url: string) {
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
 </script>
 <template>
   <div class="pcl-page">
@@ -150,8 +106,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                       { key: '1', text: text('Setup.Ui.Theme.Dark') },
                       { key: '2', text: text('Setup.Ui.Theme.FollowSystem') },
                     ]"
-                    :model-value="String(values['ComboDarkMode'])"
-                    @update:model-value="(value) => change('ComboDarkMode', value || '')"
+                    v-model="values.ComboDarkMode"
                   />
                   <span
                     style="
@@ -172,8 +127,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                         text: text(`Setup.Ui.Theme.Color.${color}`),
                       }))
                     "
-                    :model-value="String(values['ComboLightColor'])"
-                    @update:model-value="(value) => change('ComboLightColor', value || '')"
+                    v-model="values.ComboLightColor"
                   />
                   <span
                     style="
@@ -194,8 +148,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                         text: text(`Setup.Ui.Theme.Color.${color}`),
                       }))
                     "
-                    :model-value="String(values['ComboDarkColor'])"
-                    @update:model-value="(value) => change('ComboDarkColor', value || '')"
+                    v-model="values.ComboDarkColor"
                   />
                 </div>
                 <PCheckBox
@@ -203,24 +156,21 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   style="height: 22px; margin: 0px 0px 7px -1px"
                   id="PageSetupUI-CheckLauncherLogo"
                   :label="text('Setup.Ui.Basic.ShowLogo')"
-                  :model-value="Boolean(values['CheckLauncherLogo'])"
-                  @update:model-value="(value) => change('CheckLauncherLogo', value)"
+                  v-model="values.CheckLauncherLogo"
                 />
                 <PCheckBox
                   data-control="CheckLockWindowSize"
                   style="height: 22px; margin: 0px 0px 7px -1px"
                   id="PageSetupUI-CheckLockWindowSize"
                   :label="text('Setup.Ui.Basic.LockWindow')"
-                  :model-value="Boolean(values['CheckLockWindowSize'])"
-                  @update:model-value="(value) => change('CheckLockWindowSize', value)"
+                  v-model="values.CheckLockWindowSize"
                 />
                 <PCheckBox
                   data-control="CheckShowLaunchingHint"
                   style="height: 22px; margin: 0px 0px 7px -1px"
                   id="PageSetupUI-CheckShowLaunchingHint"
                   :label="text('Setup.Ui.Basic.ShowTriviaHint')"
-                  :model-value="Boolean(values['CheckShowLaunchingHint'])"
-                  @update:model-value="(value) => change('CheckShowLaunchingHint', value)"
+                  v-model="values.CheckShowLaunchingHint"
                 />
                 <div
                   data-control="PanelBlur"
@@ -232,8 +182,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     :title="text('Setup.Ui.Basic.AdvancedMaterial.ToolTip')"
                     id="PageSetupUI-CheckBlur"
                     :label="text('Setup.Ui.Basic.AdvancedMaterial')"
-                    :model-value="Boolean(values['CheckBlur'])"
-                    @update:model-value="(value) => change('CheckBlur', value)"
+                    v-model="values.CheckBlur"
                   />
                   <div
                     v-if="values.CheckBlur"
@@ -314,8 +263,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                           title: text('Setup.Ui.Basic.BlurMethod.Box.ToolTip'),
                         },
                       ]"
-                      :model-value="String(values['ComboBlurType'])"
-                      @update:model-value="(value) => change('ComboBlurType', value || '')"
+                      v-model="values.ComboBlurType"
                     />
                   </div>
                 </div>
@@ -348,8 +296,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   { key: 'Microsoft YaHei UI', text: 'Microsoft YaHei UI' },
                   { key: 'PingFang SC', text: 'PingFang SC' },
                 ]"
-                :model-value="String(values.ComboUiFont)"
-                @update:model-value="(value) => change('ComboUiFont', value || 'system-ui')"
+                v-model="values.ComboUiFont"
               />
               <span
                 style="grid-row: 3 / span 1; grid-column: 1 / span 1; align-self: center"
@@ -364,8 +311,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   { key: 'Microsoft YaHei UI', text: 'Microsoft YaHei UI' },
                   { key: 'PingFang SC', text: 'PingFang SC' },
                 ]"
-                :model-value="String(values.ComboUiMotdFont)"
-                @update:model-value="(value) => change('ComboUiMotdFont', value || 'system-ui')"
+                v-model="values.ComboUiMotdFont"
               />
             </div>
           </PCard>
@@ -397,7 +343,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                       }))
                     "
                     :model-value="String(values.ComboBackgroundSuit)"
-                    @update:model-value="(value) => change('ComboBackgroundSuit', value || '0')"
+                    @update:model-value="(value) => (values.ComboBackgroundSuit = value || '0')"
                   />
                 </div>
                 <div data-control="PanBackgroundOpacity" class="pcl-form-row">
@@ -427,16 +373,14 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                 :title="text('Setup.Ui.Background.PauseVideo.ToolTip')"
                 id="PageSetupUI-CheckAutoPauseVideo"
                 :label="text('Setup.Ui.Background.PauseVideo')"
-                :model-value="Boolean(values['CheckAutoPauseVideo'])"
-                @update:model-value="(value) => change('CheckAutoPauseVideo', value)"
+                v-model="values.CheckAutoPauseVideo"
               />
               <PCheckBox
                 data-control="CheckBackgroundColorful"
                 style="height: 22px; margin: 0px 0px 8px -1px"
                 id="PageSetupUI-CheckBackgroundColorful"
                 :label="text('Setup.Ui.Background.ColorOverlay')"
-                :model-value="Boolean(values['CheckBackgroundColorful'])"
-                @update:model-value="(value) => change('CheckBackgroundColorful', value)"
+                v-model="values.CheckBackgroundColorful"
               />
               <div
                 style="
@@ -456,7 +400,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     grid-column: 1 / span 1;
                   "
                   :title="text('Setup.Ui.Background.OpenFolder.ToolTip')"
-                  :click="() => act('BtnBackgroundOpen', 'BtnUIBgOpen_Click', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Common.Action.OpenFolder') }}</PButton
                 >
                 <PButton
@@ -469,13 +413,13 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     grid-column: 2 / span 1;
                   "
                   :title="text('Setup.Ui.Background.Refresh.ToolTip')"
-                  :click="() => act('BtnBackgroundRefresh', 'BtnBackgroundRefresh_Click', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Setup.Ui.Background.Refresh') }}</PButton
                 ><PButton
                   v-if="hasBackground"
                   data-control="BtnBackgroundClear"
                   type="warn"
-                  :click="() => act('BtnBackgroundClear')"
+                  @click="showUnavailable"
                   >{{ text('Setup.Ui.Background.Clear') }}</PButton
                 >
               </div>
@@ -514,7 +458,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     :id="`PageSetupUI-${setting.id}`"
                     :label="text(`Setup.Ui.Music.${setting.key}`)"
                     :model-value="Boolean(values[setting.id])"
-                    @update:model-value="(value) => change(setting.id, value)"
+                    @update:model-value="(value) => (values[setting.id] = value)"
                   />
                 </div>
               </template>
@@ -529,7 +473,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     grid-column: 1 / span 1;
                   "
                   :title="text('Setup.Ui.Music.OpenFolder.ToolTip')"
-                  :click="() => act('BtnMusicOpen', 'BtnMusicOpen_Click', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Common.Action.OpenFolder') }}</PButton
                 >
                 <PButton
@@ -542,13 +486,13 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     grid-column: 2 / span 1;
                   "
                   :title="text('Setup.Ui.Music.Refresh.ToolTip')"
-                  :click="() => act('BtnMusicRefresh', 'BtnMusicRefresh_Click', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Setup.Ui.Music.Refresh') }}</PButton
                 ><PButton
                   v-if="hasMusic"
                   data-control="BtnMusicClear"
                   type="warn"
-                  :click="() => act('BtnMusicClear')"
+                  @click="showUnavailable"
                   >{{ text('Setup.Ui.Music.Clear') }}</PButton
                 >
               </div>
@@ -608,8 +552,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                 style="margin: 8px 0 3px"
                 id="PageSetupUI-CheckLogoLeft"
                 :label="text('Setup.Ui.Logo.LeftAlign')"
-                :model-value="Boolean(values.CheckLogoLeft)"
-                @update:model-value="(value) => change('CheckLogoLeft', value)"
+                v-model="values.CheckLogoLeft"
               />
               <div
                 data-control="PanLogoText"
@@ -635,12 +578,12 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   data-control="TextLogoText"
                   style="grid-row: 1 / span 1; grid-column: 2 / span 1"
                   :placeholder="text('')"
-                  :model-value="String(values['TextLogoText'])"
-                  @update:model-value="(value) => change('TextLogoText', value || '')"
+                  v-model="values.TextLogoText"
                 />
               </div>
               <div
                 data-control="PanLogoChange"
+                class="logo-image-actions"
                 style="
                   height: 35px;
                   margin: 14px 0px 5px 0px;
@@ -658,7 +601,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     grid-row: 1 / span 1;
                     grid-column: 1 / span 1;
                   "
-                  :click="() => act('BtnLogoChange', 'BtnLogoChange_Click', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Setup.Ui.Logo.ChangeImage') }}</PButton
                 >
                 <PButton
@@ -670,7 +613,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     grid-row: 1 / span 1;
                     grid-column: 2 / span 1;
                   "
-                  :click="() => act('BtnLogoDelete', 'BtnLogoDelete_Click', '', '')"
+                  @click="showUnavailable"
                   type="warn"
                   >{{ text('Setup.Ui.Logo.ClearImage') }}</PButton
                 >
@@ -756,7 +699,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     grid-column: 1 / span 1;
                     justify-self: start;
                   "
-                  :click="() => act('BtnCustomRefresh', 'BtnCustomRefresh_Click', '', '')"
+                  @click="() => router.push('/home')"
                   type="tint"
                   >{{ text('Setup.Ui.Homepage.Refresh') }}</PButton
                 >
@@ -770,7 +713,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     grid-column: 2 / span 1;
                     justify-self: start;
                   "
-                  :click="() => act('BtnCustomTutorial', 'BtnCustomTutorial_Click', '', '')"
+                  @click="() => openWebsite('https://github.com/Hex-Dragon/PCL2/wiki/自定义主页')"
                   >{{ text('Setup.Ui.Homepage.Tutorial') }}</PButton
                 >
               </div>
@@ -798,8 +741,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   data-control="TextCustomNet"
                   style="max-height: 28px; grid-row: 1 / span 1; grid-column: 2 / span 1"
                   :placeholder="text('')"
-                  :model-value="String(values['TextCustomNet'])"
-                  @update:model-value="(value) => change('TextCustomNet', value || '')"
+                  v-model="values.TextCustomNet"
                 />
               </div>
               <div
@@ -843,8 +785,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                     { key: '13', text: text('Setup.Ui.Homepage.Preset.PclAnnouncement') },
                     { key: '14', text: text('Setup.Ui.Homepage.Preset.McOfficialFeed') },
                   ]"
-                  :model-value="String(values['ComboCustomPreset'])"
-                  @update:model-value="(value) => change('ComboCustomPreset', value || '')"
+                  v-model="values.ComboCustomPreset"
                 />
               </div>
             </div>
@@ -887,8 +828,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenPageDownload"
                   :label="text('Setup.Ui.FeatureHide.Item.Download')"
-                  :model-value="Boolean(values['CheckHiddenPageDownload'])"
-                  @update:model-value="(value) => change('CheckHiddenPageDownload', value)"
+                  v-model="values.CheckHiddenPageDownload"
                 />
                 <PCheckBox
                   data-control="CheckHiddenPageSetup"
@@ -900,8 +840,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenPageSetup"
                   :label="text('Setup.Ui.FeatureHide.Item.Settings')"
-                  :model-value="Boolean(values['CheckHiddenPageSetup'])"
-                  @update:model-value="(value) => change('CheckHiddenPageSetup', value)"
+                  v-model="values.CheckHiddenPageSetup"
                 />
                 <PCheckBox
                   data-control="CheckHiddenPageTools"
@@ -913,8 +852,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenPageTools"
                   :label="text('Setup.Ui.FeatureHide.Item.Tools')"
-                  :model-value="Boolean(values['CheckHiddenPageTools'])"
-                  @update:model-value="(value) => change('CheckHiddenPageTools', value)"
+                  v-model="values.CheckHiddenPageTools"
                 />
                 <span
                   style="
@@ -936,8 +874,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenSetupLaunch"
                   :label="text('Setup.Ui.FeatureHide.Item.Launch')"
-                  :model-value="Boolean(values['CheckHiddenSetupLaunch'])"
-                  @update:model-value="(value) => change('CheckHiddenSetupLaunch', value)"
+                  v-model="values.CheckHiddenSetupLaunch"
                 />
                 <PCheckBox
                   data-control="CheckHiddenSetupJava"
@@ -949,8 +886,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenSetupJava"
                   :label="text('Java')"
-                  :model-value="Boolean(values['CheckHiddenSetupJava'])"
-                  @update:model-value="(value) => change('CheckHiddenSetupJava', value)"
+                  v-model="values.CheckHiddenSetupJava"
                 />
                 <PCheckBox
                   data-control="CheckHiddenSetupGameManage"
@@ -962,8 +898,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenSetupGameManage"
                   :label="text('Setup.Ui.FeatureHide.Item.GameManage')"
-                  :model-value="Boolean(values['CheckHiddenSetupGameManage'])"
-                  @update:model-value="(value) => change('CheckHiddenSetupGameManage', value)"
+                  v-model="values.CheckHiddenSetupGameManage"
                 />
                 <PCheckBox
                   data-control="CheckHiddenSetupGameLink"
@@ -975,8 +910,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenSetupGameLink"
                   :label="text('Setup.Ui.FeatureHide.Item.GameLink')"
-                  :model-value="Boolean(values['CheckHiddenSetupGameLink'])"
-                  @update:model-value="(value) => change('CheckHiddenSetupGameLink', value)"
+                  v-model="values.CheckHiddenSetupGameLink"
                 />
                 <PCheckBox
                   data-control="CheckHiddenSetupUI"
@@ -988,8 +922,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenSetupUI"
                   :label="text('Setup.Ui.FeatureHide.Item.Ui')"
-                  :model-value="Boolean(values['CheckHiddenSetupUI'])"
-                  @update:model-value="(value) => change('CheckHiddenSetupUI', value)"
+                  v-model="values.CheckHiddenSetupUI"
                 />
                 <PCheckBox
                   data-control="CheckHiddenSetupLauncherLanguage"
@@ -1001,8 +934,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenSetupLauncherLanguage"
                   :label="text('Setup.Ui.FeatureHide.Item.Language')"
-                  :model-value="Boolean(values['CheckHiddenSetupLauncherLanguage'])"
-                  @update:model-value="(value) => change('CheckHiddenSetupLauncherLanguage', value)"
+                  v-model="values.CheckHiddenSetupLauncherLanguage"
                 />
                 <PCheckBox
                   data-control="CheckHiddenLauncherMisc"
@@ -1014,8 +946,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenLauncherMisc"
                   :label="text('Setup.Ui.FeatureHide.Item.Misc')"
-                  :model-value="Boolean(values['CheckHiddenLauncherMisc'])"
-                  @update:model-value="(value) => change('CheckHiddenLauncherMisc', value)"
+                  v-model="values.CheckHiddenLauncherMisc"
                 />
                 <PCheckBox
                   data-control="CheckHiddenSetupUpdate"
@@ -1027,8 +958,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenSetupUpdate"
                   :label="text('Setup.Ui.FeatureHide.Item.Update')"
-                  :model-value="Boolean(values['CheckHiddenSetupUpdate'])"
-                  @update:model-value="(value) => change('CheckHiddenSetupUpdate', value)"
+                  v-model="values.CheckHiddenSetupUpdate"
                 />
                 <PCheckBox
                   data-control="CheckHiddenSetupAbout"
@@ -1040,8 +970,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenSetupAbout"
                   :label="text('Setup.Ui.FeatureHide.Item.About')"
-                  :model-value="Boolean(values['CheckHiddenSetupAbout'])"
-                  @update:model-value="(value) => change('CheckHiddenSetupAbout', value)"
+                  v-model="values.CheckHiddenSetupAbout"
                 />
                 <PCheckBox
                   data-control="CheckHiddenSetupFeedback"
@@ -1053,8 +982,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenSetupFeedback"
                   :label="text('Setup.Ui.FeatureHide.Item.Feedback')"
-                  :model-value="Boolean(values['CheckHiddenSetupFeedback'])"
-                  @update:model-value="(value) => change('CheckHiddenSetupFeedback', value)"
+                  v-model="values.CheckHiddenSetupFeedback"
                 />
                 <PCheckBox
                   data-control="CheckHiddenSetupLog"
@@ -1066,8 +994,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenSetupLog"
                   :label="text('Setup.Ui.FeatureHide.Item.Log')"
-                  :model-value="Boolean(values['CheckHiddenSetupLog'])"
-                  @update:model-value="(value) => change('CheckHiddenSetupLog', value)"
+                  v-model="values.CheckHiddenSetupLog"
                 />
                 <span
                   style="
@@ -1089,8 +1016,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenToolsGameLink"
                   :label="text('Setup.Ui.FeatureHide.Item.Lobby')"
-                  :model-value="Boolean(values['CheckHiddenToolsGameLink'])"
-                  @update:model-value="(value) => change('CheckHiddenToolsGameLink', value)"
+                  v-model="values.CheckHiddenToolsGameLink"
                 />
                 <PCheckBox
                   data-control="CheckHiddenToolsTest"
@@ -1102,8 +1028,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenToolsTest"
                   :label="text('Setup.Ui.FeatureHide.Item.Toolbox')"
-                  :model-value="Boolean(values['CheckHiddenToolsTest'])"
-                  @update:model-value="(value) => change('CheckHiddenToolsTest', value)"
+                  v-model="values.CheckHiddenToolsTest"
                 />
                 <span
                   style="
@@ -1125,8 +1050,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenVersionEdit"
                   :label="text('Setup.Ui.FeatureHide.Item.Edit')"
-                  :model-value="Boolean(values['CheckHiddenVersionEdit'])"
-                  @update:model-value="(value) => change('CheckHiddenVersionEdit', value)"
+                  v-model="values.CheckHiddenVersionEdit"
                 />
                 <PCheckBox
                   data-control="CheckHiddenVersionExport"
@@ -1138,8 +1062,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenVersionExport"
                   :label="text('Setup.Ui.FeatureHide.Item.Export')"
-                  :model-value="Boolean(values['CheckHiddenVersionExport'])"
-                  @update:model-value="(value) => change('CheckHiddenVersionExport', value)"
+                  v-model="values.CheckHiddenVersionExport"
                 />
                 <PCheckBox
                   data-control="CheckHiddenVersionSave"
@@ -1151,8 +1074,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenVersionSave"
                   :label="text('Setup.Ui.FeatureHide.Item.Save')"
-                  :model-value="Boolean(values['CheckHiddenVersionSave'])"
-                  @update:model-value="(value) => change('CheckHiddenVersionSave', value)"
+                  v-model="values.CheckHiddenVersionSave"
                 />
                 <PCheckBox
                   data-control="CheckHiddenVersionScreenshot"
@@ -1164,8 +1086,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenVersionScreenshot"
                   :label="text('Setup.Ui.FeatureHide.Item.Screenshot')"
-                  :model-value="Boolean(values['CheckHiddenVersionScreenshot'])"
-                  @update:model-value="(value) => change('CheckHiddenVersionScreenshot', value)"
+                  v-model="values.CheckHiddenVersionScreenshot"
                 />
                 <PCheckBox
                   data-control="CheckHiddenVersionMod"
@@ -1177,8 +1098,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenVersionMod"
                   :label="text('Mod')"
-                  :model-value="Boolean(values['CheckHiddenVersionMod'])"
-                  @update:model-value="(value) => change('CheckHiddenVersionMod', value)"
+                  v-model="values.CheckHiddenVersionMod"
                 />
                 <PCheckBox
                   data-control="CheckHiddenVersionResourcePack"
@@ -1190,8 +1110,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenVersionResourcePack"
                   :label="text('Setup.Ui.FeatureHide.Item.ResourcePack')"
-                  :model-value="Boolean(values['CheckHiddenVersionResourcePack'])"
-                  @update:model-value="(value) => change('CheckHiddenVersionResourcePack', value)"
+                  v-model="values.CheckHiddenVersionResourcePack"
                 />
                 <PCheckBox
                   data-control="CheckHiddenVersionShader"
@@ -1203,8 +1122,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenVersionShader"
                   :label="text('Setup.Ui.FeatureHide.Item.Shader')"
-                  :model-value="Boolean(values['CheckHiddenVersionShader'])"
-                  @update:model-value="(value) => change('CheckHiddenVersionShader', value)"
+                  v-model="values.CheckHiddenVersionShader"
                 />
                 <PCheckBox
                   data-control="CheckHiddenVersionSchematic"
@@ -1216,8 +1134,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenVersionSchematic"
                   :label="text('Setup.Ui.FeatureHide.Item.Schematic')"
-                  :model-value="Boolean(values['CheckHiddenVersionSchematic'])"
-                  @update:model-value="(value) => change('CheckHiddenVersionSchematic', value)"
+                  v-model="values.CheckHiddenVersionSchematic"
                 />
                 <PCheckBox
                   data-control="CheckHiddenVersionServer"
@@ -1229,8 +1146,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   "
                   id="PageSetupUI-CheckHiddenVersionServer"
                   :label="text('Setup.Ui.FeatureHide.Item.Server')"
-                  :model-value="Boolean(values['CheckHiddenVersionServer'])"
-                  @update:model-value="(value) => change('CheckHiddenVersionServer', value)"
+                  v-model="values.CheckHiddenVersionServer"
                 />
                 <span
                   style="
@@ -1253,8 +1169,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   :title="text('Setup.Ui.FeatureHide.Item.InstanceSelect.ToolTip')"
                   id="PageSetupUI-CheckHiddenFunctionSelect"
                   :label="text('Setup.Ui.FeatureHide.Item.InstanceSelect')"
-                  :model-value="Boolean(values['CheckHiddenFunctionSelect'])"
-                  @update:model-value="(value) => change('CheckHiddenFunctionSelect', value)"
+                  v-model="values.CheckHiddenFunctionSelect"
                 />
                 <PCheckBox
                   data-control="CheckHiddenFunctionModUpdate"
@@ -1267,8 +1182,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   :title="text('Setup.Ui.FeatureHide.Item.ModUpdate.ToolTip')"
                   id="PageSetupUI-CheckHiddenFunctionModUpdate"
                   :label="text('Setup.Ui.FeatureHide.Item.ModUpdate')"
-                  :model-value="Boolean(values['CheckHiddenFunctionModUpdate'])"
-                  @update:model-value="(value) => change('CheckHiddenFunctionModUpdate', value)"
+                  v-model="values.CheckHiddenFunctionModUpdate"
                 />
                 <PCheckBox
                   data-control="CheckHiddenFunctionHidden"
@@ -1281,8 +1195,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
                   :title="text('Setup.Ui.FeatureHide.Item.FeatureHide.ToolTip')"
                   id="PageSetupUI-CheckHiddenFunctionHidden"
                   :label="text('Setup.Ui.FeatureHide.Item.FeatureHide')"
-                  :model-value="Boolean(values['CheckHiddenFunctionHidden'])"
-                  @update:model-value="(value) => change('CheckHiddenFunctionHidden', value)"
+                  v-model="values.CheckHiddenFunctionHidden"
                 />
               </div>
             </div>
@@ -1292,3 +1205,9 @@ const { values, text, change, act, image } = usePageSettings('PageSetupUI', {
     </div>
   </div>
 </template>
+
+<style scoped>
+.logo-image-actions {
+  justify-content: start;
+}
+</style>

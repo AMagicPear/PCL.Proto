@@ -6,8 +6,6 @@ export interface ISetupOption {
   title?: string
 }
 
-export type SetupItemType = 'select' | 'input'
-
 export const useSetup = defineStore('setup', {
   state: () => ({
     launch: {

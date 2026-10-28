@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
-import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
-const { values, text, change, act, image } = usePageSettings('PageSetupLog', {})
+
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -22,26 +23,23 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLog', {})
             >
               <PButton
                 style="min-width: 100px; margin: 0px 15px 0px 0px"
-                :click="() => act('ButtonExport_OnClick', 'ButtonExport_OnClick', '', '')"
+                @click="showUnavailable"
                 type="tint"
                 >{{ text('Setup.Log.Export') }}</PButton
               >
               <PButton
                 style="min-width: 120px; margin: 0px 15px 0px 0px"
-                :click="() => act('ButtonExportAll_OnClick', 'ButtonExportAll_OnClick', '', '')"
+                @click="showUnavailable"
                 >{{ text('Setup.Log.ExportAll') }}</PButton
               >
               <PButton
                 style="min-width: 120px; margin: 0px 15px 0px 0px"
-                :click="() => act('ButtonOpenDir_OnClick', 'ButtonOpenDir_OnClick', '', '')"
+                @click="showUnavailable"
                 >{{ text('Setup.Log.OpenDirectory') }}</PButton
               >
-              <PButton
-                style="min-width: 120px"
-                :click="() => act('ButtonClean_OnClick', 'ButtonClean_OnClick', '', '')"
-                type="warn"
-                >{{ text('Setup.Log.ClearHistory') }}</PButton
-              >
+              <PButton style="min-width: 120px" @click="showUnavailable" type="warn">{{
+                text('Setup.Log.ClearHistory')
+              }}</PButton>
             </div>
           </PCard>
           <PCard

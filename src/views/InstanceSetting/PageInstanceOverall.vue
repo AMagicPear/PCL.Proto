@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
 import { useSelectedInstance } from '@/stores/gameLaunch'
 import PListItem from '@/components/widget/PListItem.vue'
@@ -8,10 +9,12 @@ import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
-const { values, text, change, act, image } = usePageSettings('PageInstanceOverall', {
+const { values } = usePageSettings('PageInstanceOverall', {
   ComboDisplayLogo: '0',
   ComboDisplayType: '0',
 })
+
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -90,8 +93,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     { key: '14', text: text('Instance.Overall.Icon.NeoForgeFox') },
                     { key: '15', text: text('Instance.Overall.Icon.Cleanroom') },
                   ]"
-                  :model-value="String(values['ComboDisplayLogo'])"
-                  @update:model-value="(value) => change('ComboDisplayLogo', value || '')"
+                  v-model="values.ComboDisplayLogo"
                 />
                 <span
                   style="
@@ -119,8 +121,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     { key: '4', text: text('Instance.Overall.Category.LessUsed') },
                     { key: '5', text: text('Instance.Overall.Category.AprilFools') },
                   ]"
-                  :model-value="String(values['ComboDisplayType'])"
-                  @update:model-value="(value) => change('ComboDisplayType', value || '')"
+                  v-model="values.ComboDisplayType"
                 />
               </div>
               <div
@@ -140,7 +141,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     grid-row: 1 / span 1;
                     grid-column: 1 / span 1;
                   "
-                  :click="() => act('BtnDisplayRename', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Overall.Rename') }}</PButton
                 >
                 <PButton
@@ -152,7 +153,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     grid-row: 1 / span 1;
                     grid-column: 2 / span 1;
                   "
-                  :click="() => act('BtnDisplayDesc', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Overall.EditDescription') }}</PButton
                 >
                 <PButton
@@ -164,7 +165,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     grid-row: 1 / span 1;
                     grid-column: 3 / span 1;
                   "
-                  :click="() => act('BtnDisplayStar', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Overall.Favorite') }}</PButton
                 >
               </div>
@@ -193,7 +194,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     grid-row: 1 / span 1;
                     grid-column: 1 / span 1;
                   "
-                  :click="() => act('BtnFolderVersion', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Overall.Shortcuts.InstanceFolder') }}</PButton
                 >
                 <PButton
@@ -205,7 +206,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     grid-row: 1 / span 1;
                     grid-column: 2 / span 1;
                   "
-                  :click="() => act('BtnFolderSaves', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Overall.Shortcuts.SavesFolder') }}</PButton
                 >
                 <PButton
@@ -217,7 +218,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     grid-row: 1 / span 1;
                     grid-column: 3 / span 1;
                   "
-                  :click="() => act('BtnFolderMods', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Overall.Shortcuts.ModsFolder') }}</PButton
                 >
               </div>
@@ -246,7 +247,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     margin: 7px 20px 0px 0px;
                     padding: 0px 13px;
                   "
-                  :click="() => act('BtnManageScript', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Overall.Manage.ExportLaunchScript') }}</PButton
                 >
                 <PButton
@@ -257,7 +258,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     margin: 7px 20px 0px 0px;
                     padding: 0px 13px;
                   "
-                  :click="() => act('BtnManageTest', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Overall.Manage.TestGame') }}</PButton
                 >
                 <PButton
@@ -269,7 +270,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     padding: 0px 13px;
                   "
                   :title="text('Instance.Overall.Manage.RepairFiles.ToolTip')"
-                  :click="() => act('BtnManageCheck', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Overall.Manage.RepairFiles') }}</PButton
                 >
                 <PButton
@@ -281,7 +282,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     padding: 0px 13px;
                   "
                   :title="text('Instance.Overall.Manage.Reinstall.ToolTip')"
-                  :click="() => act('BtnManageRestore', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Common.Action.Reset') }}</PButton
                 >
                 <PButton
@@ -292,7 +293,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     margin: 7px 20px 0px 0px;
                     padding: 0px 13px;
                   "
-                  :click="() => act('BtnManageDelete', '', '', '')"
+                  @click="showUnavailable"
                   type="warn"
                   >{{ text('Instance.Overall.Manage.Delete') }}</PButton
                 >
@@ -304,7 +305,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceOveral
                     margin: 7px 20px 0px 0px;
                     padding: 0px 13px;
                   "
-                  :click="() => act('BtnManagePatch', '', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Instance.Overall.Manage.PatchCore') }}</PButton
                 >
               </div>

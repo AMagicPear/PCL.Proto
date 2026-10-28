@@ -79,6 +79,11 @@ button.button-animated {
 button.button-animated:hover {
   color: var(--color-titlebar);
 }
+
+.pcl-page .hint-container {
+  margin-top: 0;
+  margin-bottom: 0;
+}
 </style>
 
 <style scoped>

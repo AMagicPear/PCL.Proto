@@ -1,16 +1,24 @@
 <script lang="ts" setup>
+import { useId } from 'vue'
 import shapes from '@/assets/control-geometry.json'
-defineProps<{ label: string; id: string; disabled?: boolean }>()
+defineProps<{ label: string; id?: string; disabled?: boolean }>()
+const controlId = useId()
 const model = defineModel<boolean>({ default: false })
 </script>
 <template>
   <div class="option" :class="{ disabled }">
-    <input type="checkbox" :disabled="disabled" :id="id" class="checkable" v-model="model" />
+    <input
+      type="checkbox"
+      :disabled="disabled"
+      :id="id || controlId"
+      class="checkable"
+      v-model="model"
+    />
     <span class="checkbox-shape" aria-hidden="true"
       ><svg viewBox="0 0 12 12">
         <path :d="shapes['MyCheckBox.ShapeCheck']" fill="currentColor" /></svg
     ></span>
-    <label :for="id">{{ label }}</label>
+    <label :for="id || controlId">{{ label }}</label>
   </div>
 </template>
 <style scoped>

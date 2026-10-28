@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { pclText } from '@/api/pclLocale'
 import { computed, ref } from 'vue'
-import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PListItem from '@/components/widget/PListItem.vue'
@@ -28,7 +28,7 @@ const props = withDefaults(
   },
 )
 const emit = defineEmits<{ refresh: [] }>()
-const { text, act } = usePageSettings('PageInstanceCompJarInJar')
+
 const query = ref('')
 const groups = computed(() =>
   [
@@ -41,23 +41,26 @@ const groups = computed(() =>
     ),
   })),
 )
+
+const router = useRouter()
+const text = pclText
 </script>
 <template>
   <section class="pcl-page jar-page">
     <PLoading v-if="loading" :loading-text="text('Instance.Resource.Loading')" />
     <PHint v-else-if="error" severity="error"
       >{{ error
-      }}<PButton inline :click="() => emit('refresh')">{{
+      }}<PButton inline @click="() => emit('refresh')">{{
         text('Common.Action.Refresh')
       }}</PButton></PHint
     >
     <template v-else-if="relations.length || bundled.length || warnings.length || conflicts.length">
       <PCard hide-title
         ><div class="manage">
-          <PButton type="tint" :click="() => act('BtnBack')">{{
+          <PButton type="tint" @click="() => router.back()">{{
             text('Instance.Resource.BackToParent')
           }}</PButton>
-          <PButton :click="() => emit('refresh')">{{ text('Common.Action.Refresh') }}</PButton>
+          <PButton @click="() => emit('refresh')">{{ text('Common.Action.Refresh') }}</PButton>
           <span>{{ text('Instance.Resource.Mod.JarInJar.Message') }}</span>
         </div></PCard
       >
@@ -103,7 +106,7 @@ const groups = computed(() =>
         <h2>{{ text('Instance.Resource.Mod.JarInJar.Empty.Title') }}</h2>
         <div class="pcl-divider" />
         <p>{{ text('Instance.Resource.Mod.JarInJar.Empty.Message') }}</p>
-        <PButton type="tint" :click="() => act('BtnEmptyBack')">{{
+        <PButton type="tint" @click="() => router.back()">{{
           text('Instance.Resource.BackToParent')
         }}</PButton>
       </div></PCard

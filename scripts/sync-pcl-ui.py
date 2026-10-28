@@ -196,10 +196,6 @@ def sync(source):
         content = ET.tostring(svg, encoding='unicode') + '\n'
         if not svg_path.exists() or svg_path.read_text() != content:
             svg_path.write_text(content)
-        if item['data'] == control_paths.get('FormMain.ShapeTitleLogo'):
-            svg.set('width', '39')
-            svg.set('height', '20')
-            (target / 'icons/TitleLogo.svg').write_text(ET.tostring(svg, encoding='unicode') + '\n')
         item['viewBox'] = viewbox
     write_json(target / 'vector-paths.json', paths)
     revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()

@@ -142,7 +142,7 @@ const DescriptionExtra = defineComponent(
         :placeholder="pclText('Tools.ServerQuery.Address.Hint')"
         style="flex: 1"
       />
-      <PButton inline :click="performQuery" :disabled="!serverInput">{{
+      <PButton inline @click="performQuery" :disabled="!serverInput">{{
         pclText('Tools.ServerQuery.Action.Query')
       }}</PButton>
     </div>

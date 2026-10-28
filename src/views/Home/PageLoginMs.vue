@@ -19,17 +19,17 @@ function open(url: string) {
 </script>
 <template>
   <section class="ms-login">
-    <PPath :data="loginShape" class="login-avatar" /><PButton type="tint" :click="login">{{
+    <PPath :data="loginShape" class="login-avatar" /><PButton type="tint" @click="login">{{
       text('Launch.Account.Microsoft.Start')
     }}</PButton
-    ><PButton inline :click="() => open('https://www.minecraft.net')">{{
+    ><PButton inline @click="() => open('https://www.minecraft.net')">{{
       text('Launch.Account.Microsoft.Website')
     }}</PButton
     ><PButton
       inline
-      :click="() => open('https://www.minecraft.net/store/minecraft-java-bedrock-edition-pc')"
+      @click="() => open('https://www.minecraft.net/store/minecraft-java-bedrock-edition-pc')"
       >{{ text('Launch.Account.Microsoft.Purchase') }}</PButton
-    ><PButton inline :click="() => router.push('/account')">{{
+    ><PButton inline @click="() => router.push('/account')">{{
       text('Launch.Account.Back')
     }}</PButton>
   </section>

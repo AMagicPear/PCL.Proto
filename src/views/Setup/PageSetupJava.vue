@@ -28,8 +28,7 @@ async function load(refresh = false) {
     loading.value = false
   }
 }
-async function act(id: string, ..._args: string[]) {
-  if (id !== 'BtnAdd') return
+async function addJava() {
   if (!isTauri()) {
     sideTip.show(pclText('Proto.Desktop.JavaAdd'), 'warn')
     return
@@ -66,10 +65,7 @@ const text = pclText
           >
             <PCard style="margin: 0px 0px 15px 0px" hide-title>
               <div style="margin: 8px; display: flex; flex-direction: row; align-items: center">
-                <PButton
-                  data-control="BtnAdd"
-                  :click="() => act('BtnAdd', 'BtnAdd_Click', '', '')"
-                  inline
+                <PButton data-control="BtnAdd" @click="addJava" inline
                   ><PSvgIcon name="lucide/circle-plus" :size="18" />{{
                     text('Setup.Java.Add')
                   }}</PButton
@@ -84,7 +80,7 @@ const text = pclText
                   :key="runtime.directory_path"
                   :title="`${runtime.is_jdk ? 'JDK' : 'JRE'} ${runtime.slug_version} (${runtime.version}) ${runtime.architecture} ${runtime.implementor || ''}`"
                   :subtitle="runtime.directory_path"
-                /><PButton inline :click="() => load(true)">{{
+                /><PButton inline @click="() => load(true)">{{
                   text('Common.Action.Refresh')
                 }}</PButton>
               </div>

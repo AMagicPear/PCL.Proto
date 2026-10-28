@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import { pclImagePath } from '@/api/pclAssets'
 import { pclText } from '@/api/pclLocale'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PListItem from '@/components/widget/PListItem.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import PHint from '@/components/widget/PHint.vue'
-const { text, image } = usePageSettings('PageSetupFeedback')
+
 const repository = 'https://github.com/PCL-Community/PCL.Proto'
 const statuses = [
   { key: 'Processing', label: /处理中|in progress/i, icon: 'CommandBlock' },
@@ -101,13 +101,16 @@ function open(url: string) {
 }
 onMounted(load)
 onUnmounted(() => controller?.abort())
+
+const text = pclText
+const image = (value: string) => pclImagePath(value, import.meta.env.BASE_URL)
 </script>
 <template>
   <section class="pcl-page feedback-page">
     <PCard :title="text('Setup.Feedback.Submit.Title')"
       ><div class="submit-content">
         <p>{{ text('Setup.Feedback.Submit.Description') }}</p>
-        <PButton type="tint" :click="() => open(`${repository}/issues`)">{{
+        <PButton type="tint" @click="() => open(`${repository}/issues`)">{{
           text('Setup.Feedback.Submit.Open')
         }}</PButton>
       </div></PCard
@@ -117,7 +120,7 @@ onUnmounted(() => controller?.abort())
     /></PCard>
     <PHint v-else-if="error" severity="error"
       >{{ error
-      }}<PButton inline :click="load">{{
+      }}<PButton inline @click="load">{{
         pclText('Launch.Homepage.LoadFailed.Retry')
       }}</PButton></PHint
     >
@@ -137,7 +140,8 @@ onUnmounted(() => controller?.abort())
             :title="issue.title"
             :subtitle="`${issue.author} | ${issue.date}`"
             :icon="image(`Blocks/${group.icon}.png`)"
-            :click="() => open(issue.url)"
+            clickable
+            @click="() => open(issue.url)"
           />
         </div>
       </PCard>

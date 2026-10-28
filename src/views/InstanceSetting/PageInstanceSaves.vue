@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
-import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import { computed, ref } from 'vue'
@@ -25,7 +25,8 @@ const savesSorted = computed(() =>
     ? [...matching.value].sort((a, b) => a.name.localeCompare(b.name))
     : matching.value,
 )
-const { values, text, change, act, image } = usePageSettings('PageInstanceSaves', {})
+
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -36,15 +37,11 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceSaves'
             <PSearchBox v-model="query" :placeholder="text('Instance.Saves.SearchHint')" />
             <PCard :title="text('Instance.Saves.QuickActions')"
               ><div class="saves-actions">
-                <PButton :click="() => act('BtnOpenFolder_Click')">{{
-                  text('Instance.Saves.OpenFolder')
-                }}</PButton
-                ><PButton :click="() => act('BtnDownloadNew_Click')">{{
+                <PButton @click="showUnavailable">{{ text('Instance.Saves.OpenFolder') }}</PButton
+                ><PButton @click="() => router.push('/download/world')">{{
                   text('Instance.Resource.DownloadNew')
                 }}</PButton
-                ><PButton :click="() => act('BtnPaste_Click')">{{
-                  text('Instance.Saves.PasteFile')
-                }}</PButton>
+                ><PButton @click="showUnavailable">{{ text('Instance.Saves.PasteFile') }}</PButton>
               </div></PCard
             >
             <PCard :title="text('Instance.Saves.ListTitle')"
@@ -65,7 +62,8 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceSaves'
                   :title="save.name"
                   :subtitle="save.description"
                   :icon="save.icon"
-                  :click="
+                  clickable
+                  @click="
                     () => router.push({ path: '/instance_save/info', query: { id: save.id } })
                   "
                 /></div
@@ -132,7 +130,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceSaves'
                   grid-column: 2 / span 1;
                   justify-self: center;
                 "
-                :click="() => act('BtnOpenFolder_Click', 'BtnOpenFolder_Click', '', '')"
+                @click="showUnavailable"
                 type="tint"
                 >{{ text('Instance.Saves.OpenFolder') }}</PButton
               >
@@ -146,7 +144,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceSaves'
                   grid-column: 3 / span 1;
                   justify-self: center;
                 "
-                :click="() => act('BtnDownloadNew_Click', 'BtnDownloadNew_Click', '', '')"
+                @click="() => router.push('/download/world')"
                 >{{ text('Instance.Resource.DownloadNew') }}</PButton
               >
               <PButton
@@ -159,7 +157,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceSaves'
                   grid-column: 4 / span 1;
                   justify-self: center;
                 "
-                :click="() => act('BtnPaste_Click', 'BtnPaste_Click', '', '')"
+                @click="showUnavailable"
                 >{{ text('Instance.Saves.PasteFile') }}</PButton
               >
             </div>

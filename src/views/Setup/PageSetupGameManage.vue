@@ -1,28 +1,14 @@
 <script setup lang="ts">
+import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PCard from '@/components/widget/PCard.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
-const { values, text, change, act, image } = usePageSettings('PageSetupGameManage', {
-  ComboDownloadSource: '1',
-  ComboDownloadVersion: '1',
+const { values } = usePageSettings('PageSetupGameManage', {
   ComboDownloadHttpMode: '0',
-  SliderDownloadThread: 63.0,
-  SliderDownloadFileConnection: 7.0,
-  SliderDownloadSpeed: 42.0,
-  CheckDownloadAutoSelectVersion: false,
-  CheckFixAuthlib: false,
-  ComboDownloadMod: '1',
-  ComboDownloadTranslateV2: '1',
-  ComboModLocalNameStyle: '0',
-  ComboDownloadQuickBehavior: '0',
-  CheckDownloadIgnoreQuilt: false,
-  CheckDownloadAutoInstallDependencies: false,
-  CheckUpdateRelease: false,
-  CheckUpdateSnapshot: false,
-  CheckHelpLauncherLanguage: false,
-  CheckDownloadClipboard: false,
 })
+
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -60,8 +46,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                     { key: '1', text: text('Setup.GameManage.Source.PreferOfficialThenMirror') },
                     { key: '2', text: text('Setup.GameManage.Source.UseOfficial') },
                   ]"
-                  :model-value="String(values['ComboDownloadSource'])"
-                  @update:model-value="(value) => change('ComboDownloadSource', value || '')"
+                  v-model="values.ComboDownloadSource"
                 />
                 <span
                   style="
@@ -82,8 +67,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                     { key: '1', text: text('Setup.GameManage.Source.PreferOfficialThenMirror') },
                     { key: '2', text: text('Setup.GameManage.Source.UseOfficial') },
                   ]"
-                  :model-value="String(values['ComboDownloadVersion'])"
-                  @update:model-value="(value) => change('ComboDownloadVersion', value || '')"
+                  v-model="values.ComboDownloadVersion"
                 />
                 <span
                   style="
@@ -100,12 +84,23 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                   data-control="ComboDownloadHttpMode"
                   style="grid-row: 5 / span 1; grid-column: 2 / span 1"
                   :options="[
-                    { key: '0', text: text('Setup.GameManage.Download.HttpProtocol.Auto'), title: text('Setup.GameManage.Download.HttpProtocol.Auto.ToolTip') },
-                    { key: '1', text: text('Setup.GameManage.Download.HttpProtocol.Http11'), title: text('Setup.GameManage.Download.HttpProtocol.Http11.ToolTip') },
-                    { key: '2', text: text('Setup.GameManage.Download.HttpProtocol.Http2'), title: text('Setup.GameManage.Download.HttpProtocol.Http2.ToolTip') },
+                    {
+                      key: '0',
+                      text: text('Setup.GameManage.Download.HttpProtocol.Auto'),
+                      title: text('Setup.GameManage.Download.HttpProtocol.Auto.ToolTip'),
+                    },
+                    {
+                      key: '1',
+                      text: text('Setup.GameManage.Download.HttpProtocol.Http11'),
+                      title: text('Setup.GameManage.Download.HttpProtocol.Http11.ToolTip'),
+                    },
+                    {
+                      key: '2',
+                      text: text('Setup.GameManage.Download.HttpProtocol.Http2'),
+                      title: text('Setup.GameManage.Download.HttpProtocol.Http2.ToolTip'),
+                    },
                   ]"
-                  :model-value="String(values['ComboDownloadHttpMode'])"
-                  @update:model-value="(value) => change('ComboDownloadHttpMode', value || '')"
+                  v-model="values.ComboDownloadHttpMode"
                 />
                 <span
                   style="
@@ -208,8 +203,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                     style="grid-row: 1 / span 1; grid-column: 1 / span 1"
                     id="PageSetupGameManage-CheckDownloadAutoSelectVersion"
                     :label="text('Setup.GameManage.Download.AutoSelectInstance')"
-                    :model-value="Boolean(values['CheckDownloadAutoSelectVersion'])"
-                    @update:model-value="(value) => change('CheckDownloadAutoSelectVersion', value)"
+                    v-model="values.CheckDownloadAutoSelectVersion"
                   />
                   <PCheckBox
                     data-control="CheckFixAuthlib"
@@ -217,8 +211,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                     :title="text('Setup.GameManage.Download.FixAuthlib.ToolTip')"
                     id="PageSetupGameManage-CheckFixAuthlib"
                     :label="text('Setup.GameManage.Download.FixAuthlib')"
-                    :model-value="Boolean(values['CheckFixAuthlib'])"
-                    @update:model-value="(value) => change('CheckFixAuthlib', value)"
+                    v-model="values.CheckFixAuthlib"
                   />
                 </div>
               </div>
@@ -255,8 +248,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                     },
                     { key: '2', text: text('Setup.GameManage.Source.UseOfficial') },
                   ]"
-                  :model-value="String(values['ComboDownloadMod'])"
-                  @update:model-value="(value) => change('ComboDownloadMod', value || '')"
+                  v-model="values.ComboDownloadMod"
                 />
                 <span
                   data-control="TextFilenameFormat"
@@ -281,8 +273,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                     { key: '3', text: text('Setup.GameManage.Community.FilenameFormat.Style3') },
                     { key: '4', text: text('Setup.GameManage.Community.FilenameFormat.Style4') },
                   ]"
-                  :model-value="String(values['ComboDownloadTranslateV2'])"
-                  @update:model-value="(value) => change('ComboDownloadTranslateV2', value || '')"
+                  v-model="values.ComboDownloadTranslateV2"
                 />
                 <span
                   data-control="TextModManageStyle"
@@ -310,8 +301,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                       text: text('Setup.GameManage.Community.ModManageStyle.TitleFilename'),
                     },
                   ]"
-                  :model-value="String(values['ComboModLocalNameStyle'])"
-                  @update:model-value="(value) => change('ComboModLocalNameStyle', value || '')"
+                  v-model="values.ComboModLocalNameStyle"
                 />
                 <span
                   style="
@@ -340,8 +330,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                     },
                     { key: '3', text: text('Setup.GameManage.Community.QuickDownload.AskPath') },
                   ]"
-                  :model-value="String(values['ComboDownloadQuickBehavior'])"
-                  @update:model-value="(value) => change('ComboDownloadQuickBehavior', value || '')"
+                  v-model="values.ComboDownloadQuickBehavior"
                 />
               </div>
               <div
@@ -362,8 +351,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                   :title="text('Setup.GameManage.Community.HideQuilt.ToolTip')"
                   id="PageSetupGameManage-CheckDownloadIgnoreQuilt"
                   :label="text('Setup.GameManage.Community.HideQuilt')"
-                  :model-value="Boolean(values['CheckDownloadIgnoreQuilt'])"
-                  @update:model-value="(value) => change('CheckDownloadIgnoreQuilt', value)"
+                  v-model="values.CheckDownloadIgnoreQuilt"
                 />
                 <PCheckBox
                   data-control="CheckDownloadAutoInstallDependencies"
@@ -376,10 +364,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                   :title="text('Setup.GameManage.Community.AutoInstallDependencies.ToolTip')"
                   id="PageSetupGameManage-CheckDownloadAutoInstallDependencies"
                   :label="text('Setup.GameManage.Community.AutoInstallDependencies')"
-                  :model-value="Boolean(values['CheckDownloadAutoInstallDependencies'])"
-                  @update:model-value="
-                    (value) => change('CheckDownloadAutoInstallDependencies', value)
-                  "
+                  v-model="values.CheckDownloadAutoInstallDependencies"
                 />
               </div>
             </div>
@@ -413,8 +398,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                 :title="text('Setup.GameManage.Accessibility.ReleaseNotice.ToolTip')"
                 id="PageSetupGameManage-CheckUpdateRelease"
                 :label="text('Setup.GameManage.Accessibility.ReleaseNotice')"
-                :model-value="Boolean(values['CheckUpdateRelease'])"
-                @update:model-value="(value) => change('CheckUpdateRelease', value)"
+                v-model="values.CheckUpdateRelease"
               />
               <PCheckBox
                 data-control="CheckUpdateSnapshot"
@@ -422,8 +406,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                 :title="text('Setup.GameManage.Accessibility.SnapshotNotice.ToolTip')"
                 id="PageSetupGameManage-CheckUpdateSnapshot"
                 :label="text('Setup.GameManage.Accessibility.SnapshotNotice')"
-                :model-value="Boolean(values['CheckUpdateSnapshot'])"
-                @update:model-value="(value) => change('CheckUpdateSnapshot', value)"
+                v-model="values.CheckUpdateSnapshot"
               />
               <span
                 style="
@@ -441,8 +424,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                 style="grid-row: 3 / span 1; grid-column: 2 / span 5"
                 id="PageSetupGameManage-CheckHelpLauncherLanguage"
                 :label="text('Setup.GameManage.Accessibility.AutoLauncherLanguage')"
-                :model-value="Boolean(values['CheckHelpLauncherLanguage'])"
-                @update:model-value="(value) => change('CheckHelpLauncherLanguage', value)"
+                v-model="values.CheckHelpLauncherLanguage"
               />
               <PCheckBox
                 data-control="CheckDownloadClipboard"
@@ -450,8 +432,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupGameManag
                 :title="text('Setup.GameManage.Accessibility.ReadClipboard.ToolTip')"
                 id="PageSetupGameManage-CheckDownloadClipboard"
                 :label="text('Setup.GameManage.Accessibility.ReadClipboard')"
-                :model-value="Boolean(values['CheckDownloadClipboard'])"
-                @update:model-value="(value) => change('CheckDownloadClipboard', value)"
+                v-model="values.CheckDownloadClipboard"
               />
             </div>
           </PCard>

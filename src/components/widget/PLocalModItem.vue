@@ -37,12 +37,12 @@ const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
       ><PButton
         v-if="updatable"
         inline
-        :click="() => emit('update')"
+        @click="() => emit('update')"
         :title="pclText('Instance.Resource.Filter.Updatable')"
         ><PSvgIcon name="lucide/upload" :size="18" /></PButton
       ><PButton
         inline
-        :click="() => emit('toggle')"
+        @click="() => emit('toggle')"
         :title="
           pclText(
             enabled === false
@@ -58,18 +58,12 @@ const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
 <style scoped>
 .local-resource {
   min-height: 44px;
+  --list-title-size: 14px;
 }
-.local-resource :deep(img) {
+.local-resource img {
   width: 34px;
   height: 34px;
   border-radius: 6px;
-}
-.local-resource :deep(.title) {
-  font-size: 14px;
-}
-.local-resource :deep(.right) {
-  display: flex;
-  gap: 6px;
 }
 .disabled {
   opacity: 0.5;

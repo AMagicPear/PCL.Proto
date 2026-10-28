@@ -7,9 +7,10 @@ defineProps<{
   type?: ButtonType
   inline?: boolean
   tooltip?: string
-  click?: () => void
   disabled?: boolean
 }>()
+
+const emit = defineEmits<{ click: [event: MouseEvent] }>()
 
 const baseColor = {
   default: 'var(--color-text-black)',
@@ -35,7 +36,7 @@ const hoverBg = {
       borderColor: disabled ? 'var(--color-text-grey)' : baseColor[type ?? 'default'],
       cursor: disabled ? 'not-allowed' : 'pointer',
     }"
-    @click="!disabled && click?.()"
+    @click="!disabled && emit('click', $event)"
     :while-hover="!disabled ? { backgroundColor: hoverBg[type ?? 'default'] } : undefined"
     :while-press="!disabled ? { scale: 0.95 } : undefined"
     :transition="{
@@ -67,5 +68,14 @@ const hoverBg = {
   color: var(--color-text-grey);
   border-color: var(--color-text-grey);
   background: transparent;
+}
+
+.pcl-page .mybutton {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font: inherit;
 }
 </style>

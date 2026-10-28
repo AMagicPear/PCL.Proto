@@ -1,6 +1,12 @@
 <script lang="ts" setup>
-import { useAttrs, useId } from 'vue'
-const attrs = useAttrs()
+import { useAttrs, useId, type HTMLAttributes } from 'vue'
+defineOptions({ inheritAttrs: false })
+const attrs = useAttrs() as HTMLAttributes & Record<string, unknown>
+const controlId = useId()
+function controlAttrs() {
+  const { class: _class, style: _style, 'data-control': _control, ...inputAttrs } = attrs
+  return inputAttrs
+}
 const suggestionsId = useId()
 const model = defineModel<string>()
 defineProps<{
@@ -14,19 +20,26 @@ defineProps<{
 </script>
 
 <template>
-  <div class="input-wrapper">
+  <div
+    class="input-wrapper"
+    :class="attrs.class"
+    :style="attrs.style"
+    :data-control="attrs['data-control']"
+  >
     <textarea
       v-if="multiline"
-      :id="inputId"
-      :aria-label="String(attrs['aria-label'] || attrs.title || '')"
+      v-bind="controlAttrs()"
+      :id="inputId || String(attrs.id || controlId)"
+      :aria-label="attrs['aria-label'] || (attrs['aria-labelledby'] ? undefined : attrs.title)"
       :disabled="disabled"
       :placeholder
       v-model="model"
     />
     <input
       v-else
-      :id="inputId"
-      :aria-label="String(attrs['aria-label'] || attrs.title || '')"
+      v-bind="controlAttrs()"
+      :id="inputId || String(attrs.id || controlId)"
+      :aria-label="attrs['aria-label'] || (attrs['aria-labelledby'] ? undefined : attrs.title)"
       :disabled="disabled"
       :type="type || 'text'"
       :list="suggestions?.length ? suggestionsId : undefined"
@@ -69,5 +82,13 @@ textarea:hover {
 input:focus,
 textarea:focus {
   background-color: var(--color-tint-lighter);
+}
+
+.pcl-page .input-wrapper {
+  min-width: 0;
+}
+.pcl-page .input-wrapper input {
+  height: 28px;
+  padding: 0 8px;
 }
 </style>

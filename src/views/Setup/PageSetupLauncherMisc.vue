@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { showUnavailable } from '@/util/showUnavailable'
+import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
@@ -6,22 +8,11 @@ import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
-const { values, text, change, act, image } = usePageSettings('PageSetupLauncherMisc', {
+const { values } = usePageSettings('PageSetupLauncherMisc', {
   ComboSystemActivity: '0',
-  SliderAniFPS: 59.0,
-  SliderMaxLog: 13.0,
-  CheckSystemDisableHardwareAcceleration: false,
-  CheckSystemTelemetry: false,
-  CheckNetDohEnable: false,
-  SystemHttpProxyType: '0',
-  TextSystemHttpProxy: '',
-  TextSystemHttpProxyCustomUsername: '',
-  TextSystemHttpProxyCustomPassword: '',
-  SliderDebugAnim: 0.0,
-  CheckDebugSkipCopy: false,
-  CheckDebugMode: false,
-  CheckDebugDelay: false,
 })
+
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -63,8 +54,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                   { key: '1', text: text('Setup.Misc.System.Announcement.ImportantOnly') },
                   { key: '2', text: text('Setup.Misc.System.Announcement.Disabled') },
                 ]"
-                :model-value="String(values['ComboSystemActivity'])"
-                @update:model-value="(value) => change('ComboSystemActivity', value || '')"
+                v-model="values.ComboSystemActivity"
               />
               <span
                 style="
@@ -120,10 +110,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                   style="grid-row: 1 / span 1; grid-column: 1 / span 1"
                   id="PageSetupLauncherMisc-CheckSystemDisableHardwareAcceleration"
                   :label="text('Setup.Misc.System.DisableHardwareAcceleration')"
-                  :model-value="Boolean(values['CheckSystemDisableHardwareAcceleration'])"
-                  @update:model-value="
-                    (value) => change('CheckSystemDisableHardwareAcceleration', value)
-                  "
+                  v-model="values.CheckSystemDisableHardwareAcceleration"
                 />
                 <PCheckBox
                   data-control="CheckSystemTelemetry"
@@ -131,8 +118,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                   :title="text('Setup.Misc.System.Telemetry.ToolTip')"
                   id="PageSetupLauncherMisc-CheckSystemTelemetry"
                   :label="text('Setup.Misc.System.Telemetry')"
-                  :model-value="Boolean(values['CheckSystemTelemetry'])"
-                  @update:model-value="(value) => change('CheckSystemTelemetry', value)"
+                  v-model="values.CheckSystemTelemetry"
                 />
               </div>
               <div
@@ -153,7 +139,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                     grid-row: 1 / span 1;
                     grid-column: 1 / span 1;
                   "
-                  :click="() => act('BtnSystemSettingExp', 'BtnSystemSettingExp_Click', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Setup.Misc.System.ExportSettings') }}</PButton
                 >
                 <PButton
@@ -165,7 +151,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                     grid-row: 1 / span 1;
                     grid-column: 2 / span 1;
                   "
-                  :click="() => act('BtnSystemSettingImp', 'BtnSystemSettingImp_Click', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Setup.Misc.System.ImportSettings') }}</PButton
                 >
                 <PButton
@@ -177,9 +163,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                     grid-row: 1 / span 1;
                     grid-column: 3 / span 1;
                   "
-                  :click="
-                    () => act('BtnSystemStopUsingPclCe', 'BtnSystemStopUsingPclCe_Click', '', '')
-                  "
+                  @click="() => showUnavailable()"
                   type="warn"
                   >{{ text('Setup.Misc.System.StopUsingPclCe') }}</PButton
                 >
@@ -201,8 +185,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                 :title="text('Setup.Misc.Network.DoH.ToolTip')"
                 id="PageSetupLauncherMisc-CheckNetDohEnable"
                 :label="text('Setup.Misc.Network.DoH')"
-                :model-value="Boolean(values['CheckNetDohEnable'])"
-                @update:model-value="(value) => change('CheckNetDohEnable', value)"
+                v-model="values.CheckNetDohEnable"
               />
               <span
                 style="
@@ -269,8 +252,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                   style="grid-row: 3 / span 1; grid-column: 1 / span 5"
                   :title="text('Setup.Misc.Network.Proxy.InvalidWarning')"
                   :placeholder="text('Proto.Settings.ProxyExample')"
-                  :model-value="String(values['TextSystemHttpProxy'])"
-                  @update:model-value="(value) => change('TextSystemHttpProxy', value || '')"
+                  v-model="values.TextSystemHttpProxy"
                 />
                 <span
                   style="
@@ -287,10 +269,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                   data-control="TextSystemHttpProxyCustomUsername"
                   style="margin: 0px 5px 0px 0px; grid-row: 5 / span 1; grid-column: 2 / span 1"
                   :placeholder="text('Setup.Misc.Network.Proxy.Optional')"
-                  :model-value="String(values['TextSystemHttpProxyCustomUsername'])"
-                  @update:model-value="
-                    (value) => change('TextSystemHttpProxyCustomUsername', value || '')
-                  "
+                  v-model="values.TextSystemHttpProxyCustomUsername"
                 />
                 <span
                   style="
@@ -308,15 +287,12 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                   data-control="TextSystemHttpProxyCustomPassword"
                   style="margin: 0px 5px 0px 0px; grid-row: 5 / span 1; grid-column: 4 / span 1"
                   :placeholder="text('Setup.Misc.Network.Proxy.Optional')"
-                  :model-value="String(values['TextSystemHttpProxyCustomPassword'])"
-                  @update:model-value="
-                    (value) => change('TextSystemHttpProxyCustomPassword', value || '')
-                  "
+                  v-model="values.TextSystemHttpProxyCustomPassword"
                 />
                 <PButton
                   data-control="BtnApplyHttpProxy"
                   style="grid-row: 5 / span 1; grid-column: 5 / span 1"
-                  :click="() => act('BtnApplyHttpProxy', 'ApplyHttpProxyBtn_OnClicked', '', '')"
+                  @click="showUnavailable"
                   >{{ text('Setup.Misc.Network.Proxy.Apply') }}</PButton
                 >
               </div>
@@ -370,8 +346,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                   :title="text('Setup.Misc.Debug.SkipCopy.ToolTip')"
                   id="PageSetupLauncherMisc-CheckDebugSkipCopy"
                   :label="text('Setup.Misc.Debug.SkipCopy')"
-                  :model-value="Boolean(values['CheckDebugSkipCopy'])"
-                  @update:model-value="(value) => change('CheckDebugSkipCopy', value)"
+                  v-model="values.CheckDebugSkipCopy"
                 />
                 <PCheckBox
                   data-control="CheckDebugMode"
@@ -379,8 +354,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                   :title="text('Setup.Misc.Debug.Mode.ToolTip')"
                   id="PageSetupLauncherMisc-CheckDebugMode"
                   :label="text('Setup.Misc.Debug.Mode')"
-                  :model-value="Boolean(values['CheckDebugMode'])"
-                  @update:model-value="(value) => change('CheckDebugMode', value)"
+                  v-model="values.CheckDebugMode"
                 />
                 <PCheckBox
                   data-control="CheckDebugDelay"
@@ -388,8 +362,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherM
                   :title="text('Setup.Misc.Debug.Delay.ToolTip')"
                   id="PageSetupLauncherMisc-CheckDebugDelay"
                   :label="text('Setup.Misc.Debug.Delay')"
-                  :model-value="Boolean(values['CheckDebugDelay'])"
-                  @update:model-value="(value) => change('CheckDebugDelay', value)"
+                  v-model="values.CheckDebugDelay"
                 />
               </div>
             </div>

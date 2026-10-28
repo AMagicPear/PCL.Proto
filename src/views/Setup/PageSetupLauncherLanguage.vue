@@ -18,10 +18,15 @@ async function setLanguage(value?: string) {
     sideTip.show(pclText('Proto.Language.Failed', [String(error)]), 'warn')
   }
 }
-const { values, text, change, act, image } = usePageSettings('PageSetupLauncherLanguage', {
+const { values } = usePageSettings('PageSetupLauncherLanguage', {
   ComboUiLanguage: '0',
   ComboUiFormatCulture: '0',
 })
+
+const text = pclText
+function openWebsite(url: string) {
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
 </script>
 <template>
   <div class="pcl-page">
@@ -76,12 +81,12 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherL
                     { key: '0', text: text('Setup.Language.FormatCulture.Auto') },
                     { key: '1', text: text('Setup.Language.FormatCulture.FollowLanguage') },
                   ]"
-                  :model-value="String(values['ComboUiFormatCulture'])"
-                  @update:model-value="(value) => change('ComboUiFormatCulture', value || '')"
+                  v-model="values.ComboUiFormatCulture"
                 />
               </div>
               <div
                 data-control="BannerInternationalization"
+                class="internationalization-banner"
                 style="
                   min-height: 230px;
                   margin: 10px 0px 0px 0px;
@@ -169,15 +174,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherL
                 <PButton
                   data-control="BtnTranslateWebsite"
                   style="margin: 0px 7px 0px 0px"
-                  :click="
-                    () =>
-                      act(
-                        'BtnTranslateWebsite',
-                        '',
-                        'OpenUrl',
-                        'https://translate.pclc.cc/projects/pcl-ce/',
-                      )
-                  "
+                  @click="() => openWebsite('https://translate.pclc.cc/projects/pcl-ce/')"
                   inline
                   type="tint"
                   ><PSvgIcon name="lucide/globe" :size="18" />{{
@@ -187,15 +184,7 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherL
                 <PButton
                   data-control="BtnSubmitPullRequest"
                   style="margin: 0px 7px 0px 0px"
-                  :click="
-                    () =>
-                      act(
-                        'BtnSubmitPullRequest',
-                        '',
-                        'OpenUrl',
-                        'https://github.com/PCL-Community/PCL.Proto/pulls',
-                      )
-                  "
+                  @click="() => openWebsite('https://github.com/PCL-Community/PCL.Proto/pulls')"
                   inline
                   ><PSvgIcon name="lucide/git-pull-request-arrow" :size="18" />{{
                     text('Setup.Language.Banner.SubmitPullRequest')
@@ -209,3 +198,10 @@ const { values, text, change, act, image } = usePageSettings('PageSetupLauncherL
     </div>
   </div>
 </template>
+
+<style scoped>
+.internationalization-banner {
+  background: var(--color-background-soft);
+  box-shadow: var(--box-shadow);
+}
+</style>

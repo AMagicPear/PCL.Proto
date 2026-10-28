@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { usePageSettings } from '@/composables/usePageSettings'
+import { showUnavailable } from '@/util/showUnavailable'
+import { pclText } from '@/api/pclLocale'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 withDefaults(defineProps<{ screenshots?: { id: string; url: string; name: string }[] }>(), {
@@ -7,7 +8,8 @@ withDefaults(defineProps<{ screenshots?: { id: string; url: string; name: string
 })
 const safeUrl = (value: string) =>
   /^(https?:|blob:|asset:|data:image\/)/i.test(value) ? value : undefined
-const { values, text, change, act, image } = usePageSettings('PageInstanceScreenshot', {})
+
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -17,7 +19,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceScreen
           <div v-if="screenshots.length" class="screenshots-content">
             <PCard :title="text('Instance.Screenshot.QuickActions')"
               ><div class="screenshot-actions">
-                <PButton type="tint" :click="() => act('BtnOpenFolderTop')">{{
+                <PButton type="tint" @click="showUnavailable">{{
                   text('Instance.Screenshot.OpenFolder')
                 }}</PButton>
               </div></PCard
@@ -94,7 +96,7 @@ const { values, text, change, act, image } = usePageSettings('PageInstanceScreen
                   grid-column: 2 / span 1;
                   justify-self: center;
                 "
-                :click="() => act('BtnOpenFolderTop', '', '', '')"
+                @click="showUnavailable"
                 type="tint"
                 >{{ text('Instance.Screenshot.OpenFolder') }}</PButton
               >

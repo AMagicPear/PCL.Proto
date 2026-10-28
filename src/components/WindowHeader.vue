@@ -66,7 +66,7 @@ appWindow?.onResized(async () => {
         .title-tag Proto
       .left(v-else :class="{ 'mac-margin-title': currentPlatform == 'macos' }")
         i.button-animated(@click="backClicked")
-          PSvgIcon(name="lucide/arrow-left" :size="14")
+          PSvgIcon(name="lucide/arrow-left" :size="18")
         span.title-text(v-if="title" data-tauri-drag-region) {{ pclText(title) }}
 
 

@@ -12,7 +12,7 @@ const topics = ['Join', 'Start', 'Server', 'Identity', 'Launchers', 'Nat']
     <PCard v-for="topic in topics" :key="topic" :title="pclText(`Proto.Help.${topic}.Title`)">
       <div class="help-content">
         <p>{{ pclText(`Proto.Help.${topic}.Body`) }}</p>
-        <PButton v-if="topic === 'Nat'" :click="openArticle">{{
+        <PButton v-if="topic === 'Nat'" @click="openArticle">{{
           pclText('Proto.Help.Nat.Article')
         }}</PButton>
       </div>

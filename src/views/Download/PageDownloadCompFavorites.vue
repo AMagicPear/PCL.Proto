@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { showUnavailable } from '@/util/showUnavailable'
 import { computed, ref } from 'vue'
 import PCard from '@/components/widget/PCard.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
@@ -8,14 +9,13 @@ import PButton from '@/components/widget/PButton.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
 import sideTip from '@/composables/sideTip'
-import { usePageSettings } from '@/composables/usePageSettings'
 import { useCompFavorites } from '@/stores/compFavorites'
 import { pclText } from '@/api/pclLocale'
 const favorites = useCompFavorites()
 const text = pclText
 const query = ref('')
 const folder = ref('default')
-const { act } = usePageSettings('PageDownloadCompFavorites')
+
 const selected = ref(new Set<string>())
 const selectedItems = computed(() =>
   favorites.items.filter((item) => selected.value.has(item.project_id)),
@@ -52,7 +52,7 @@ const items = computed(() =>
       <PSearchBox
         v-model="query"
         :placeholder="text('Download.Comp.Favorites.Search.Hint')"
-      /><PCard hide-title class="folder-card"
+      /><PCard hide-title class="folder-card" overflow-visible
         ><div class="folder-row">
           <PComboBox
             v-model="folder"
@@ -72,12 +72,12 @@ const items = computed(() =>
                 v-for="action in ['New', 'Rename', 'Delete', 'Import']"
                 :key="action"
                 inline
-                :click="() => act(`BtnFavorites${action}`)"
+                @click="showUnavailable"
                 >{{ text(`Download.Comp.Favorites.Menu.${action}`) }}</PButton
               >
               <PButton
                 inline
-                :click="() => share(favorites.items.map((item) => item.project_id))"
+                @click="() => share(favorites.items.map((item) => item.project_id))"
                 >{{ text('Download.Comp.Favorites.Menu.Share') }}</PButton
               >
             </div>
@@ -104,7 +104,7 @@ const items = computed(() =>
           />
           <PCompItem :data="item" clickable /><PButton
             inline
-            :click="() => favorites.toggle(item)"
+            @click="() => favorites.toggle(item)"
             :title="text('Download.Comp.Detail.Unfavorite')"
             ><PSvgIcon name="lucide/heart-filled"
           /></PButton>
@@ -127,20 +127,20 @@ const items = computed(() =>
         {{ text('Download.Comp.Favorites.Hint.SelectedCount', [selectedItems.length]) }}
       </p>
       <div class="selection-actions">
-        <PButton inline :click="unfavoriteSelected"
+        <PButton inline @click="unfavoriteSelected"
           ><PSvgIcon name="lucide/heart-filled" />{{
             text('Download.Comp.Favorites.Cancel')
           }}</PButton
         >
-        <PButton inline :click="() => share(selectedItems.map((item) => item.project_id))"
+        <PButton inline @click="() => share(selectedItems.map((item) => item.project_id))"
           ><PSvgIcon name="lucide/share-2" />{{ text('Download.Comp.Favorites.Share') }}</PButton
         >
-        <PButton inline :click="() => act('BtnFavoritesDownload')"
+        <PButton inline @click="showUnavailable"
           ><PSvgIcon name="lucide/download" />{{
             text('Download.Comp.Favorites.Download')
           }}</PButton
         >
-        <PButton inline :click="() => selected.clear()"
+        <PButton inline @click="() => selected.clear()"
           ><PSvgIcon name="lucide/x" />{{ text('Download.Comp.Favorites.Deselect') }}</PButton
         >
       </div></PCard
@@ -168,10 +168,6 @@ const items = computed(() =>
 .manage-menu summary {
   cursor: pointer;
   list-style: none;
-}
-.folder-card,
-.folder-card :deep(.mycard-content) {
-  overflow: visible;
 }
 .manage-menu {
   position: relative;

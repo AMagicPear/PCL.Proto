@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { showUnavailable } from '@/util/showUnavailable'
+import { pclText } from '@/api/pclLocale'
 import { computed } from 'vue'
 import exportOptions from '@/assets/export-options.json'
 import { useSelectedInstance } from '@/stores/gameLaunch'
@@ -17,7 +19,7 @@ const defaults = {
   CheckAdvancedModrinth: false,
   ...Object.fromEntries(exportOptions.map((option) => [option.id, option.checked])),
 }
-const { values, text, change, act } = usePageSettings('PageInstanceExport', defaults)
+const { values, reset } = usePageSettings('PageInstanceExport', defaults)
 const visibleOptions = computed(() =>
   exportOptions.filter(
     (option) =>
@@ -31,6 +33,8 @@ const visibleOptions = computed(() =>
             ))),
   ),
 )
+
+const text = pclText
 </script>
 <template>
   <div class="pcl-page">
@@ -69,8 +73,7 @@ const visibleOptions = computed(() =>
                   data-control="TextExportName"
                   style="grid-row: 1 / span 1; grid-column: 2 / span 1"
                   :placeholder="text('')"
-                  :model-value="String(values['TextExportName'])"
-                  @update:model-value="(value) => change('TextExportName', value || '')"
+                  v-model="values.TextExportName"
                 />
                 <span
                   style="
@@ -87,8 +90,7 @@ const visibleOptions = computed(() =>
                   data-control="TextExportVersion"
                   style="grid-row: 1 / span 1; grid-column: 4 / span 1"
                   :placeholder="text('')"
-                  :model-value="String(values['TextExportVersion'])"
-                  @update:model-value="(value) => change('TextExportVersion', value || '')"
+                  v-model="values.TextExportVersion"
                 />
               </div>
             </PCard>
@@ -99,7 +101,7 @@ const visibleOptions = computed(() =>
             >
               <div class="export-options-heading">
                 <h2>{{ text('Instance.Export.OptionListTitle') }}</h2>
-                <PButton inline :click="() => act('BtnOverrideCancel')"
+                <PButton inline @click="() => reset()"
                   ><PSvgIcon name="lucide/rotate-ccw" />{{ text('Common.Action.Reset') }}</PButton
                 >
               </div>
@@ -117,7 +119,7 @@ const visibleOptions = computed(() =>
                   :disabled="option.disabled"
                   :label="text(option.title)"
                   :model-value="option.disabled || Boolean(values[option.id])"
-                  @update:model-value="(value) => change(option.id, value)"
+                  @update:model-value="(value) => (values[option.id] = value)"
                 />
               </div>
             </PCard>
@@ -136,8 +138,7 @@ const visibleOptions = computed(() =>
                   :title="text('Instance.Export.Advanced.BundleFiles.ToolTip')"
                   id="PageInstanceExport-CheckAdvancedInclude"
                   :label="text('Instance.Export.Advanced.BundleFiles')"
-                  :model-value="Boolean(values['CheckAdvancedInclude'])"
-                  @update:model-value="(value) => change('CheckAdvancedInclude', value)"
+                  v-model="values.CheckAdvancedInclude"
                 />
                 <PCheckBox
                   data-control="CheckAdvancedModrinth"
@@ -145,8 +146,7 @@ const visibleOptions = computed(() =>
                   :title="text('Instance.Export.Advanced.Modrinth.ToolTip')"
                   id="PageInstanceExport-CheckAdvancedModrinth"
                   :label="text('Instance.Export.Advanced.Modrinth')"
-                  :model-value="Boolean(values['CheckAdvancedModrinth'])"
-                  @update:model-value="(value) => change('CheckAdvancedModrinth', value)"
+                  v-model="values.CheckAdvancedModrinth"
                 />
                 <PHint style="margin: 20px 0px 2px 0px" severity="info" closable>{{
                   text('Instance.Export.Advanced.ConfigHint')
@@ -168,7 +168,7 @@ const visibleOptions = computed(() =>
                       grid-row: 1 / span 1;
                       grid-column: 1 / span 1;
                     "
-                    :click="() => act('BtnAdvancedImport', '', '', '')"
+                    @click="showUnavailable"
                     type="tint"
                     >{{ text('Instance.Export.Advanced.ImportConfig') }}</PButton
                   >
@@ -181,7 +181,7 @@ const visibleOptions = computed(() =>
                       grid-row: 1 / span 1;
                       grid-column: 2 / span 1;
                     "
-                    :click="() => act('BtnAdvancedExport', '', '', '')"
+                    @click="showUnavailable"
                     >{{ text('Instance.Export.Advanced.ExportConfig') }}</PButton
                   >
                 </div>
@@ -197,7 +197,7 @@ const visibleOptions = computed(() =>
             justify-self: center;
             align-self: end;
           "
-          :click="() => act('BtnExport', '', '', '')"
+          @click="showUnavailable"
           inline
           ><PSvgIcon name="lucide/package" :size="18" />{{
             text('Instance.Export.StartExport')

@@ -25,14 +25,14 @@ async function copyAddress() {
 const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
 </script>
 <template>
-  <PCard hide-title class="server-entry"
+  <PCard hide-title class="server-entry" overflow-visible
     ><PListItem
       :title="name"
       :subtitle="`${latency == null ? '—' : `${latency} ms`} · ${players || '—'}`"
       :icon="icon || fallback"
       ><template #actions
         ><p class="motd">{{ motd }}</p>
-        <PButton inline :click="() => emit('connect')" :title="name"
+        <PButton inline @click="() => emit('connect')" :title="name"
           ><PSvgIcon name="lucide/play" :size="18"
         /></PButton>
         <details>
@@ -40,16 +40,16 @@ const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
             <PSvgIcon name="lucide/settings" :size="18" />
           </summary>
           <div class="server-menu">
-            <PButton inline :click="() => emit('refresh')">{{
+            <PButton inline @click="() => emit('refresh')">{{
               pclText('Common.Action.Refresh')
             }}</PButton
-            ><PButton inline :click="copyAddress">{{
+            ><PButton inline @click="copyAddress">{{
               pclText('Instance.Server.Card.CopyAddress')
             }}</PButton
-            ><PButton inline :click="() => emit('edit')">{{
+            ><PButton inline @click="() => emit('edit')">{{
               pclText('Instance.Server.Card.Edit')
             }}</PButton
-            ><PButton inline type="warn" :click="() => emit('remove')">{{
+            ><PButton inline type="warn" @click="() => emit('remove')">{{
               pclText('Instance.Server.Card.Remove')
             }}</PButton>
           </div>
@@ -61,23 +61,10 @@ const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
 <style scoped>
 .server-entry {
   margin: 8px 0;
-  overflow: visible;
-}
-.server-entry :deep(.mycard-content) {
-  overflow: visible;
-}
-.server-entry :deep(.gameinfo-container) {
-  min-height: 44px;
-}
-.server-entry :deep(img) {
-  width: 34px;
-  height: 34px;
-  border-radius: 6px;
-}
-.server-entry :deep(.right) {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  --list-min-height: 44px;
+  --list-icon-size: 34px;
+  --list-icon-radius: 6px;
+  --list-actions-gap: 4px;
 }
 .motd {
   width: min(350px, 30vw);

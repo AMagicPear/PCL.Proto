@@ -137,7 +137,7 @@ function parseXamlElement(element: Element): Component | string | null {
           <PButton
             type={type}
             tooltip={element.attributes?.ToolTip as string | undefined}
-            click={onClick}
+            onClick={onClick}
           >
             {element.attributes?.Text}
           </PButton>
@@ -148,9 +148,9 @@ function parseXamlElement(element: Element): Component | string | null {
           <PListItem
             title={element.attributes?.Title as string}
             subtitle={element.attributes?.Info as string}
-            isGameInfo={false}
+            clickable={Boolean(onClick)}
             icon={handleIcon(element.attributes?.Logo as string)}
-            click={onClick}
+            onClick={onClick}
           />
         )
       case 'PImage':

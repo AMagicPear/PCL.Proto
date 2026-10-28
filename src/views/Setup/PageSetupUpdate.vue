@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { pclText } from '@/api/pclLocale'
 import { computed, onUnmounted, ref } from 'vue'
-import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PHint from '@/components/widget/PHint.vue'
 import appIcon from '/PCL.Proto.svg?url'
 const appVersion = __APP_VERSION__
-const { text } = usePageSettings('PageSetupUpdate')
+
 const repository = 'https://github.com/PCL-Community/PCL.Proto'
 const latest = ref<{ version: string; body: string; url: string }>()
 const loading = ref(false)
@@ -61,6 +60,8 @@ function open(url: string) {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 onUnmounted(() => controller?.abort())
+
+const text = pclText
 </script>
 <template>
   <section class="pcl-page update-page">
@@ -71,12 +72,12 @@ onUnmounted(() => controller?.abort())
           <h2>PCL.Proto {{ appVersion }}</h2>
           <p>{{ status }}</p>
         </div>
-        <PButton data-control="BtnCheckAgain" type="tint" :disabled="loading" :click="check">{{
+        <PButton data-control="BtnCheckAgain" type="tint" :disabled="loading" @click="check">{{
           text('Setup.Update.CheckAgain')
         }}</PButton
         ><PButton
           data-control="BtnChangelog"
-          :click="() => open(latest?.url || `${repository}/releases`)"
+          @click="() => open(latest?.url || `${repository}/releases`)"
           >{{ text('Setup.Update.Changelog.View') }}</PButton
         >
       </div></PCard
@@ -91,10 +92,10 @@ onUnmounted(() => controller?.abort())
               : pclText('Proto.Update.NotesPlaceholder')
           }}
         </p>
-        <PButton inline :click="() => open(latest?.url || `${repository}/releases`)">{{
+        <PButton inline @click="() => open(latest?.url || `${repository}/releases`)">{{
           text('Setup.Update.Changelog.MoreInfo')
         }}</PButton
-        ><PButton v-if="latest" type="tint" :click="() => open(latest!.url)">{{
+        ><PButton v-if="latest" type="tint" @click="() => open(latest!.url)">{{
           pclText('Proto.Update.Download')
         }}</PButton>
       </div></PCard

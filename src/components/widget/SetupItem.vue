@@ -1,52 +1,30 @@
 <script setup lang="ts">
-import PComboBox from './PComboBox.vue'
-import { type ISetupOption, type SetupItemType } from '@/stores/setup'
-import PTextBox from './PTextBox.vue'
+import { useId } from 'vue'
 
-withDefaults(
-  defineProps<{
-    label: string
-    options?: ISetupOption[]
-    type: SetupItemType
-    ratio?: number
-  }>(),
-  {
-    ratio: 4,
-  },
-)
-
-const model = defineModel<string>()
+defineProps<{ label?: string }>()
+const controlId = useId()
 </script>
 
-<template lang="pug">
-.setupitem-with-text-container
-    label.text-label {{ label }}
-    PComboBox.input(
-        v-if="type == 'select' && options"
-        :options="options"
-        v-model="model"
-    )
-    PTextBox.input(
-        v-else-if="type == 'input'"
-        :placeholder="options?.find(v => v.key === 'placeholder')?.text"
-        v-model="model"
-    )
+<template>
+  <div class="setup-item">
+    <label v-if="label" class="setup-label" :for="controlId">{{ label }}</label>
+    <div v-else class="setup-label"><slot name="label" :id="controlId" /></div>
+    <div class="setup-control"><slot :id="controlId" /></div>
+  </div>
 </template>
 
-<style lang="css" scoped>
-.setupitem-with-text-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-block: 4px;
+<style scoped>
+.setup-item {
+  display: contents;
 }
-
-.text-label {
-  flex: 1;
-  margin: 0;
+.setup-label {
+  margin-inline-end: 25px;
+  align-self: center;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
-
-.input {
-  flex: v-bind(ratio);
+.setup-control {
+  min-width: 0;
+  min-height: 28px;
 }
 </style>
