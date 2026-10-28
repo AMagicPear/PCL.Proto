@@ -110,6 +110,7 @@ aside {
   padding: 12px 0 0;
   width: max-content;
   white-space: nowrap;
+  overflow-x: hidden;
   overflow-y: auto;
   height: 100%;
   flex: 0 0 auto;
