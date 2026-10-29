@@ -10,11 +10,7 @@
 use crate::core::api_client::game::VersionDetails;
 use crate::setup::constants::{APP_VERSION, LAUNCHER_NAME};
 use crate::{
-    core::{
-        auth::Account,
-        game::{GameInstance, GameJava},
-        java::JavaRuntime,
-    },
+    core::{auth::Account, game::GameInstance, java::JavaRuntime},
     setup::AppState,
 };
 use std::sync::Arc;
@@ -40,9 +36,6 @@ pub enum GameLaunchError {
 
     #[error("Invalid Minecraft metadata: {0}")]
     InvalidMetadata(String),
-
-    #[error("active java runtime not found")]
-    MissingJava,
 
     #[error("active account not found")]
     MissingAccount,
@@ -169,18 +162,11 @@ impl LaunchOption {
     }
 
     /// build a launch option from app state if it is possible
-    pub fn from_state(state: &AppState) -> Result<Self, GameLaunchError> {
+    pub fn from_state(
+        state: &AppState,
+        java_selected: Arc<JavaRuntime>,
+    ) -> Result<Self, GameLaunchError> {
         if let Some(game_instance) = state.active_game_instance.as_ref() {
-            let java_selected: &Arc<JavaRuntime> = match game_instance.game_java {
-                GameJava::Default => {
-                    if let Some(java_runtime) = state.pcl_setup_info.default_java.as_ref() {
-                        java_runtime
-                    } else {
-                        return Err(GameLaunchError::MissingJava);
-                    }
-                }
-                GameJava::Custom(ref java_runtime) => java_runtime,
-            };
             let active_account = state.active_account.as_ref();
             if active_account.is_none() {
                 return Err(GameLaunchError::MissingAccount);

@@ -187,5 +187,9 @@
   "Proto.Help.Launchers.Body": "截至目前，PCL CE 已经与 HMCL（陶瓦）实现基础的互联功能，你可以直接与使用 HMCL（陶瓦）的朋友们共享大厅编号并联机。\n\n另外，PCL CE 正在与 HTML 协商并共同开发 Scaffolding（暂名）跨启动器联机协议，未来将支持更多拓展功能。",
   "Proto.Help.Nat.Title": "NAT 类型是什么，对联机有影响么？",
   "Proto.Help.Nat.Body": "简单来说：会，但是在使用大厅的过程中影响不大。如果你想进一步了解，可以继续阅读下面的简要介绍。\n\nNAT 是计算机网络中的一个概念，它会将多个内网IP地址映射为一个公网IP地址。更为宽松的 NAT 环境可以提高点对点连接成功率，这可以使联机延迟更低。一般来说，绝大部分中国大陆家庭宽带的 NAT 类型均为端口受限圆锥或对称。\n\n你还可以阅读来自 Tailscale 的介绍文章（英文）以对 NAT 有更深入的了解。",
-  "Proto.Help.Nat.Article": "打开介绍文章"
+  "Proto.Help.Nat.Article": "打开介绍文章",
+  "Proto.Java.RelativePathHint": "选择启动器所在文件夹或其子文件夹中的 Java，移动启动器时会保留相对路径。",
+  "Proto.Java.ManualRequired": "未找到符合要求的 Java（最低 {0}，最高 {1}）。该版本或更新范围需要手动安装，请安装后在“设置 → 游戏 Java”中导入。",
+  "Proto.Java.DownloadProgress": "正在下载 Java：{0} / {1} 个文件",
+  "Proto.Java.Preparing": "正在检查游戏 Java……"
 }

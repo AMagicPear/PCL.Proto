@@ -12,6 +12,7 @@ use crate::{
     util,
 };
 use std::{
+    collections::HashMap,
     fs,
     io::Write,
     path::PathBuf,
@@ -33,6 +34,8 @@ pub struct PCLSetupInfo {
     pub api_provider: ApiProvider,
     pub max_memory: usize,
     pub default_java: Option<Arc<JavaRuntime>>,
+    #[serde(default)]
+    pub selected_java: Option<PathBuf>,
 }
 
 /// PCL theme
@@ -52,6 +55,7 @@ impl Default for PCLSetupInfo {
             api_provider: ApiProvider::Official,
             max_memory: 2048,
             default_java: None,
+            selected_java: None,
         }
     }
 }
@@ -66,6 +70,8 @@ pub struct AppState {
     pub repositories: Vec<GameRepository>,
     pub active_game_instance: Option<Arc<GameInstance>>,
     pub active_repo_path: PathBuf,
+    #[serde(default)]
+    pub java_preferences: HashMap<PathBuf, crate::core::java::selection::InstanceJavaSettings>,
 }
 
 /// config manager, for loading and saving config file
@@ -186,6 +192,7 @@ impl ConfigManager {
             .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
         let mut state = self.app_state.blocking_lock();
         *state = state_read;
+        migrate_java_settings(&mut state);
         // update the api provider
         self.api_client
             .switch_provider(&state.pcl_setup_info.api_provider);
@@ -194,22 +201,75 @@ impl ConfigManager {
 
     /// save the config file
     pub fn save(&self) -> Result<(), ConfigManagerError> {
-        let file = std::fs::File::create(&self.config_path)
-            .map_err(|_| ConfigManagerError::ConfigFileNotFound)?;
-        let mut writer = std::io::BufWriter::new(file);
+        static SAVE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        let _save = SAVE_LOCK
+            .lock()
+            .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
         let state = self.app_state.blocking_lock();
-        serde_json::to_writer_pretty(&mut writer, &*state)
-            .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
-        writer
-            .flush()
-            .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
-        Ok(())
+        save_config_atomically(&self.config_path, &*state)
     }
 
     #[inline]
     pub fn identifier_path(&self) -> PathBuf {
         self.config_dir.join("pcl_identifier.txt")
     }
+
+    pub fn java_runtime_dir(&self) -> PathBuf {
+        self.config_dir.join("runtime")
+    }
+}
+
+fn migrate_java_settings(state: &mut AppState) {
+    // Legacy cached version numbers are untrusted; migrate only the executable path.
+    if state.pcl_setup_info.selected_java.is_none() {
+        state.pcl_setup_info.selected_java = state
+            .pcl_setup_info
+            .default_java
+            .as_ref()
+            .map(|j| j.java_exe.clone());
+    }
+    state.pcl_setup_info.default_java = None;
+    if let Some(instance) = state.active_game_instance.as_ref()
+        && let crate::core::game::GameJava::Custom(runtime) = &instance.game_java
+    {
+        let (path, java_exe) = (instance.directory.clone(), runtime.java_exe.clone());
+        state.java_preferences.entry(path).or_insert_with(|| {
+            crate::core::java::selection::InstanceJavaSettings {
+                preference: crate::core::java::selection::JavaPreference::Existing { java_exe },
+                ignore_compatibility: false,
+            }
+        });
+    }
+}
+
+fn save_config_atomically(
+    path: &std::path::Path,
+    value: &impl serde::Serialize,
+) -> Result<(), ConfigManagerError> {
+    let temporary = path.with_extension(format!("{}.tmp", uuid::Uuid::new_v4()));
+    let result = (|| {
+        let file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|_| ConfigManagerError::ConfigFileNotFound)?;
+        let mut writer = std::io::BufWriter::new(file);
+        serde_json::to_writer_pretty(&mut writer, value)
+            .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
+        writer
+            .flush()
+            .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
+        writer
+            .get_ref()
+            .sync_all()
+            .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
+        drop(writer);
+        fs::rename(&temporary, path).map_err(|_| ConfigManagerError::ConfigFileCorrupted)
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(temporary);
+    }
+    result
 }
 
 #[test]
@@ -217,4 +277,77 @@ fn test_config_manager() {
     let config_manager = ConfigManager::instance();
     config_manager.load().unwrap();
     config_manager.save().unwrap();
+}
+
+#[cfg(test)]
+mod java_config_tests {
+    use super::*;
+    use serde::ser::Error;
+    #[test]
+    fn failed_saves_preserve_previous_config_and_successful_saves_replace_it() {
+        let root =
+            std::env::temp_dir().join(format!("pcl-java-config-test-{}", uuid::Uuid::new_v4()));
+        fs::create_dir(&root).unwrap();
+        let path = root.join("config.json");
+        fs::write(&path, b"previous config").unwrap();
+        struct CannotSerialize;
+        impl serde::Serialize for CannotSerialize {
+            fn serialize<S: serde::Serializer>(&self, _: S) -> Result<S::Ok, S::Error> {
+                Err(S::Error::custom("fixture failure"))
+            }
+        }
+        assert!(save_config_atomically(&path, &CannotSerialize).is_err());
+        assert_eq!(fs::read(&path).unwrap(), b"previous config");
+        let mut state = AppState::default();
+        state.pcl_setup_info.selected_java = Some(PathBuf::from("/test/jdk/bin/java"));
+        state.java_preferences.insert(
+            PathBuf::from("/test/game"),
+            crate::core::java::selection::InstanceJavaSettings {
+                preference: crate::core::java::selection::JavaPreference::Auto,
+                ignore_compatibility: true,
+            },
+        );
+        save_config_atomically(&path, &state).unwrap();
+        let restored: AppState = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        assert_eq!(
+            restored.pcl_setup_info.selected_java,
+            state.pcl_setup_info.selected_java
+        );
+        assert!(restored.java_preferences[&PathBuf::from("/test/game")].ignore_compatibility);
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+        fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn legacy_java_migration_preserves_only_path_and_does_not_override_new_preferences() {
+        let mut data = serde_json::to_value(AppState::default()).unwrap();
+        data["pcl_setup_info"]["default_java"] = serde_json::json!({
+            "directory_path":"/legacy/bin","is_user_imported":false,"version":"25","slug_version":25,
+            "is_64_bit":true,"architecture":"Arm64","compability":"Perfect","is_jdk":true,
+            "java_exe":"/legacy/bin/java","implementor":"fixture"
+        });
+        let mut state: AppState = serde_json::from_value(data).unwrap();
+        migrate_java_settings(&mut state);
+        assert_eq!(
+            state.pcl_setup_info.selected_java,
+            Some(PathBuf::from("/legacy/bin/java"))
+        );
+        assert!(state.pcl_setup_info.default_java.is_none());
+        migrate_java_settings(&mut state);
+        assert_eq!(
+            state.pcl_setup_info.selected_java,
+            Some(PathBuf::from("/legacy/bin/java"))
+        );
+        state.pcl_setup_info.selected_java = Some(PathBuf::from("/new/bin/java"));
+        state.pcl_setup_info.default_java = serde_json::from_value(serde_json::json!({
+            "directory_path":"/legacy/bin","is_user_imported":false,"version":"25","slug_version":25,
+            "is_64_bit":true,"architecture":"Arm64","compability":"Perfect","is_jdk":true,
+            "java_exe":"/legacy/bin/java","implementor":"fixture"
+        })).unwrap();
+        migrate_java_settings(&mut state);
+        assert_eq!(
+            state.pcl_setup_info.selected_java,
+            Some(PathBuf::from("/new/bin/java"))
+        );
+        assert!(state.pcl_setup_info.default_java.is_none());
+    }
 }

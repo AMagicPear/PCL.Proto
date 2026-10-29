@@ -20,7 +20,10 @@ export function usePageSettings<
   const initialDefaults = {
     ...Object.fromEntries(
       Object.entries(pageDefaults).filter(
-        ([key]) => !['ComboArgumentJava', 'ComboUiFont', 'ComboUiMotdFont'].includes(key),
+        ([key]) =>
+          !['ComboArgumentJava', 'CheckAdvanceJava', 'ComboUiFont', 'ComboUiMotdFont'].includes(
+            key,
+          ),
       ),
     ),
     ...defaults,
@@ -37,6 +40,7 @@ export function usePageSettings<
           Object.entries(parsed).filter(
             ([key, value]) =>
               !/password|token|secret|cdk/i.test(key) &&
+              !['ComboArgumentJava', 'CheckAdvanceJava'].includes(key) &&
               ['string', 'number', 'boolean'].includes(typeof value) &&
               (!(key in initialDefaults) || typeof value === typeof initialDefaults[String(key)]),
           ),
@@ -53,13 +57,20 @@ export function usePageSettings<
     values,
     () => {
       try {
+        const legacy = JSON.parse(localStorage.getItem(storageKey.value) || '{}')
+        const javaLegacy = Object.fromEntries(
+          Object.entries(legacy || {}).filter(([key]) =>
+            ['ComboArgumentJava', 'CheckAdvanceJava'].includes(key),
+          ),
+        )
         localStorage.setItem(
           storageKey.value,
-          JSON.stringify(
-            Object.fromEntries(
+          JSON.stringify({
+            ...javaLegacy,
+            ...Object.fromEntries(
               Object.entries(values).filter(([key]) => !/password|token|secret|cdk/i.test(key)),
             ),
-          ),
+          }),
         )
       } catch {
         sideTip.show(pclText('Proto.Storage.SettingsFailed'), 'warn')

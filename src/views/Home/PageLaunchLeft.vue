@@ -8,7 +8,10 @@ import PageLoginAuth from './PageLoginAuth.vue'
 import { useSelectedInstance } from '@/stores/gameLaunch'
 import { useRoute, useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
-import { computed } from 'vue'
+import { prepareGameJava, downloadGameJava, type JavaInstallProgress } from '@/api/javaReq'
+import { useModal } from '@/composables/useModal'
+import PHint from '@/components/widget/PHint.vue'
+import { computed, ref } from 'vue'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 defineProps<{
@@ -33,16 +36,74 @@ const accountView = computed(() =>
       ] || PageLoginProfile
     : PageLoginProfileSkin,
 )
+const modal = useModal()
+const preparing = ref(false)
+const javaCancelled = ref(false)
+const javaProgress = ref<JavaInstallProgress | null>(null)
 async function launch() {
+  if (preparing.value) return
   if (!instance.instance_info) {
     await router.push('/download/game')
     return
   }
+  const instanceDirectory = instance.instance_info.directory
+  preparing.value = true
+  javaCancelled.value = false
   try {
-    await invoke('launch_game')
+    let info = await prepareGameJava(instanceDirectory)
+    if (!info.runtime) {
+      if (!info.download_major) {
+        await modal.open({
+          title: text('Minecraft.Launch.Java.NotFound.Title'),
+          content: text('Proto.Java.ManualRequired', [
+            info.requirements.min[0],
+            info.requirements.max[0],
+          ]),
+          plainText: true,
+          buttons: [{ content: text('Common.Action.Close'), operation: () => modal.close() }],
+        })
+        return
+      }
+      const answer = await modal.open({
+        title: text('Minecraft.Launch.Java.AutoDownload.Title'),
+        content: text('Minecraft.Launch.Java.AutoDownload.Message', [
+          `Java ${info.download_major}`,
+        ]),
+        plainText: true,
+        buttons: [
+          {
+            content: text('Minecraft.Launch.Java.AutoDownload.Action'),
+            operation: () => modal.close(true),
+          },
+          { content: text('Common.Action.Cancel'), operation: () => modal.close(false) },
+        ],
+      })
+      if (!answer.confirmed || instance.instance_info?.directory !== instanceDirectory) return
+      javaProgress.value = { completed: 0, total: 0 }
+      await downloadGameJava(instanceDirectory, (progress) => {
+        javaProgress.value = {
+          completed: Math.max(javaProgress.value?.completed || 0, progress.completed),
+          total: progress.total,
+        }
+      })
+      if (javaCancelled.value) return
+      javaProgress.value = null
+      info = await prepareGameJava(instanceDirectory)
+      if (!info.runtime) throw new Error(text('Proto.Java.ReadFailed'))
+    }
+    for (const warning of info.warnings)
+      sideTip.show(text(warning.key, [warning.version, warning.min, warning.max]), 'warn')
+    await invoke('launch_game', { instanceDirectory })
   } catch (err) {
-    sideTip.show(pclText('Proto.Error.Launch', [String(err)]), 'warn')
+    if (!javaCancelled.value) sideTip.show(text('Proto.Error.Launch', [String(err)]), 'warn')
+  } finally {
+    javaProgress.value = null
+    preparing.value = false
   }
+}
+async function cancelJava() {
+  javaCancelled.value = true
+  await invoke('cancel_java_download')
 }
 function settings() {
   if (instance.instance_info) void router.push('/instance_setting')
@@ -79,8 +140,22 @@ function settings() {
     </div>
     <template v-else
       ><div class="login-panel"><component :is="accountView" /></div>
+      <PHint v-if="preparing" severity="info" aria-live="polite">
+        {{
+          javaProgress
+            ? text('Proto.Java.DownloadProgress', [javaProgress.completed, javaProgress.total])
+            : text('Proto.Java.Preparing')
+        }}
+        <PButton v-if="javaProgress" inline @click="cancelJava">{{
+          text('Common.Action.Cancel')
+        }}</PButton>
+      </PHint>
       <div class="launch-actions">
-        <PButton class="launch" type="tint" @click="launch" :disabled="loadingInstances"
+        <PButton
+          class="launch"
+          type="tint"
+          @click="launch"
+          :disabled="loadingInstances || preparing"
           ><span>{{
             text(
               loadingInstances

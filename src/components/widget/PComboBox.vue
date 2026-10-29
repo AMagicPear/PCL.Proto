@@ -33,7 +33,13 @@ const model = defineModel<string>()
       :disabled="disabled"
       :aria-label="attrs['aria-label'] || (attrs['aria-labelledby'] ? undefined : attrs.title)"
     >
-      <option v-for="option in options" :key="option.key" :title="option.title" :value="option.key">
+      <option
+        v-for="option in options"
+        :key="option.key"
+        :title="option.title"
+        :value="option.key"
+        :disabled="option.disabled"
+      >
         {{ option.text }}
       </option>
     </select>

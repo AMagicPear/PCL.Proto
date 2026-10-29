@@ -67,6 +67,11 @@ jobs:
       - name: generate icons
         run: pnpm tauri icon
 
+      - name: test Java selection and configuration
+        run: |
+          cargo test -p pcl-proto --lib core::java::
+          cargo test -p pcl-proto --lib setup::java_config_tests
+
       - name: build tauri app
         run: pnpm tauri build ${{ matrix.args }}
         env:

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import SetupItem from '@/components/widget/SetupItem.vue'
 import { useSetup } from '@/stores/setup'
-import { watch } from 'vue'
+import { watch, computed, onMounted } from 'vue'
+import { isTauri } from '@tauri-apps/api/core'
+import { useJavaStore } from '@/stores/java'
 import { useRouter } from 'vue-router'
 import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
@@ -13,7 +15,15 @@ import PHint from '@/components/widget/PHint.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
 const setup = useSetup()
-defineProps<{ java32Bit?: boolean; memoryOverLimit?: boolean }>()
+const props = defineProps<{ java32Bit?: boolean; memoryOverLimit?: boolean }>()
+const java = useJavaStore()
+const java32Bit = computed(
+  () => props.java32Bit ?? (java.runtimes.length > 0 && java.globalIs64Bit === false),
+)
+onMounted(() => {
+  if (isTauri())
+    void java.load().catch((error) => console.warn('Unable to read Java memory limits', error))
+})
 const { values, reset } = usePageSettings('PageSetupLaunch', {
   TextArgumentTitle: setup.launch.gameWindowTitle,
   TextArgumentInfo: setup.launch.customInfo,

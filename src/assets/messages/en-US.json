@@ -187,5 +187,9 @@
   "Proto.Help.Launchers.Body": "PCL CE and HMCL (Terracotta) support basic interoperability. You can share lobby codes and play with friends using HMCL (Terracotta).\n\nPCL CE is also working with HTML on Scaffolding (a working title), a protocol for multiplayer across launchers, with more features planned.",
   "Proto.Help.Nat.Title": "What is a NAT type, and does it affect multiplayer?",
   "Proto.Help.Nat.Body": "Yes, but the effect is usually small when using lobbies. Read on for a brief introduction.\n\nNAT maps multiple private IP addresses to one public IP address. A less restrictive NAT environment makes peer-to-peer connections more likely to succeed and can reduce latency. Most home broadband connections in mainland China use port-restricted cone or symmetric NAT.\n\nYou can also read the Tailscale article below (in English) for a deeper explanation.",
-  "Proto.Help.Nat.Article": "Read the article"
+  "Proto.Help.Nat.Article": "Read the article",
+  "Proto.Java.RelativePathHint": "Choose Java inside the launcher folder. Its relative path is preserved when the launcher is moved.",
+  "Proto.Java.ManualRequired": "No suitable Java found (minimum {0}, maximum {1}). This version or update range requires manual installation. Install it, then import it in Settings → Game Java.",
+  "Proto.Java.DownloadProgress": "Downloading Java: {0} / {1} files",
+  "Proto.Java.Preparing": "Checking game Java…"
 }

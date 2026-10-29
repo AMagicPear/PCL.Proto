@@ -3,8 +3,12 @@ import SetupItem from '@/components/widget/SetupItem.vue'
 import { useRouter } from 'vue-router'
 import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { getJavaList, type IJavaRuntimeInfo } from '@/api/javaReq'
+import { computed, watch, ref } from 'vue'
+import { selectRelativeJava, type JavaPreference, type InstanceJavaSettings } from '@/api/javaReq'
+import { useJavaStore } from '@/stores/java'
+import { useSelectedInstance } from '@/stores/gameLaunch'
+import { isTauri } from '@tauri-apps/api/core'
+import sideTip from '@/composables/sideTip'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
@@ -19,33 +23,111 @@ const props = defineProps<{
   memoryOverLimit?: boolean
   canCreateProfile?: boolean
 }>()
-const { values } = usePageSettings('PageInstanceSetup', {
-  ComboArgumentJava: '0',
-})
-const javaList = ref<IJavaRuntimeInfo[]>([])
+const { values } = usePageSettings('PageInstanceSetup')
+const java = useJavaStore()
+const selected = useSelectedInstance()
+const directory = computed(() => selected.instance_info?.directory)
+const javaSettings = computed<InstanceJavaSettings>(
+  () =>
+    (directory.value && java.instances[directory.value]) || {
+      preference: { kind: 'global' },
+      ignore_compatibility: false,
+    },
+)
 const javaLoading = ref(true)
+const javaSaving = ref(false)
+const javaChoiceRevision = ref(0)
 const javaError = ref(false)
-let disposed = false
-onUnmounted(() => {
-  disposed = true
-})
-onMounted(async () => {
-  try {
-    const list = await getJavaList()
-    if (!disposed) javaList.value = list
-  } catch {
-    if (!disposed) javaError.value = true
-  } finally {
-    if (!disposed) javaLoading.value = false
-  }
+watch(
+  directory,
+  async (path, _, onCleanup) => {
+    let current = true
+    onCleanup(() => {
+      current = false
+    })
+    javaLoading.value = true
+    javaError.value = false
+    try {
+      if (!path || !isTauri()) throw new Error('Desktop instance required')
+      await java.load(path, false, selected.instance_info?.id)
+    } catch (err) {
+      if (current) javaError.value = true
+      console.error(err)
+    } finally {
+      if (current) javaLoading.value = false
+    }
+  },
+  { immediate: true },
+)
+const javaChoice = computed(() => {
+  const pref = javaSettings.value.preference
+  return pref.kind === 'exist' ? pref.java_exe : pref.kind
 })
 const javaOptions = computed(() => [
-  { key: '0', text: text('Instance.Setup.Options.Java.AutoSelect') },
-  ...javaList.value.map((java) => ({
-    key: java.java_exe,
-    text: `${java.version} · ${java.architecture} · ${java.directory_path}`,
+  { key: 'global', text: text('Instance.Setup.FollowGlobal') },
+  { key: 'auto', text: text('Instance.Setup.Options.Java.AutoSelect') },
+  {
+    key: 'relative',
+    text:
+      javaSettings.value.preference.kind === 'relative'
+        ? text('Instance.Setup.Options.Java.SelectRelative.WithJava', [
+            javaSettings.value.preference.relative_path,
+          ])
+        : text('Instance.Setup.Options.Java.SelectRelative'),
+    title: text('Proto.Java.RelativePathHint'),
+  },
+  ...java.runtimes.map((runtime) => ({
+    key: runtime.java_exe,
+    text: `${runtime.version} · ${runtime.architecture} · ${runtime.directory_path}${runtime.is_enabled ? '' : ` · ${text('Setup.Java.EnableBeforeSelect')}`}`,
+    disabled: !runtime.is_enabled,
   })),
+  ...(javaSettings.value.preference.kind === 'exist' &&
+  !java.runtimes.some((j) => j.java_exe === javaChoice.value)
+    ? [
+        {
+          key: javaChoice.value,
+          text: `${javaChoice.value} · ${text('Setup.Java.Unavailable')}`,
+          disabled: true,
+        },
+      ]
+    : []),
 ])
+async function saveJava(settings: InstanceJavaSettings) {
+  const path = directory.value
+  if (!path || javaSaving.value || javaLoading.value) return
+  javaSaving.value = true
+  try {
+    await java.saveInstance(path, settings)
+  } catch (err) {
+    sideTip.show(String(err), 'warn')
+  } finally {
+    javaSaving.value = false
+  }
+}
+async function selectJava(choice: string | undefined) {
+  const path = directory.value
+  if (!path || !choice) return
+  let preference: JavaPreference
+  try {
+    if (choice === 'relative') {
+      const picked = await selectRelativeJava()
+      if (!picked || path !== directory.value) return
+      preference = picked
+    } else if (choice === 'global' || choice === 'auto') preference = { kind: choice }
+    else preference = { kind: 'exist', java_exe: choice }
+    await saveJava({ ...javaSettings.value, preference })
+  } catch (err) {
+    sideTip.show(String(err), 'warn')
+  } finally {
+    javaChoiceRevision.value++
+  }
+}
+const java32Bit = computed(
+  () =>
+    !!directory.value &&
+    java.runtimes.length > 0 &&
+    java.instanceIs64Bit[directory.value] === false,
+)
 const authVisible = computed(() => ['2', '3'].includes(String(values.ComboServerLoginRequire)))
 const modal = useModal()
 async function setLittleSkin() {
@@ -137,6 +219,7 @@ const text = pclText
                 /></SetupItem>
                 <SetupItem :label="text('Instance.Setup.Options.Java')" v-slot="{ id }"
                   ><PComboBox
+                    :key="javaChoiceRevision"
                     :input-id="id"
                     data-control="ComboArgumentJava"
                     :title="text('Instance.Setup.Options.Java.ToolTip')"
@@ -145,8 +228,9 @@ const text = pclText
                         ? [{ key: '0', text: text('Instance.Setup.Options.Java.Loading') }]
                         : javaOptions
                     "
-                    :disabled="javaLoading"
-                    v-model="values.ComboArgumentJava"
+                    :disabled="javaLoading || javaSaving || javaError"
+                    :model-value="javaChoice"
+                    @update:model-value="selectJava"
                 /></SetupItem>
               </div>
             </div>
@@ -158,15 +242,9 @@ const text = pclText
             }}</RouterLink></PHint
           >
           <PCard style="margin: 0px 0px 15px 0px" :title="text('Setup.Launch.Memory.Title')">
-            <PHint
-              v-if="
-                javaList.some(
-                  (java) => java.java_exe === values.ComboArgumentJava && !java.is_64_bit,
-                )
-              "
-              severity="warning"
-              >{{ text('Setup.Launch.Memory.Warning.Java32Bit') }}</PHint
-            >
+            <PHint v-if="java32Bit" severity="warning">{{
+              text('Setup.Launch.Memory.Warning.Java32Bit')
+            }}</PHint>
             <PHint v-if="memoryOverLimit" severity="warning">{{
               text('Setup.Launch.Memory.Warning.TooMuch')
             }}</PHint>
@@ -571,7 +649,11 @@ const text = pclText
                   :title="text('Instance.Setup.Advanced.IgnoreJavaCompatibility.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceJava"
                   :label="text('Instance.Setup.Advanced.IgnoreJavaCompatibility')"
-                  v-model="values.CheckAdvanceJava"
+                  :disabled="javaLoading || javaSaving || javaError"
+                  :model-value="javaSettings.ignore_compatibility"
+                  @update:model-value="
+                    (value) => saveJava({ ...javaSettings, ignore_compatibility: value })
+                  "
                 />
                 <PCheckBox
                   data-control="CheckAdvanceAssetsV2"

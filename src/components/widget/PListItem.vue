@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import PButton from './PButton.vue'
+import PSelectionIndicator from './PSelectionIndicator.vue'
 
 withDefaults(
   defineProps<{
     icon?: string
     title: string
     subtitle?: string
+    tags?: string[]
+    selected?: boolean
     roundImg?: boolean
     hoverEffect?: boolean
     btn?: {
@@ -20,18 +23,23 @@ withDefaults(
     clickable: false,
     roundImg: false,
     pixelatedIcon: false,
+    selected: undefined,
   },
 )
 const emit = defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
 </script>
 
 <template lang="pug">
-    .gameinfo-container(@click="clickable && emit('click', $event)" :role="clickable ? 'button' : undefined" :tabindex="clickable ? 0 : undefined" @keydown.enter.self="clickable && emit('click', $event)" @keydown.space.self.prevent="clickable && emit('click', $event)" :class="{'hover-effect': hoverEffect, 'round-img': roundImg, 'clickable': clickable }")
+    .gameinfo-container(@click="clickable && emit('click', $event)" :role="clickable ? 'button' : undefined" :tabindex="clickable ? 0 : undefined" :aria-pressed="selected" @keydown.enter.self="clickable && emit('click', $event)" @keydown.space.self.prevent="clickable && emit('click', $event)" :class="{'hover-effect': hoverEffect, 'round-img': roundImg, 'clickable': clickable, 'selectable': selected !== undefined, selected }")
+        PSelectionIndicator.list-selection(v-if="selected !== undefined")
         .left
             slot(name="icon")
                 img(:src="icon" v-if="icon" :style="{ 'image-rendering': pixelatedIcon ? 'pixelated' : 'auto' }")
             .text
-                .title {{ title }}
+                .title
+                    slot(name="title")
+                        span {{ title }}
+                    span.list-tag(v-for="tag in tags" :key="tag") {{ tag }}
                 .subtitle {{ subtitle }}
         .right(@click.stop)
             slot(name="actions")
@@ -50,6 +58,17 @@ const emit = defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
   border-radius: 4px;
   gap: 6px;
   transition: background-color 0.4s ease;
+
+  &.selectable {
+    position: relative;
+    padding-left: 14px;
+  }
+
+  > .list-selection {
+    position: absolute;
+    left: 0;
+    top: calc(50% - 11.5px);
+  }
 
   &.clickable {
     transition:
@@ -117,8 +136,21 @@ const emit = defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px 6px;
   font-size: var(--list-title-size, 13px);
   line-height: 1.1rem;
+}
+
+.list-tag {
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.067);
+  color: var(--color-text-grey);
+  font-size: 11px;
+  line-height: 14px;
 }
 
 .subtitle {

@@ -105,18 +105,68 @@ impl Architecture {
 
 /// assert compability of java runtime according to the current OS
 pub(super) fn assert_compability(arch: &Architecture) -> Compability {
-    let system = OS::current();
-    let current_arch = tauri_plugin_os::arch();
+    compatibility_for(OS::current(), host_architecture(), arch)
+}
+
+/// The host can differ from the launcher process when Rosetta or Windows emulation is in use.
+pub(crate) fn host_architecture() -> &'static str {
+    static ARCH: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+        #[cfg(windows)]
+        for key in ["PROCESSOR_ARCHITEW6432", "PROCESSOR_ARCHITECTURE"] {
+            if let Ok(value) = std::env::var(key) {
+                match value.to_ascii_lowercase().as_str() {
+                    "arm64" => return "aarch64".into(),
+                    "amd64" => return "x86_64".into(),
+                    "x86" => return "x86".into(),
+                    _ => (),
+                }
+            }
+        }
+        #[cfg(target_os = "macos")]
+        if std::process::Command::new("/usr/sbin/sysctl")
+            .args(["-n", "hw.optional.arm64"])
+            .output()
+            .is_ok_and(|output| output.status.success() && output.stdout.starts_with(b"1"))
+        {
+            return "aarch64".into();
+        }
+        #[cfg(target_os = "linux")]
+        if let Ok(output) = std::process::Command::new("uname").arg("-m").output() {
+            match String::from_utf8_lossy(&output.stdout).trim() {
+                "aarch64" | "arm64" => return "aarch64".into(),
+                "x86_64" | "amd64" => return "x86_64".into(),
+                "i386" | "i486" | "i586" | "i686" => return "x86".into(),
+                _ => (),
+            }
+        }
+        std::env::consts::ARCH.into()
+    });
+    &ARCH
+}
+
+pub(super) fn compatibility_for(
+    system: OS,
+    current_arch: &str,
+    arch: &Architecture,
+) -> Compability {
+    if matches!(system, OS::macOS) && matches!(arch, Architecture::FatFile) {
+        return Compability::Perfect;
+    }
     match system {
         OS::macOS | OS::Windows => match current_arch {
             "x86_64" => match arch {
                 Architecture::X64 => Compability::Perfect,
-                Architecture::X86 => Compability::Translation,
+                Architecture::X86 if matches!(system, OS::Windows) => Compability::Translation,
                 _ => Compability::No,
             },
             "aarch64" => match arch {
                 Architecture::Arm64 => Compability::Perfect,
                 Architecture::X64 => Compability::Translation,
+                Architecture::X86 if matches!(system, OS::Windows) => Compability::Translation,
+                _ => Compability::No,
+            },
+            "x86" | "i686" => match arch {
+                Architecture::X86 => Compability::Perfect,
                 _ => Compability::No,
             },
             _ => Compability::Unknown,
@@ -124,10 +174,15 @@ pub(super) fn assert_compability(arch: &Architecture) -> Compability {
         OS::Linux => match current_arch {
             "x86_64" => match arch {
                 Architecture::X64 => Compability::Perfect,
+                Architecture::X86 => Compability::Translation,
                 _ => Compability::No,
             },
             "aarch64" => match arch {
                 Architecture::Arm64 => Compability::Perfect,
+                _ => Compability::No,
+            },
+            "x86" | "i686" => match arch {
+                Architecture::X86 => Compability::Perfect,
                 _ => Compability::No,
             },
             _ => Compability::Unknown,

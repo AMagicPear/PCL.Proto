@@ -1,315 +1,369 @@
-//! Referenced from JavaData.cs of PCL-Community/PCL.Neo/PCL.Neo.Core
-//! [PLC.Neo.Core](https://github.com/PCL-Community/PCL.Neo) | MIT license
-
+//! CE Java management, with executable probing and discovery for each desktop OS.
+use super::platform::{Architecture, Compability};
+use anyhow::{Context, ensure};
+use serde::{Deserialize, Serialize};
 use std::{
-    collections::HashSet,
-    env,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
+    time::{Duration, Instant},
 };
 
-use crate::setup::ConfigManager;
+mod discovery;
+pub mod install;
+pub mod requirements;
+pub mod selection;
+#[cfg(test)]
+mod tests;
 
-use super::platform::Compability;
-
-/// struct of java runtime
-#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct JavaRuntime {
-    directory_path: PathBuf,
-    pub(crate) is_user_imported: bool,
-    version: String,
-    slug_version: i32,
-    is_64_bit: bool,
-    architecture: super::platform::Architecture,
-    compability: Compability,
-    is_jdk: bool,
+    pub directory_path: PathBuf,
+    pub is_user_imported: bool,
+    pub version: String,
+    pub slug_version: i32,
+    pub is_64_bit: bool,
+    pub architecture: Architecture,
+    pub compability: Compability,
+    pub is_jdk: bool,
     pub java_exe: PathBuf,
-    implementor: Option<String>,
+    pub implementor: Option<String>,
+    #[serde(default = "enabled_by_default")]
+    pub is_enabled: bool,
+}
+fn enabled_by_default() -> bool {
+    true
 }
 
 impl PartialEq for JavaRuntime {
     fn eq(&self, other: &Self) -> bool {
-        self.directory_path == other.directory_path
+        self.java_exe == other.java_exe
     }
 }
 
-#[derive(Debug)]
-pub enum JavaRuntimeConstructorError {
-    MissingFile,
-    InvalidRuntime,
+/// Normalized Java version: 1.8.0_321 and 8.0.321 compare identically.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct JavaVersion(pub u32, pub u32, pub u32, pub u32);
+impl JavaVersion {
+    pub const fn major(major: u32) -> Self {
+        Self(major, 0, 0, 0)
+    }
+    pub const fn upper(major: u32) -> Self {
+        Self(major, u32::MAX, u32::MAX, u32::MAX)
+    }
+    pub fn parse(value: &str) -> Option<Self> {
+        let numeric = value.trim().split(['-', '+']).next()?;
+        let parts: Vec<u32> = numeric
+            .split(['.', '_'])
+            .map(str::parse)
+            .collect::<Result<_, _>>()
+            .ok()?;
+        if parts.is_empty() || parts.len() > 4 {
+            return None;
+        }
+        let n = |i| parts.get(i).copied().unwrap_or(0);
+        if n(0) == 1 {
+            (n(1) > 0).then_some(Self(n(1), n(2), n(3), 0))
+        } else {
+            Some(Self(n(0), n(1), n(2), n(3)))
+        }
+    }
+}
+impl std::fmt::Display for JavaVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.1 == u32::MAX {
+            write!(f, "{}.*", self.0)
+        } else {
+            write!(f, "{}.{}.{}", self.0, self.1, self.2)
+        }
+    }
+}
+
+pub fn java_binary() -> &'static str {
+    if cfg!(windows) { "java.exe" } else { "java" }
+}
+pub fn launcher_directory() -> anyhow::Result<PathBuf> {
+    Ok(std::env::current_exe()?
+        .parent()
+        .context("Missing launcher directory")?
+        .to_owned())
+}
+
+pub(super) fn command_output(mut command: Command) -> anyhow::Result<std::process::Output> {
+    use std::io::Read;
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x08000000);
+    }
+    let mut child = command
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+    // Drain both pipes while the process runs; registry scans can exceed a pipe's capacity.
+    let (send, receive) = std::sync::mpsc::channel();
+    for (is_stdout, mut pipe) in [
+        (
+            true,
+            Box::new(child.stdout.take().unwrap()) as Box<dyn Read + Send>,
+        ),
+        (
+            false,
+            Box::new(child.stderr.take().unwrap()) as Box<dyn Read + Send>,
+        ),
+    ] {
+        let send = send.clone();
+        std::thread::spawn(move || {
+            let mut bytes = Vec::new();
+            let result = pipe
+                .by_ref()
+                .take(1024 * 1024 + 1)
+                .read_to_end(&mut bytes)
+                .map(|_| bytes);
+            let _ = send.send((is_stdout, result));
+        });
+    }
+    let (mut stdout, mut stderr) = (None, None);
+    let start = Instant::now();
+    loop {
+        while let Ok((is_stdout, result)) = receive.try_recv() {
+            if is_stdout {
+                stdout = Some(result);
+            } else {
+                stderr = Some(result);
+            }
+        }
+        if let Some(status) = child.try_wait()?
+            && stdout.is_some()
+            && stderr.is_some()
+        {
+            let (stdout, stderr) = (stdout.unwrap()?, stderr.unwrap()?);
+            ensure!(
+                stdout.len() <= 1024 * 1024 && stderr.len() <= 1024 * 1024,
+                "Java probe output is too large"
+            );
+            return Ok(std::process::Output {
+                status,
+                stdout,
+                stderr,
+            });
+        }
+        if start.elapsed() > Duration::from_secs(5) {
+            let _ = child.kill();
+            let _ = child.wait();
+            anyhow::bail!("Java probe timed out");
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
 }
 
 impl JavaRuntime {
-    /// read release file of java runtime
-    fn read_release_file(
-        release_file: &Path,
-    ) -> (
-        Option<String>,
-        Option<String>,
-        super::platform::Architecture,
-    ) {
-        let release_content = std::fs::read_to_string(release_file).unwrap();
-
-        let mut implementor = None;
-        let mut version = None;
-        let mut architecture = super::platform::Architecture::Unknown;
-
-        for line in release_content.lines() {
-            if line.starts_with("IMPLEMENTOR=") {
-                implementor = Some(
-                    line.split('=')
-                        .nth(1)
-                        .unwrap_or("")
-                        .trim_matches('"')
-                        .to_string(),
-                );
-            } else if line.starts_with("JAVA_VERSION=") {
-                version = Some(
-                    line.split('=')
-                        .nth(1)
-                        .unwrap_or("")
-                        .trim_matches('"')
-                        .to_string(),
-                );
-            } else if line.starts_with("OS_ARCH=") {
-                let arch = line.split('=').nth(1).unwrap_or("").trim_matches('"');
-                architecture = match arch {
-                    "x86_64" => super::platform::Architecture::X64,
-                    "aarch64" => super::platform::Architecture::Arm64,
-                    "i386" | "i686" => super::platform::Architecture::X86,
-                    // 可以根据需要添加更多架构映射
-                    _ => super::platform::Architecture::Unknown,
-                };
-            }
-
-            // 如果已经获取了所有需要的信息，可以提前结束循环
-            if !implementor.is_none()
-                && !version.is_none()
-                && architecture != super::platform::Architecture::Unknown
-            {
-                break;
-            }
-        }
-
-        (implementor, version, architecture)
-    }
-
-    /// parse java version string to slug version number
-    fn parse_to_slug_version(version: &str) -> Option<i32> {
-        let mut version_split: std::str::Split<'_, char> = version.split('.');
-        // for purpose of distinguish java 8 or 11 and later
-        // example:
-        // java 8: 1.8.0_362
-        // java 11: 11.0.19
-        let first = version_split.next();
-        if let Some(first) = first {
-            if first == "1" {
-                if let Some(second) = version_split.next() {
-                    return second.parse().ok();
-                }
-            } else {
-                return first.parse().ok();
-            }
-        }
-        None
-    }
-
-    /// search java runtime in system
-    pub async fn search() -> Vec<Self> {
-        let mut collect_paths: HashSet<String> = HashSet::new();
-        // TODO: check java home
-        // search macOS specific directory
-        #[cfg(target_os = "macos")]
-        {
-            use tokio::fs;
-            let home_dir = env::home_dir().unwrap();
-            pub async fn search_macos(base_dir: &Path) -> HashSet<String> {
-                let mut result = HashSet::new();
-                if !base_dir.exists() || !base_dir.is_dir() {
-                    log::warn!("macOS search path not exists: {:?}", base_dir);
-                    return result;
-                }
-                if let Ok(mut entries) = fs::read_dir(base_dir).await {
-                    while let Ok(Some(entry)) = entries.next_entry().await {
-                        let entry_path = entry.path();
-                        if entry_path.is_dir() {
-                            let java_path = entry_path.join("Contents/Home/bin/java");
-                            if java_path.exists() {
-                                result.insert(java_path.to_string_lossy().into_owned());
-                            }
-                        }
-                    }
-                }
-                result
-            }
-            collect_paths.extend(search_macos(Path::new("/Library/Java/JavaVirtualMachines")).await);
-            collect_paths.extend(search_macos(Path::new(
-                &home_dir.join("Library/Java/JavaVirtualMachines"),
-            )).await);
-        }
-        // search PATH
-        {
-            if let Ok(path_var) = env::var("PATH") {
-                for path in env::split_paths(&path_var) {
-                    let exe_path = path.join(if cfg!(target_os = "windows") {
-                        "java.exe"
-                    } else {
-                        "java"
-                    });
-                    if exe_path.exists() {
-                        collect_paths.insert(exe_path.to_string_lossy().into_owned());
-                    }
-                }
-            }
-        }
-        // walk windows directory
-        // #[cfg(target_os = "windows")]
-        // {
-        //     for dirve in (b'A'..=b'Z')
-        //         .map(|c| format!("{}:", c as char))
-        //         .map(PathBuf::from)
-        //         .collect::<Vec<PathBuf>>()
-        //     {
-        //         if let Ok(metadata) = fs::metadata(&dirve){
-        //             if metadata.is_dir(){
-        //             }
-        //         }
-        //     }
-        // }
-        log::info!("found {} java runtimes", collect_paths.len());
-        // 使用try_from映射valid_paths到结果
-        collect_paths
-            .iter()
-            .filter_map(|path| Self::try_from(path.as_str()).ok())
-            .collect()
-    }
-}
-
-pub trait JavaRuntimeVecExt {
-    async fn patch_state(self);
-}
-impl JavaRuntimeVecExt for Vec<JavaRuntime> {
-    async fn patch_state(self) {
-        // TODO: 根据是否为用户导入写一个更复杂的合并逻辑
-        let config_manager = ConfigManager::instance();
-        let mut guard = config_manager.app_state.lock().await;
-        guard.java_runtimes = self;
-        drop(guard);
-        tauri::async_runtime::spawn_blocking(move || {
-            config_manager.save().unwrap();
-        })
-        .await
-        .unwrap();
-        // TODO: 应该根据配置文件选择默认的java runtime
-        log::info!("patched java runtimes to config");
-    }
-}
-
-impl TryFrom<&str> for JavaRuntime {
-    type Error = JavaRuntimeConstructorError;
-    fn try_from(java_path: &str) -> Result<Self, Self::Error> {
-        use super::platform::Architecture;
-        log::debug!("[java] 创建JavaRuntime: {java_path}");
-        let java_path = Path::new(java_path);
-        if !java_path.exists() {
-            return Err(JavaRuntimeConstructorError::MissingFile);
-        }
-        let directory = java_path.parent().unwrap().to_path_buf();
-        // 检查是否有javac来判断是否是JDK
-        let is_jdk = directory
-            .join(if cfg!(target_os = "windows") {
-                "javac.exe"
-            } else {
-                "javac"
-            })
-            .exists();
-
-        // 尝试读取RELEASE文件的信息
-        let mut version: Option<String> = None;
-        let mut implementor: Option<String> = None;
-        let mut architecture: Architecture = Architecture::Unknown;
-        if let Some(parent_dir) = directory.parent() {
-            let release_file = parent_dir.join("release");
-            if release_file.exists() {
-                let (imp, ver, arch) = Self::read_release_file(&release_file);
-                implementor = imp;
-                version = ver;
-                architecture = arch;
-            }
-        }
-
-        // 若版本未被设置，运行 java -version 获取版本
-        if version.is_none() {
-            // 如果Error返回InvalidRuntime
-            let output = Command::new(java_path)
-                .arg("-version")
-                .output()
-                .map_err(|_| JavaRuntimeConstructorError::InvalidRuntime)?;
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let version_regex = regex::Regex::new(r#"version\s+"([\d._]+)"#).unwrap();
-            if let Some(captures) = version_regex.captures(&stderr) {
-                version = Some(captures[1].to_string());
-            }
-        }
-
-        // 设置slug Version
-        let slug_version = Self::parse_to_slug_version(version.as_deref().unwrap_or_default());
-
-        // 如果架构未知，尝试从文件头读取
-        if architecture == super::platform::Architecture::Unknown {
-            if let Ok(arch) = Architecture::read_header(java_path) {
-                architecture = arch;
-            }
-        }
-
-        let compability = super::platform::assert_compability(&architecture);
-
-        Ok(JavaRuntime {
-            directory_path: directory,
-            is_user_imported: false,
-            version: version.unwrap_or_default(),
-            slug_version: slug_version.unwrap_or(0),
-            is_64_bit: architecture == Architecture::X64 || architecture == Architecture::Arm64,
-            architecture,
-            compability: compability,
-            is_jdk,
-            java_exe: java_path.to_path_buf(),
-            implementor,
-        })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    use std::time::Instant;
-
-    use super::*;
-
-    #[test]
-    fn java_test1() {
-        println!(
-            "{:?}",
-            JavaRuntime::try_from(
-                "/Library/Java/JavaVirtualMachines/zulu-21.jdk/Contents/Home/bin/java",
-            )
-            .unwrap()
+    pub fn probe(java_path: &Path) -> anyhow::Result<Self> {
+        ensure!(
+            java_path.is_file(),
+            "Java executable does not exist: {}",
+            java_path.display()
         );
+        let mut command = Command::new(java_path);
+        command.args(["-XshowSettings:properties", "-version"]);
+        let output = command_output(command)?;
+        let text = |output: &std::process::Output| {
+            format!(
+                "{}\n{}",
+                String::from_utf8_lossy(&output.stderr),
+                String::from_utf8_lossy(&output.stdout)
+            )
+        };
+        if output.status.success()
+            && let Ok(runtime) = Self::from_probe(java_path, &text(&output))
+        {
+            return Ok(runtime);
+        }
+        // Java 6 and some older vendor builds do not implement -XshowSettings.
+        let mut command = Command::new(java_path);
+        command.arg("-version");
+        let output = command_output(command)?;
+        ensure!(
+            output.status.success(),
+            "Java executable could not start: {}",
+            java_path.display()
+        );
+        Self::from_probe(java_path, &text(&output))
     }
 
-    #[test]
-    fn java_test_2() {
-        let java_runtime = JavaRuntime::try_from("/usr/bin/java").unwrap();
-        println!("{:?}", java_runtime);
-        assert_eq!(java_runtime.version, "24.0.2");
+    fn from_probe(java_path: &Path, text: &str) -> anyhow::Result<Self> {
+        let property = |name: &str| {
+            text.lines().find_map(|line| {
+                let (key, value) = line.trim().split_once('=')?;
+                (key.trim() == name).then(|| value.trim().to_owned())
+            })
+        };
+        let version = property("java.version")
+            .or_else(|| {
+                let re = regex::Regex::new(r#"(?:openjdk|java) version\s+"([^"]+)"#).unwrap();
+                re.captures(text).map(|v| v[1].to_owned())
+            })
+            .context("Cannot identify Java version")?;
+        let parsed = JavaVersion::parse(&version).context("Invalid Java version")?;
+        ensure!(parsed.0 > 0, "Invalid Java major version");
+        let home = property("java.home").map(PathBuf::from).map(|home| {
+            // Java 8 JDKs report their nested jre as java.home; retain the JDK executable and its javac.
+            if home.file_name().is_some_and(|name| name == "jre")
+                && let Some(parent) = home.parent()
+                && parent
+                    .join("bin")
+                    .join(if cfg!(windows) { "javac.exe" } else { "javac" })
+                    .is_file()
+            {
+                return parent.to_owned();
+            }
+            home
+        });
+        let actual = home
+            .as_ref()
+            .map(|p| p.join("bin").join(java_binary()))
+            .filter(|p| p.is_file())
+            .unwrap_or_else(|| java_path.to_owned());
+        let java_exe = actual
+            .canonicalize()
+            .with_context(|| format!("Invalid Java path: {}", actual.display()))?;
+        let directory_path = java_exe
+            .parent()
+            .context("Missing Java directory")?
+            .to_owned();
+        let architecture = match property("os.arch").as_deref() {
+            Some("amd64" | "x86_64" | "x64") => Architecture::X64,
+            Some("aarch64" | "arm64") => Architecture::Arm64,
+            Some("x86" | "i386" | "i486" | "i586" | "i686") => Architecture::X86,
+            _ => Architecture::read_header(&java_exe).unwrap_or(Architecture::Unknown),
+        };
+        let is_64_bit = property("sun.arch.data.model")
+            .map(|v| v == "64")
+            .unwrap_or(matches!(
+                architecture,
+                Architecture::Arm64 | Architecture::X64 | Architecture::FatFile
+            ));
+        let compability = super::platform::assert_compability(&architecture);
+        let is_jdk = directory_path
+            .join(if cfg!(windows) { "javac.exe" } else { "javac" })
+            .is_file();
+        let is_enabled = !matches!(compability, Compability::No | Compability::Unknown)
+            && is_64_bit == matches!(super::platform::host_architecture(), "x86_64" | "aarch64")
+            && (is_jdk || parsed.0 <= 8);
+        Ok(Self {
+            directory_path,
+            is_user_imported: false,
+            version,
+            slug_version: parsed.0 as i32,
+            is_64_bit,
+            architecture,
+            compability,
+            is_jdk,
+            java_exe,
+            implementor: property("java.vendor"),
+            is_enabled,
+        })
     }
+    pub fn parsed_version(&self) -> JavaVersion {
+        JavaVersion::parse(&self.version).unwrap_or(JavaVersion::major(0))
+    }
+    pub fn brand_rank(&self) -> usize {
+        let vendor = self.implementor.as_deref().unwrap_or("").to_lowercase();
+        [
+            "eclipse",
+            "bellsoft",
+            "azul",
+            "amazon",
+            "microsoft",
+            "ibm",
+            "oracle",
+            "alibaba",
+            "tencent",
+            "openjdk",
+            "graalvm",
+            "jetbrains",
+        ]
+        .iter()
+        .position(|brand| vendor.contains(brand))
+        .unwrap_or(12)
+    }
+}
+impl TryFrom<&str> for JavaRuntime {
+    type Error = anyhow::Error;
+    fn try_from(path: &str) -> Result<Self, Self::Error> {
+        Self::probe(Path::new(path))
+    }
+}
 
-    #[tokio::test]
-    async fn java_search() {
-        let start = Instant::now();
-        let java_runtimes = JavaRuntime::search().await;
-        let duration = start.elapsed();
-        println!("{:?}", java_runtimes);
-        println!("耗时: {:?}", duration);
+pub fn sort_list(list: &mut [JavaRuntime]) {
+    list.sort_by(|a, b| {
+        b.parsed_version()
+            .cmp(&a.parsed_version())
+            .then(a.brand_rank().cmp(&b.brand_rank()))
+            .then(a.java_exe.cmp(&b.java_exe))
+    });
+}
+
+pub(super) fn merge_runtimes(
+    mut scanned: Vec<JavaRuntime>,
+    before: &[JavaRuntime],
+    current: &[JavaRuntime],
+) -> Vec<JavaRuntime> {
+    for runtime in &mut scanned {
+        if let Some(saved) = current.iter().find(|j| j.java_exe == runtime.java_exe) {
+            runtime.is_enabled = saved.is_enabled;
+            runtime.is_user_imported |= saved.is_user_imported;
+        }
     }
+    // Imports made during a scan must survive, while unavailable entries in the scan snapshot disappear.
+    for runtime in current {
+        if !before.iter().any(|j| j.java_exe == runtime.java_exe)
+            && !scanned.iter().any(|j| j.java_exe == runtime.java_exe)
+        {
+            scanned.push(runtime.clone());
+        }
+    }
+    sort_list(&mut scanned);
+    scanned
+}
+
+static SCAN_LOCK: tokio::sync::Mutex<Option<Instant>> = tokio::sync::Mutex::const_new(None);
+pub async fn refresh(force: bool) -> Result<Vec<JavaRuntime>, String> {
+    let mut scan = SCAN_LOCK.lock().await;
+    let config = crate::setup::ConfigManager::instance();
+    if !force && scan.is_some_and(|last| last.elapsed() < Duration::from_secs(13)) {
+        return Ok(config.app_state.lock().await.java_runtimes.clone());
+    }
+    let (known, mut roots, selected) = {
+        let state = config.app_state.lock().await;
+        let known = state.java_runtimes.clone();
+        let roots = state
+            .repositories
+            .iter()
+            .map(|r| r.path.join("runtime"))
+            .collect::<Vec<_>>();
+        (known, roots, state.pcl_setup_info.selected_java.clone())
+    };
+    roots.push(config.java_runtime_dir());
+    let scanned = discovery::scan(known.clone(), roots).await?;
+    let selected_probe = selected.clone();
+    let actual_selected = tokio::task::spawn_blocking(move || {
+        selected_probe
+            .and_then(|p| JavaRuntime::probe(&p).ok())
+            .map(|j| j.java_exe)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    {
+        let mut state = config.app_state.lock().await;
+        state.java_runtimes = merge_runtimes(scanned, &known, &state.java_runtimes);
+        if state.pcl_setup_info.selected_java == selected && actual_selected.is_some() {
+            state.pcl_setup_info.selected_java = actual_selected;
+        }
+    }
+    tauri::async_runtime::spawn_blocking(move || config.save().map_err(|e| format!("{e:?}")))
+        .await
+        .map_err(|e| e.to_string())??;
+    *scan = Some(Instant::now());
+    Ok(config.app_state.lock().await.java_runtimes.clone())
 }

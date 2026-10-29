@@ -142,6 +142,24 @@ try {
     JSON.parse(storage.get('pcl-ui:PageInstanceSetup:second')).TextArgumentInfo,
     'Second edited',
   )
+  const PListItem = await load('PListItem')
+  for (const selected of [undefined, false, true]) {
+    const html = await renderToString(
+      createSSRApp({
+        render: () =>
+          h(PListItem, {
+            title: 'JDK 25',
+            tags: ['64 Bit', 'ARM64', 'Eclipse'],
+            selected,
+            clickable: true,
+          }),
+      }),
+    )
+    if (selected === undefined) assert.doesNotMatch(html, /aria-pressed|class="[^"]*selectable/)
+    else assert.match(html, new RegExp(`aria-pressed="${selected}"`))
+    assert.match(html, /class="list-tag"[^>]*>ARM64<\/span>/)
+    assert.doesNotMatch(html, /<input/)
+  }
   const PVersionActions = await load('PVersionActions')
   for (const manual of [false, true]) {
     const html = await renderToString(
@@ -211,6 +229,119 @@ try {
       },
     },
   })
+  const originalInvoke = window.__TAURI_INTERNALS__.invoke
+  const javaCalls = []
+  const javaRuntime = {
+    java_exe: '/jdk25/bin/java',
+    directory_path: '/jdk25/bin',
+    version: '25.0.1',
+    slug_version: 25,
+    is_enabled: true,
+    is_jdk: true,
+    is_64_bit: true,
+    architecture: 'Arm64',
+    compability: 'Perfect',
+    implementor: 'Eclipse',
+    is_user_imported: false,
+  }
+  const javaBackend = { global: null, instances: {}, fail: false }
+  let pauseJavaList
+  window.__TAURI_INTERNALS__.invoke = async (command, args) => {
+    javaCalls.push({ command, args })
+    if (command === 'get_java_list' || command === 'refresh_java_list') {
+      if (pauseJavaList) {
+        const pause = pauseJavaList
+        pauseJavaList = null
+        return pause
+      }
+      return [{ ...javaRuntime }]
+    }
+    if (command === 'get_java_settings')
+      return {
+        global_java: javaBackend.global,
+        has_instance_settings: !!javaBackend.instances[args.instanceDirectory],
+        global_is_64_bit: true,
+        instance_is_64_bit: true,
+        instance: javaBackend.instances[args.instanceDirectory] || {
+          preference: { kind: 'global' },
+          ignore_compatibility: false,
+        },
+      }
+    if (javaBackend.fail) throw new Error('disk full')
+    if (command === 'set_global_java') javaBackend.global = args.javaExe
+    else if (command === 'set_instance_java_settings')
+      javaBackend.instances[args.instanceDirectory] = args.settings
+    else if (command === 'set_java_enabled') javaRuntime.is_enabled = args.enabled
+    else throw new Error(`Unexpected Java command: ${command}`)
+  }
+  try {
+    const { useJavaStore } = await server.ssrLoadModule('/src/stores/java.ts')
+    const javaStore = useJavaStore()
+    storage.set(
+      'pcl-ui:PageInstanceSetup:legacy',
+      JSON.stringify({
+        ComboArgumentJava: '/jdk25/bin/java',
+        CheckAdvanceJava: true,
+        TextArgumentTitle: 'keep',
+      }),
+    )
+    await javaStore.load('/games/legacy', false, 'legacy')
+    assert.equal(javaStore.instances['/games/legacy'].preference.java_exe, '/jdk25/bin/java')
+    assert.equal(javaStore.instances['/games/legacy'].ignore_compatibility, true)
+    const migrations = javaCalls.filter(
+      ({ command }) => command === 'set_instance_java_settings',
+    ).length
+    await javaStore.load('/games/legacy', false, 'legacy')
+    assert.equal(
+      javaCalls.filter(({ command }) => command === 'set_instance_java_settings').length,
+      migrations,
+    )
+    await javaStore.selectGlobal('/jdk25/bin/java')
+    assert.equal(javaStore.globalJava, '/jdk25/bin/java')
+    await javaStore.setEnabled(javaStore.runtimes[0])
+    assert.equal(javaStore.runtimes[0].is_enabled, false)
+    javaBackend.fail = true
+    await assert.rejects(javaStore.selectGlobal(null), /disk full/)
+    assert.equal(
+      javaStore.globalJava,
+      '/jdk25/bin/java',
+      'failed persistence must not change the displayed selection',
+    )
+    javaBackend.fail = false
+    let releaseJava
+    pauseJavaList = new Promise((resolve) => {
+      releaseJava = resolve
+    })
+    const staleJava = javaStore.load('/games/stale')
+    await javaStore.load('/games/current')
+    releaseJava([{ ...javaRuntime }])
+    await staleJava
+    assert.equal(
+      javaStore.instances['/games/stale'],
+      undefined,
+      'late responses do not overwrite the next instance',
+    )
+    assert.equal(javaStore.instances['/games/current'].preference.kind, 'global')
+    await javaStore.saveInstance('/games/current', {
+      preference: { kind: 'relative', relative_path: 'runtime/bin/java' },
+      ignore_compatibility: false,
+    })
+    assert.deepEqual(javaBackend.instances['/games/current'].preference, {
+      kind: 'relative',
+      relative_path: 'runtime/bin/java',
+    })
+    const combo = await renderToString(
+      createSSRApp({
+        render: () =>
+          h(PComboBox, {
+            options: [{ key: 'disabled', text: 'Disabled Java', disabled: true }],
+          }),
+      }),
+    )
+    assert.match(combo, /<option[^>]*value="disabled"[^>]*disabled/)
+  } finally {
+    window.__TAURI_INTERNALS__.invoke = originalInvoke
+  }
   const { useTaskManager, TaskStatus } = await server.ssrLoadModule('/src/stores/task.ts')
   const manager = useTaskManager()
   const { useFloatButton } = await server.ssrLoadModule('/src/composables/useFloatButton.ts')

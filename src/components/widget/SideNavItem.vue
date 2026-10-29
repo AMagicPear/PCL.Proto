@@ -2,6 +2,7 @@
 import type { INavItem } from '@/types/naviOptions'
 import { RouterLink } from 'vue-router'
 import { inject } from 'vue'
+import PSelectionIndicator from './PSelectionIndicator.vue'
 const runAction = inject<(kind: string) => void>('navAction')
 defineProps<INavItem>()
 </script>
@@ -14,17 +15,7 @@ defineProps<INavItem>()
       @click="clickCallback"
       :class="{ custom: !linkto }"
     >
-      <svg class="indicator" width="4" height="23" viewBox="0 0 4 23" v-if="linkto">
-        <line
-          x1="2"
-          y1="2"
-          x2="2"
-          y2="21"
-          stroke="currentColor"
-          stroke-width="4"
-          stroke-linecap="round"
-        />
-      </svg>
+      <PSelectionIndicator v-if="linkto" />
 
       <i class="side-nav-icon" v-if="icon"><icon /></i>
       <p>{{ text }}</p>
@@ -68,19 +59,6 @@ a.custom {
   /* left: 11px gap + 4px width */
   padding-inline-start: 15px;
   cursor: pointer;
-}
-
-.indicator {
-  visibility: hidden;
-  transform: scaleY(0);
-  transform-origin: center;
-  transition: none;
-}
-
-a.router-link-active .indicator {
-  visibility: visible;
-  transform: scaleY(1);
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .sidenav-line {

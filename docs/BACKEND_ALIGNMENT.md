@@ -69,7 +69,6 @@ Proto 实现：
 cargo test -p pcl-proto --lib core:: -- \
   --skip core::api_client::tests::forge_test \
   --skip core::api_client::tests::mc_manifest \
-  --skip core::java:: \
   --skip core::launcher::game_launch_test \
   --skip core::platform::read_header_test
 cargo test -p pcl-proto --lib util::file::path_tests
@@ -125,9 +124,44 @@ cargo test -p pcl-proto --lib official_large_client_range_smoke -- --ignored --n
 
 与 CE 的剩余差异：版本列表目前按偏好顺序超时/失败回退，尚未复刻 CE 的延时并行竞速；文件切换来源或整个传输重试会重新下载该文件，不持久化跨来源分段。没有新增 UI 取消入口、跨应用重启断点恢复或任意未知大小 URL 的通用下载入口。
 
+## 第三批：Java 管理、选择与多平台运行时
+
+参考 CE 的 `ModJava.cs`、`ModLaunch.cs`、`PageSetupJava.xaml.cs`、`PageInstanceSetup.xaml.cs`，以及 `PCL.Core/Minecraft/Java` 下的管理器、扫描器、解析器和用户偏好。保留 CE 的选择契约，将 Windows 路径与架构规则扩展至 macOS、Linux。
+
+本次 26.3 故障的直接原因是实际执行了 Java 21（最高 class 65），游戏要求 Java 25（class 69）。本机旧配置曾将 `/usr/bin/java` 缓存为 25，但实际探测为 Zulu 21.0.7；新逻辑只迁移旧选择路径，版本与架构重新从可执行文件读取。
+
+| 链路 | 当前行为 |
+| --- | --- |
+| 探测 | 执行 `-XshowSettings:properties -version`，旧 Java 回退 `-version`；校验真实版本、Java Home、架构和供应商，解析 Java 6/8 更新号及现代 EA 版本。处理系统 stub、wrapper、符号链接、Java 8 嵌套 JRE；超时 5 秒，输出有界且同步排空两个管道 |
+| 扫描 | 环境变量、PATH、系统 JVM 根、SDKMAN/asdf/jabba/mise、Minecraft 与启动器 runtime；Windows 追加注册表和 Store runtime，macOS 追加 JDK bundles、Applications、Homebrew。关键词遍历有深度限制并防链接循环；自动扫描间隔至少 13 秒，手动刷新强制重扫 |
+| 状态 | 统一 Rust 配置保存全局路径、运行时启用/禁用和实例偏好；扫描保留禁用状态与并发导入，失效项移除。配置写入临时文件后替换，序列化失败保留原文件；旧实例 localStorage 偏好只在没有新设置时迁移 |
+| 需求 | 原版/快照日期、OptiFine、Forge（含 Java 7 和 8u321 上限）、Fabric、LiteLoader、Cleanroom、LabyMod；读取 JSON `javaVersion`、非连续 `compatibleJavaMajors` 集合与 JAR `version.json`。仅为 Java 需求解析父版本元数据，并检查继承循环 |
+| 选择 | 实例指定/启动器目录内相对路径 → 全局指定 → 自动候选；每次选择重新探测实际 executable。自动候选按最低可接受 major、原生架构、JDK、供应商、最新补丁排序，禁用、失效或不能运行的候选不会启动 |
+| 手动覆盖 | 与当前 CE 一致：指定版本越界时警告后仍使用，忽略兼容性只跳过警告。CE 当前 `AutoSelect` 在启动选择时仍继续检查全局指定；实例 Auto 不会绕过全局手动覆盖 |
+| 补全 | 缺失时重扫；用户确认后按平台/架构及 Mojang component 下载，再重新选择。复用共享下载源、连接/带宽配额、大小/SHA-1 校验；独立 staging、失败/取消清理、Unix 执行权限与安全链接处理。旧 Java 和受限 Java 8 更新范围要求手动安装 |
+| 界面 | 全局自动/指定、导入、刷新、详情、打开目录、启用/禁用；实例全局/自动/相对/指定、忽略兼容性；32 位内存警告读取后端 Java 信息。启动前提供下载进度和取消，拒绝异步期间切换到其他实例后继续启动 |
+
+平台处理：Windows x86/x64/ARM64、macOS Intel/Apple Silicon、Linux x86/x64/ARM64 的本地 Java 均可识别，架构兼容性按实际主机 CPU 判断（包含 Rosetta/Windows 模拟下的启动器）。可运行性最终由实际执行验证。Mojang 当前没有 Linux ARM64 运行时，也未必提供每个平台的所有 Java major；这种情况明确提示手动安装，不使用其他架构冒充原生运行时。Linux ARM64 可导入本地 ARM64 Java。选择 ARM Java 并不代表实例已有的 native 库也已经匹配 ARM，二者联动仍属于后续启动链路工作。
+
+Java 验证：
+
+- 本轮 Rust 核心离线回归 47 项通过（其中 Java 18 项），另有配置回归 2 项、路径边界回归 1 项通过。Java 覆盖需求规则、major 集合、排序、缓存版本失真、手动越界警告、禁用/失效回退、别名去重、Java 6 回退、Java 8 JDK、相对路径与 manifest 链接边界、继承循环、扫描目录布局、探测大输出/超时，以及模拟 HTTP 完整安装、错误散列和取消清理。`pnpm ui:build` 通过。
+- 配置回归覆盖旧字段迁移、不覆盖新偏好、保存失败保留旧文件；前端真实 Pinia store 的模拟 IPC 回归覆盖迁移、持久化、保存失败、迟到请求隔离、相对路径和禁用候选。
+- macOS ARM64 本机只读扫描通过，识别本地 Java 8、17、21，以及用户 Applications 中 Rider 自带的 Java 25.0.2。官方 ARM64 Java 25.0.1 已在独立临时目录完整下载、校验、执行并清理，报告原生架构兼容；没有改写用户启动器配置。
+- Chrome 使用真实 Vue 组件与模拟 Tauri IPC，检查全局选择、启用/禁用、实例选项和相对路径保存；这不等于原生 Tauri 验收。
+- Windows/Linux/macOS 构建矩阵已加入 Java 和配置测试；尚未执行远端 CI。本机 Windows 交叉检查在下载目标依赖阶段受阻，没有取得 Windows 编译结果。
+
+显式只读/实网检查：
+
+```sh
+cargo test -p pcl-proto --lib setup::java_config_tests
+cargo test -p pcl-proto --lib native_java_discovery_smoke -- --ignored --nocapture
+cargo test -p pcl-proto --lib official_native_java25_install_smoke -- --ignored --nocapture
+```
+
 ## 当前边界与下一批
 
-本批没有验证真实游戏进程启动，也没有完成现代 `arguments.game/jvm`、旧 `minecraftArguments`、版本继承、Java 版本/架构选择和实例隔离的整体迁移。旧版 x64 native 在 ARM 主机上能下载和解压，并不代表能用 ARM Java 启动。BMCLAPI 的地址转换有离线测试，但没有进行 BMCLAPI 真实服务安装验收；分段下载、会话内续传和下载源降级见第二批；版本列表竞速、UI 用户取消及应用崩溃后的安装恢复尚未实现。新安装拒绝覆盖已有目录，原地修复另做明确入口。
+本批没有验证真实游戏进程启动，也没有完成现代 `arguments.game/jvm`、旧 `minecraftArguments`、通用版本继承、native 与所选 Java 架构联动和实例隔离的整体迁移。Java 管理与选择见第三批。旧版 x64 native 在 ARM 主机上能下载和解压，并不代表能用 ARM Java 启动。BMCLAPI 的地址转换有离线测试，但没有进行 BMCLAPI 真实服务安装验收；分段下载、会话内续传和下载源降级见第二批；版本列表竞速、Minecraft 安装的 UI 用户取消及应用崩溃后的安装恢复尚未实现。新安装拒绝覆盖已有目录，原地修复另做明确入口。
 
 后续按依赖推进：
 
@@ -136,4 +170,4 @@ cargo test -p pcl-proto --lib official_large_client_range_smoke -- --ignored --n
 3. **配置和账户**：将前端偏好映射到 Rust 配置、处理持久化和重置，分离账户展示数据与凭据，再接微软 OAuth/令牌刷新及外置登录。
 4. **资源与整合包**：将 Modrinth/其他来源的检索接到真实文件安装、依赖解析、更新及收藏批量操作，之后接整合包导入/导出和存档操作。
 
-Windows/Linux 真实桌面行为、macOS WebView 安装交互、Java 扫描、账户认证和联机仍需各自验收，不能用本批 Rust 服务测试代替。
+Windows/Linux 真实桌面行为与 Java 扫描、macOS WebView 安装交互、账户认证和联机仍需各自验收，不能用本批 Rust 服务测试代替。

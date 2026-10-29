@@ -298,13 +298,6 @@ watch(versionId, (id) => {
 .version-list {
   padding: 0 18px 12px 20px;
 }
-.version-list :deep(.gameinfo-container:hover .version-actions),
-.version-list :deep(.gameinfo-container:focus-within .version-actions) {
-  opacity: 1;
-  pointer-events: auto;
-  transition-duration: 84ms;
-  transition-delay: 36ms;
-}
 .instance-name-row {
   display: flex;
   align-items: center;

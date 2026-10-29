@@ -4,7 +4,6 @@
 // |  __/| |___| |___ _|  __/| | | (_) | || (_) |
 // |_|    \____|_____(_)_|   |_|  \___/ \__\___/
 //
-use crate::core::java::JavaRuntimeVecExt;
 use setup::AppState;
 use std::sync::Arc;
 use tauri::Manager;
@@ -52,8 +51,9 @@ pub fn run() {
             // window.on_navigation(move |url| {});
             // search for Java during init
             tauri::async_runtime::spawn(async move {
-                let java_runtimes = core::java::JavaRuntime::search().await;
-                java_runtimes.patch_state().await;
+                if let Err(error) = core::java::refresh(false).await {
+                    log::error!("Java scan failed: {error}");
+                }
             });
             Ok(())
         })
@@ -65,6 +65,15 @@ pub fn run() {
             commands::add_java,
             commands::get_java_list,
             commands::refresh_java_list,
+            commands::get_java_settings,
+            commands::set_global_java,
+            commands::set_java_enabled,
+            commands::set_instance_java_settings,
+            commands::select_relative_java,
+            commands::open_java_folder,
+            commands::prepare_game_java,
+            commands::download_game_java,
+            commands::cancel_java_download,
             commands::get_repositories,
             commands::select_repository,
             commands::add_new_repository,
