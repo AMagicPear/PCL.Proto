@@ -166,6 +166,8 @@ try {
   })
   const { useTaskManager, TaskStatus } = await server.ssrLoadModule('/src/stores/task.ts')
   const manager = useTaskManager()
+  const { useFloatButton } = await server.ssrLoadModule('/src/composables/useFloatButton.ts')
+  const button = useFloatButton().floatButtonState
   const clientDownload = manager.exportMinecraftVersion('1.21.1', '/exports', false)
   const serverDownload = manager.exportMinecraftVersion('1.21.1', '/exports', true)
   assert.equal(manager.activeTaskCount, 2)
@@ -188,6 +190,7 @@ try {
   })
   assert.equal(manager.tasks[0].progress, 0.25)
   assert.equal(manager.tasks[1].progress, 0)
+  assert.equal(manager.totalSpeed, 100)
   calls[0].resolve('/exports/1.21.1')
   assert.equal(await clientDownload, '/exports/1.21.1')
   assert.equal(manager.tasks[0].status, TaskStatus.Completed)
@@ -195,14 +198,67 @@ try {
   await assert.rejects(serverDownload, /SHA-1/)
   assert.equal(manager.tasks[1].status, TaskStatus.Failed)
   assert.equal(manager.activeTaskCount, 0)
+  assert.equal(manager.totalSpeed, 0)
+  assert.equal(manager.totalRemaining, 0)
+  assert.match(manager.tasks[1].error, /SHA-1/)
   const install = manager.startDownloadMCVersion('1.21.1', 'instance')
   assert.equal(manager.tasks[2].items.length, 4)
   assert.equal(calls[2].command, 'download_minecraft_version')
   assert.equal(calls[2].args.instance_name, 'instance')
-  calls[2].resolve()
-  await install
+  assert.equal(button.visible, true)
+  for (let item = 0; item < 4; item++) {
+    calls[2].args.on_event.onmessage({
+      task_id: 2,
+      item_id: item,
+      files_remaining: 0,
+      progress: 1,
+      status: TaskStatus.Completed,
+      speed: 0,
+    })
+  }
+  assert.equal(
+    manager.tasks[2].status,
+    TaskStatus.Running,
+    'downloaded files must wait for native extraction and instance publication',
+  )
+  const failed = assert.rejects(install, /native extraction failed/)
+  calls[2].reject(new Error('native extraction failed'))
+  await failed
+  assert.equal(manager.tasks[2].status, TaskStatus.Failed)
+  assert.match(manager.tasks[2].error, /native extraction failed/)
+  calls[2].args.on_event.onmessage({
+    task_id: 2,
+    item_id: 0,
+    files_remaining: 1,
+    progress: 0.5,
+    status: TaskStatus.Running,
+    speed: 500,
+  })
+  assert.equal(manager.totalSpeed, 0, 'late IPC cannot restart terminal tasks')
+  const nextInstall = manager.startDownloadMCVersion('1.21.1', 'second')
+  const concurrent = manager.startDownloadMCVersion('1.21.1', 'third')
+  calls[3].args.on_event.onmessage({
+    task_id: 4,
+    item_id: 1,
+    files_remaining: 1,
+    progress: 0.5,
+    status: TaskStatus.Failed,
+    speed: 0,
+  })
+  assert.equal(manager.tasks[3].items[1].status, TaskStatus.Pending, 'IPC IDs stay isolated')
+  calls[3].resolve()
+  await nextInstall
+  assert.equal(manager.tasks[3].status, TaskStatus.Completed)
+  assert.equal(manager.tasks[3].progress, 1)
+  assert.equal(button.visible, true, 'another installation is still running')
+  calls[4].resolve()
+  await concurrent
+  assert.equal(manager.tasks[4].status, TaskStatus.Completed)
+  assert.equal(manager.totalSpeed, 0)
+  assert.equal(manager.totalRemaining, 0)
+  assert.equal(button.visible, false)
   console.log(
-    'Version action buttons, export IPC, progress, duplicate prevention and download failure checks passed.',
+    'Version actions, IPC isolation, download progress, publication failures and concurrent tasks passed.',
   )
   console.log(
     'Component attributes, labels, settings persistence/reset and instance isolation passed.',

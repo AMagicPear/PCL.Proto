@@ -5,7 +5,6 @@
 // |_|    \____|_____(_)_|   |_|  \___/ \__\___/
 //
 use crate::core::java::JavaRuntimeVecExt;
-use core::downloader;
 use setup::AppState;
 use std::sync::Arc;
 use tauri::Manager;
@@ -65,6 +64,7 @@ pub fn run() {
             commands::get_java_list,
             commands::refresh_java_list,
             commands::get_repositories,
+            commands::select_repository,
             commands::add_new_repository,
             commands::get_account,
             commands::get_instances_in_repository,
@@ -73,7 +73,7 @@ pub fn run() {
             commands::handle_clicked_on_version,
             core::version_export::export_minecraft_version,
             core::version_export::open_minecraft_wiki,
-            downloader::minecraft_resource::download_minecraft_version,
+            core::installer::download_minecraft_version,
             commands::get_plugin_versions,
             commands::get_active_instance,
             util::server_query::server_query,

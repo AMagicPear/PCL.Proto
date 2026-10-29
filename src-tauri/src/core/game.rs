@@ -1,4 +1,8 @@
-use std::{fs, path::PathBuf, sync::Arc};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use crate::core::{
     api_client::game::VersionDetails, java::JavaRuntime, launcher::GameLaunchError,
@@ -34,21 +38,15 @@ pub enum GameInstanceError {
 
 impl GameInstance {
     pub fn from_version_folder(
-        version_folder: &PathBuf,
+        version_folder: &Path,
         repo: &GameRepository,
     ) -> Result<Self, GameInstanceError> {
         let folder_name = version_folder
             .file_name()
             .and_then(|name| name.to_str())
             .ok_or(GameInstanceError::InvalidVersionFolder)?;
-        let entries: fs::ReadDir =
-            fs::read_dir(version_folder).map_err(|_| GameInstanceError::InvalidVersionFolder)?;
-        let mut json_files = entries
-            .filter_map(|entry| entry.ok())
-            .filter(|entry| entry.path().extension().map_or(false, |ext| ext == "json"));
-
-        if let Some(json_path) = crate::util::file::find_file_of_name(&mut json_files, folder_name)
-        {
+        let json_path = version_folder.join(format!("{folder_name}.json"));
+        if json_path.is_file() {
             let json_reader =
                 fs::File::open(&json_path).map_err(|_| GameInstanceError::InvalidVersionJson)?;
             let json_content: serde_json::Value = serde_json::from_reader(json_reader)
@@ -61,6 +59,8 @@ impl GameInstance {
             } else {
                 folder_name // use folder name as jar name if there is no jar name in json file
             };
+            crate::util::file::validate_file_name(jar_name)
+                .map_err(|_| GameInstanceError::InvalidVersionJar)?;
             let jar_path = version_folder.join(format!("{}.jar", jar_name));
             if !jar_path.exists() {
                 log::error!("jar file not found in folder: {:?}", jar_path);
@@ -79,11 +79,14 @@ impl GameInstance {
                     None
                 }
             };
-            let version = version.unwrap_or(id).to_string();
-            return Ok(GameInstance {
+            let version = version
+                .or_else(|| json_content["clientVersion"].as_str())
+                .unwrap_or(id)
+                .to_string();
+            Ok(GameInstance {
                 id: id.to_string(),
                 name: folder_name.to_string(),
-                directory: version_folder.clone(),
+                directory: version_folder.to_path_buf(),
                 jar_path,
                 version,
                 json_path,
@@ -91,10 +94,10 @@ impl GameInstance {
                 game_java: GameJava::Default,
                 global_dir: repo.path.clone(),
                 plugin_type: PluginType::default(),
-            });
+            })
         } else {
             log::error!("version json not found in folder: {:?}", version_folder);
-            return Err(GameInstanceError::InvalidVersionJson);
+            Err(GameInstanceError::InvalidVersionJson)
         }
     }
 

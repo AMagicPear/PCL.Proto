@@ -12,48 +12,6 @@ export enum TaskStatus {
 }
 type DownloadKind = 'install' | 'client' | 'server'
 
-export class Task {
-  id: number
-  versionId: string
-  status: TaskStatus
-  speed: number
-  items: TaskItem[]
-  progress: number
-  kind: DownloadKind
-
-  get name() {
-    return pclText(
-      this.kind === 'server'
-        ? 'Minecraft.Download.Stage.MinecraftServerDownload'
-        : 'Proto.Task.Download',
-      [this.versionId],
-    )
-  }
-
-  constructor(id: number, version_id: string, kind: DownloadKind = 'install') {
-    this.id = id
-    this.versionId = version_id
-    this.kind = kind
-    this.status = TaskStatus.Pending
-    this.speed = 0
-    this.items = [
-      new TaskItem(0, 'Proto.Task.Manifest', id, 1),
-      new TaskItem(
-        1,
-        kind === 'server' ? 'Minecraft.Download.Stage.DownloadServerFile' : 'Proto.Task.Client',
-        id,
-        1,
-      ),
-    ]
-    if (kind === 'install')
-      this.items.push(
-        new TaskItem(2, 'Proto.Task.Libraries', id),
-        new TaskItem(3, 'Minecraft.Download.Stage.DownloadAssets', id),
-      )
-    this.progress = 0
-  }
-}
-
 export interface ITaskItem {
   id: number
   task_id: number
@@ -64,35 +22,16 @@ export interface ITaskItem {
   remaining: number | undefined
 }
 
-class TaskItem implements ITaskItem {
+interface Task {
   id: number
-  task_id: number
-  nameKey: string
+  versionId: string
+  name: string
+  kind: DownloadKind
   status: TaskStatus
-  speed: number | null
+  speed: number
+  items: ITaskItem[]
   progress: number
-  remaining: number | undefined
-
-  get name() {
-    return pclText(this.nameKey)
-  }
-
-  constructor(id: number, name: string, task_id: number, files_num?: number) {
-    this.id = id
-    this.nameKey = name
-    this.task_id = task_id
-    this.status = TaskStatus.Pending
-    this.progress = 0
-    this.remaining = files_num
-    this.speed = null
-  }
-
-  update(event: TaskItemReport) {
-    this.status = event.status
-    this.progress = event.progress
-    this.remaining = event.files_remaining
-    this.speed = event.speed
-  }
+  error: string
 }
 
 interface TaskItemReport {
@@ -104,114 +43,145 @@ interface TaskItemReport {
   speed: number | null
 }
 
+function createTask(id: number, versionId: string, kind: DownloadKind): Task {
+  const keys = [
+    'Minecraft.Download.Stage.VanillaJsonDownload',
+    kind === 'server'
+      ? 'Minecraft.Download.Stage.DownloadServerFile'
+      : 'Minecraft.Download.Stage.DownloadCoreJar',
+  ]
+  if (kind === 'install')
+    keys.push(
+      'Minecraft.Download.Stage.VanillaLibrariesDownload',
+      'Minecraft.Download.Stage.DownloadVanillaAssets',
+    )
+  return {
+    id,
+    versionId,
+    kind,
+    get name() {
+      return pclText(
+        kind === 'server'
+          ? 'Minecraft.Download.Stage.MinecraftServerDownload'
+          : 'Minecraft.Download.Stage.MinecraftDownload',
+        [versionId],
+      )
+    },
+    status: TaskStatus.Running,
+    speed: 0,
+    progress: 0,
+    error: '',
+    items: keys.map((key, itemId) => ({
+      id: itemId,
+      task_id: id,
+      get name() {
+        return pclText(key)
+      },
+      status: TaskStatus.Pending,
+      speed: 0,
+      progress: 0,
+      remaining: undefined,
+    })),
+  }
+}
+
+function isActive(task: Task) {
+  return task.status === TaskStatus.Pending || task.status === TaskStatus.Running
+}
+
 export const useTaskManager = defineStore('task-manager', () => {
   const tasks = ref<Task[]>([])
-  let current_taskid = -1
+  let nextTaskId = 0
+  const activeTasks = computed(() => tasks.value.filter(isActive))
   const totalProgress = computed(() => {
+    const visible = activeTasks.value.length ? activeTasks.value : tasks.value
     return (
-      (tasks.value.reduce((acc, task) => {
-        return acc + task.progress
-      }, 0) /
-        (tasks.value.length || 1)) *
-      100
+      (100 * visible.reduce((sum, task) => sum + task.progress, 0)) /
+      (visible.length || 1)
     ).toFixed(2)
   })
-  const totalSpeed = computed(() => {
-    return tasks.value.reduce((acc, task) => {
-      return acc + task.speed
-    }, 0)
-  })
-  const totalRemaining = computed(() => {
-    return tasks.value.reduce((acc, task) => {
-      return acc + task.items.reduce((sum, item) => sum + (item.remaining || 0), 0)
-    }, 0)
-  })
-  const activeTaskCount = computed(() => {
-    return tasks.value.filter(
-      (task) => task.status !== TaskStatus.Completed && task.status !== TaskStatus.Failed,
-    ).length
-  })
+  const totalSpeed = computed(() => activeTasks.value.reduce((sum, task) => sum + task.speed, 0))
+  const totalRemaining = computed(() =>
+    activeTasks.value.reduce(
+      (sum, task) => sum + task.items.reduce((count, item) => count + (item.remaining || 0), 0),
+      0,
+    ),
+  )
+  const activeTaskCount = computed(() => activeTasks.value.length)
   const floatButton = useFloatButton()
 
   async function runDownload(
-    version_id: string,
+    versionId: string,
     command: string,
     args: Record<string, unknown>,
     kind: DownloadKind,
   ) {
-    const newTask = new Task(++current_taskid, version_id, kind)
-    tasks.value.push(newTask)
+    const id = nextTaskId++
+    tasks.value.push(createTask(id, versionId, kind))
+    const task = tasks.value.find((item) => item.id === id)!
+    floatButton.setFloatButton(FloatButtonType.TaskManage)
+    floatButton.floatButtonState.visible = true
     const onEvent = new Channel<TaskItemReport>()
     onEvent.onmessage = (message) => {
-      const taskToUpdate = tasks.value[message.task_id]
-      if (
-        taskToUpdate &&
-        taskToUpdate.status !== TaskStatus.Failed &&
-        taskToUpdate.status !== TaskStatus.Completed
-      ) {
-        const itemToUpdate = taskToUpdate.items[message.item_id]
-        if (itemToUpdate) {
-          itemToUpdate.update(message)
-          if (taskToUpdate.items.every((item) => item.status === TaskStatus.Completed)) {
-            taskToUpdate.status = TaskStatus.Completed
-          }
-          taskToUpdate.progress =
-            taskToUpdate.items.reduce((total, item) => total + item.progress, 0) /
-            taskToUpdate.items.length
-          taskToUpdate.speed = taskToUpdate.items.reduce(
-            (total, item) => total + (item.speed || 0),
-            0,
-          )
-        }
-      }
+      if (message.task_id !== id || !isActive(task)) return
+      const item = task.items.find((item) => item.id === message.item_id)
+      if (!item) return
+      item.status = message.status
+      item.progress = Number.isFinite(message.progress)
+        ? Math.max(0, Math.min(1, message.progress))
+        : 0
+      item.remaining = message.files_remaining
+      item.speed =
+        message.status === TaskStatus.Running && Number.isFinite(message.speed)
+          ? Math.max(0, message.speed || 0)
+          : 0
+      task.progress = task.items.reduce((sum, item) => sum + item.progress, 0) / task.items.length
+      task.speed = task.items.reduce((sum, item) => sum + (item.speed || 0), 0)
+      // File stages can finish before native extraction and instance publication.
+      // Only the command result commits the overall task to a terminal state.
     }
     try {
       const result = await invoke<string | void>(command, {
         ...args,
         on_event: onEvent,
-        version_id,
-        task_id: newTask.id,
+        version_id: versionId,
+        task_id: id,
       })
-      if (kind !== 'install') {
-        const completed = tasks.value.find((task) => task.id === newTask.id)!
-        completed.status = TaskStatus.Completed
-        completed.progress = 1
-        completed.speed = 0
-        completed.items.forEach((item) => {
-          item.status = TaskStatus.Completed
-          item.progress = 1
-          item.speed = 0
-          item.remaining = 0
-        })
-      }
+      task.status = TaskStatus.Completed
+      task.progress = 1
+      task.items.forEach((item) => {
+        item.status = TaskStatus.Completed
+        item.progress = 1
+        item.remaining = 0
+        item.speed = 0
+      })
       return result
-    } catch (err) {
-      const failedTask = tasks.value.find((task) => task.id === newTask.id)!
-      failedTask.status = TaskStatus.Failed
-      failedTask.items
-        .filter((item) => item.status !== TaskStatus.Completed)
-        .forEach((item) => (item.status = TaskStatus.Failed))
-      throw err
+    } catch (error) {
+      task.status = TaskStatus.Failed
+      task.error = String(error)
+      task.items.forEach((item) => {
+        if (item.status !== TaskStatus.Completed) item.status = TaskStatus.Failed
+        item.speed = 0
+      })
+      throw error
     } finally {
-      if (activeTaskCount.value <= 0) floatButton.floatButtonState.visible = false
+      task.speed = 0
+      if (!activeTaskCount.value) floatButton.floatButtonState.visible = false
     }
   }
 
-  async function startDownloadMCVersion(version_id: string, instance_name: string) {
-    await runDownload(version_id, 'download_minecraft_version', { instance_name }, 'install')
+  function startDownloadMCVersion(versionId: string, instanceName: string) {
+    return runDownload(
+      versionId,
+      'download_minecraft_version',
+      { instance_name: instanceName },
+      'install',
+    )
   }
 
-  function exportMinecraftVersion(version_id: string, directory: string, server: boolean) {
+  function exportMinecraftVersion(versionId: string, directory: string, server: boolean) {
     const kind = server ? 'server' : 'client'
-    if (
-      tasks.value.some(
-        (task) =>
-          task.versionId === version_id &&
-          task.kind === kind &&
-          task.status !== TaskStatus.Completed &&
-          task.status !== TaskStatus.Failed,
-      )
-    )
+    if (activeTasks.value.some((task) => task.versionId === versionId && task.kind === kind))
       throw new Error(
         pclText(
           server
@@ -219,9 +189,7 @@ export const useTaskManager = defineStore('task-manager', () => {
             : 'Minecraft.Download.Error.InstanceDownloading',
         ),
       )
-    floatButton.setFloatButton(FloatButtonType.TaskManage)
-    floatButton.floatButtonState.visible = true
-    return runDownload(version_id, 'export_minecraft_version', { directory, server }, kind)
+    return runDownload(versionId, 'export_minecraft_version', { directory, server }, kind)
   }
 
   return {
@@ -229,8 +197,8 @@ export const useTaskManager = defineStore('task-manager', () => {
     totalProgress,
     totalSpeed,
     totalRemaining,
+    activeTaskCount,
     startDownloadMCVersion,
     exportMinecraftVersion,
-    activeTaskCount,
   }
 })

@@ -1,8 +1,5 @@
 use super::{
-    api_client::{
-        MinecraftApiClient,
-        game::{DownloadInfo, VERSION_MANIFEST_ENDPOINT, VersionManifest},
-    },
+    api_client::{MinecraftApiClient, game::DownloadInfo},
     downloader::{DownloadConfig, Downloader, TaskItemReport, TaskStatus},
 };
 use anyhow::{Context, bail, ensure};
@@ -91,10 +88,10 @@ async fn download_jar(
     path: PathBuf,
     task_id: i32,
     on_event: &Channel<TaskItemReport>,
+    downloader: &Downloader,
 ) -> anyhow::Result<()> {
     let size = info.size;
     let (tx, mut rx) = mpsc::channel(100);
-    let downloader = Downloader::new();
     let download = downloader.start_download(
         DownloadConfig {
             file_index: 0,
@@ -175,15 +172,7 @@ async fn export_version(
         "Destination already exists: {}",
         destination.display()
     );
-    let manifest: VersionManifest = client
-        .get_with_endpoint(VERSION_MANIFEST_ENDPOINT, true)
-        .await?;
-    let version = manifest
-        .versions
-        .iter()
-        .find(|version| version.id == version_id)
-        .context("Minecraft version not found")?;
-    let metadata: serde_json::Value = client.get(&version.url, false).await?;
+    let metadata = client.get_version_metadata(version_id).await?;
     let info = download_info(&metadata, version_id, server)?;
     let staging =
         ExportDirectory::create(directory.join(format!(".pcl-export-{}", uuid::Uuid::new_v4())))?;
@@ -200,7 +189,15 @@ async fn export_version(
     } else {
         format!("{version_id}.jar")
     };
-    download_jar(info, staging.path.join(&jar_name), task_id, &on_event).await?;
+    let downloader = Downloader::with_bases(client.api_bases_async().await);
+    download_jar(
+        info,
+        staging.path.join(&jar_name),
+        task_id,
+        &on_event,
+        &downloader,
+    )
+    .await?;
     if server {
         fs::write(
             staging.path.join("Launch Server.bat"),
@@ -472,6 +469,7 @@ mod tests {
             directory.path.join("test.jar"),
             7,
             &Channel::new(|_| Ok(())),
+            &Downloader::default(),
         )
         .await;
         server.join().unwrap();

@@ -1,42 +1,18 @@
-//! The downloader mod.
-//! Designed for Minecraft version and mod downloads.
-//! Supports mutli task parallel and mspc channel.
-use crate::{
-    core::api_client::{
-        McApiError,
-        game::{DownloadInfo, VersionDetails},
-    },
-    setup::{ConfigManager, constants::USER_AGENT},
-    util::file,
-};
-use dashmap::DashMap;
+//! Verified file transfers shared by installation and client/server export.
+use super::api_client::{McApiError, game::DownloadInfo};
+use crate::setup::constants::USER_AGENT;
 use futures_util::StreamExt;
-use reqwest::Client;
+use sha1::Digest;
 use std::{
-    fs,
     path::{Path, PathBuf},
-    sync::Arc,
+    time::Duration,
 };
-use tokio::{
-    io::AsyncWriteExt,
-    sync::{Mutex, mpsc},
-};
+use tokio::{io::AsyncWriteExt, sync::mpsc};
 
-// ---------------- 🌟 Progress Types 🌟 ----------------
-
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug, Clone, Copy)]
 pub struct FileProgress {
     pub downloaded_bytes: u64,
     pub status: TaskStatus,
-}
-
-impl Default for FileProgress {
-    fn default() -> Self {
-        Self {
-            downloaded_bytes: 0,
-            status: TaskStatus::Pending,
-        }
-    }
 }
 
 #[derive(PartialEq, Debug, serde_repr::Serialize_repr, Default, Clone, Copy)]
@@ -49,16 +25,13 @@ pub enum TaskStatus {
     Failed = 3,
 }
 
-/// inner progress update structure
+#[derive(Debug)]
 pub struct ProgressUpdate {
     pub file_index: usize,
     pub progress: FileProgress,
     pub item_id: i32,
 }
 
-// ---------------- 🌟 Downloader 🌟 ----------------
-
-/// options to perform a download action
 pub struct DownloadConfig {
     pub file_index: usize,
     pub out_path: PathBuf,
@@ -66,535 +39,379 @@ pub struct DownloadConfig {
     pub info: DownloadInfo,
 }
 
-/// one file to be downloaded in the TaskItem files
-#[derive(serde::Serialize)]
-pub struct DownloadFile {
-    progress: FileProgress,
-    info: DownloadInfo,
+/// Removes incomplete transfers on errors and when their futures are cancelled.
+struct PartialFile(PathBuf);
+impl Drop for PartialFile {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
 }
+
 #[derive(Clone)]
 pub struct Downloader {
-    client: Client,
+    client: reqwest::Client,
+    bases: super::api_client::ApiBases,
+}
+
+impl Default for Downloader {
+    fn default() -> Self {
+        Self::with_bases(super::api_client::ApiBases::new(
+            &super::api_client::ApiProvider::Official,
+        ))
+    }
 }
 
 impl Downloader {
-    pub fn new() -> Self {
+    pub fn with_bases(bases: super::api_client::ApiBases) -> Self {
         Self {
-            client: Client::builder().user_agent(USER_AGENT).build().unwrap(),
+            bases,
+            client: reqwest::Client::builder()
+                .user_agent(USER_AGENT)
+                .connect_timeout(Duration::from_secs(15))
+                .read_timeout(Duration::from_secs(30))
+                .build()
+                .expect("static HTTP client configuration"),
         }
     }
 
-    /// start downloading a single file
     pub async fn start_download(
         &self,
         options: DownloadConfig,
         progress_tx: mpsc::Sender<ProgressUpdate>,
     ) -> Result<(), McApiError> {
-        progress_tx
-            .send(ProgressUpdate {
-                file_index: options.file_index,
-                progress: FileProgress {
-                    downloaded_bytes: 0,
-                    status: TaskStatus::Pending,
-                },
-                item_id: options.task_item_id,
-            })
-            .await?;
-        if let Ok(true) = file::check_sha1(&options.out_path, &options.info.sha1) {
-            log::debug!("file exists, skip {:?}", options.out_path);
-            progress_tx
-                .send(ProgressUpdate {
-                    file_index: options.file_index,
-                    progress: FileProgress {
-                        downloaded_bytes: 0,
-                        status: TaskStatus::Completed,
-                    },
-                    item_id: options.task_item_id,
-                })
-                .await?;
-            return Ok(());
-        } else {
-            let mut retries: u8 = 3;
-            while retries > 0 {
-                self.http_download_inner(&options, progress_tx.clone())
-                    .await?;
-                if file::check_sha1(&options.out_path, &options.info.sha1)? {
-                    progress_tx
-                        .send(ProgressUpdate {
-                            file_index: options.file_index,
-                            progress: FileProgress {
-                                downloaded_bytes: options.info.size,
-                                status: TaskStatus::Completed,
-                            },
-                            item_id: options.task_item_id,
-                        })
-                        .await?;
-                    return Ok(());
-                }
-                log::warn!(
-                    "sha1 mismatch, file: {:?}, retry remaining: {}",
-                    options.info.path,
-                    retries
-                );
-                retries -= 1;
-            }
-        }
-        progress_tx
-            .send(ProgressUpdate {
-                file_index: options.file_index,
-                progress: FileProgress {
-                    downloaded_bytes: 0,
-                    status: TaskStatus::Failed,
-                },
-                item_id: options.task_item_id,
-            })
-            .await?;
-        return Err(McApiError::Sha1Mismatch(options.out_path));
+        let result = self
+            .transfer(
+                &options.info,
+                &options.out_path,
+                Some((&options, &progress_tx)),
+            )
+            .await;
+        report(
+            Some((&options, &progress_tx)),
+            result.as_ref().copied().unwrap_or(0),
+            if result.is_ok() {
+                TaskStatus::Completed
+            } else {
+                TaskStatus::Failed
+            },
+        )
+        .await;
+        result.map(|_| ())
     }
 
-    /// the actual process of downloading a single file
-    async fn http_download_inner(
+    pub async fn download(&self, info: &DownloadInfo, path: &Path) -> Result<(), McApiError> {
+        self.transfer(info, path, None).await.map(|_| ())
+    }
+
+    async fn transfer(
         &self,
-        option: &DownloadConfig,
-        progress_tx: mpsc::Sender<ProgressUpdate>,
+        info: &DownloadInfo,
+        path: &Path,
+        progress: Option<(&DownloadConfig, &mpsc::Sender<ProgressUpdate>)>,
+    ) -> Result<u64, McApiError> {
+        if !super::minecraft::valid_sha1(&info.sha1) {
+            return Err(McApiError::InvalidMetadata("Invalid download SHA-1".into()));
+        }
+        report(progress, 0, TaskStatus::Pending).await;
+        let cached_path = path.to_owned();
+        let expected = info.clone();
+        let cached = tokio::task::spawn_blocking(move || {
+            std::fs::metadata(&cached_path).is_ok_and(|m| m.len() == expected.size)
+                && crate::util::file::check_sha1(&cached_path, &expected.sha1.to_ascii_lowercase())
+                    .unwrap_or(false)
+        })
+        .await
+        .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
+        if cached {
+            return Ok(0);
+        }
+        let parent = path
+            .parent()
+            .ok_or_else(|| McApiError::InvalidMetadata("Missing destination parent".into()))?;
+        tokio::fs::create_dir_all(parent).await?;
+        for attempt in 0..3 {
+            report(progress, 0, TaskStatus::Running).await;
+            match self.transfer_once(info, path, progress).await {
+                Ok(()) => return Ok(info.size),
+                Err(error) => {
+                    let permanent = matches!(&error, McApiError::RequestError(e)
+                        if e.status().is_some_and(|s| s.is_client_error() && s.as_u16() != 408 && s.as_u16() != 429));
+                    if attempt == 2 || permanent {
+                        return Err(error);
+                    }
+                    log::warn!(
+                        "Download failed for {} (attempt {}): {error}",
+                        path.display(),
+                        attempt + 1
+                    );
+                    tokio::time::sleep(Duration::from_millis(250 * (1 << attempt))).await;
+                }
+            }
+        }
+        unreachable!("bounded retry loop always returns")
+    }
+
+    async fn transfer_once(
+        &self,
+        info: &DownloadInfo,
+        path: &Path,
+        progress: Option<(&DownloadConfig, &mpsc::Sender<ProgressUpdate>)>,
     ) -> Result<(), McApiError> {
         let response = self
             .client
-            .get(&option.info.url)
+            .get(self.bases.download_url(&info.url))
             .send()
             .await?
             .error_for_status()?;
-        let parent_path = option.out_path.parent().unwrap();
-        if !parent_path.is_dir() {
-            fs::create_dir_all(parent_path)?;
-        }
-        let mut file = tokio::fs::File::create(&option.out_path).await?;
+        let partial = PartialFile(
+            path.with_file_name(format!(".pcl-download-{}.part", uuid::Uuid::new_v4())),
+        );
+        let mut output = tokio::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&partial.0)
+            .await?;
         let mut stream = response.bytes_stream();
-        let mut downloaded: u64 = 0;
+        let mut hasher = sha1::Sha1::new();
+        let mut bytes = 0_u64;
+        let mut last_report = tokio::time::Instant::now();
         while let Some(chunk) = stream.next().await {
             let chunk = chunk?;
-            file.write_all(&chunk).await?;
-            downloaded += chunk.len() as u64;
-            progress_tx
-                .send(ProgressUpdate {
-                    file_index: option.file_index,
-                    progress: FileProgress {
-                        downloaded_bytes: downloaded,
-                        status: TaskStatus::Running,
-                    },
-                    item_id: option.task_item_id,
-                })
-                .await?;
+            bytes += chunk.len() as u64;
+            if bytes > info.size {
+                return Err(McApiError::InvalidMetadata(format!(
+                    "Download exceeds expected size: {}",
+                    path.display()
+                )));
+            }
+            output.write_all(&chunk).await?;
+            hasher.update(&chunk);
+            if last_report.elapsed() >= Duration::from_millis(100) {
+                report(progress, bytes, TaskStatus::Running).await;
+                last_report = tokio::time::Instant::now();
+            }
         }
-        file.flush().await?;
-        file.sync_data().await?;
+        if bytes != info.size {
+            return Err(McApiError::InvalidMetadata(format!(
+                "Download size mismatch: {}",
+                path.display()
+            )));
+        }
+        if !format!("{:x}", hasher.finalize()).eq_ignore_ascii_case(&info.sha1) {
+            return Err(McApiError::Sha1Mismatch(path.to_owned()));
+        }
+        output.flush().await?;
+        output.sync_all().await?;
+        drop(output);
+        tokio::fs::rename(&partial.0, path).await?;
         Ok(())
     }
-
-    /// simply download a file and check its sha1
-    async fn download_without_report(
-        &self,
-        info: &DownloadInfo,
-        base_path: &Path,
-    ) -> Result<PathBuf, McApiError> {
-        let response = self.client.get(&info.url).send().await?;
-        let bytes = response.bytes().await?;
-        let out_path = base_path.join(
-            info.path
-                .as_deref()
-                .unwrap_or(info.url.split('/').last().unwrap_or(&info.url).into()),
-        );
-        // return directly if there is already the right file
-        if let Ok(true) = file::check_sha1(&out_path, &info.sha1) {
-            return Ok(out_path);
-        }
-        let parent_path = out_path.parent().unwrap();
-        if !parent_path.is_dir() {
-            fs::create_dir_all(parent_path)?;
-        }
-        let mut file = tokio::fs::File::create(&out_path).await?;
-        file.write(&bytes).await?;
-        file.flush().await?;
-        drop(file);
-        if !crate::util::file::check_sha1(&out_path, &info.sha1)? {
-            Err(McApiError::Sha1Mismatch(out_path))
-        } else {
-            Ok(out_path)
-        }
-    }
 }
 
-// ---------------- 🌟 TaskItem 🌟 ----------------
-
-#[derive(serde::Serialize)]
-pub struct TaskItem {
-    pub id: i32,
-    pub task_id: i32,
-    pub name: String,
-    pub progress: f64,
-    pub files: Vec<DownloadFile>,
-    pub out_dir: PathBuf,
-    pub total_size: u64, // for convenience of progress calculate
-    pub remaining_files: usize,
-    pub status: TaskStatus,
-    pub downloaded_size: u64,
-}
-
-impl TaskItem {
-    /// create a new TaskItem with several urls to download
-    pub fn build_with_infos(
-        id: i32,
-        task_id: i32,
-        name: impl Into<String>,
-        download_infos: Vec<DownloadInfo>,
-        out_dir: impl Into<PathBuf>,
-    ) -> (Arc<Mutex<Self>>, Vec<DownloadConfig>) {
-        let total_size = download_infos.iter().fold(0, |acc, info| acc + info.size);
-        let files: Vec<DownloadFile> = download_infos
-            .into_iter()
-            .map(|download_item| DownloadFile {
-                progress: FileProgress::default(),
-                info: download_item,
+async fn report(
+    progress: Option<(&DownloadConfig, &mpsc::Sender<ProgressUpdate>)>,
+    bytes: u64,
+    status: TaskStatus,
+) {
+    if let Some((options, tx)) = progress {
+        // UI lifetime does not control whether verified files may finish downloading.
+        let _ = tx
+            .send(ProgressUpdate {
+                file_index: options.file_index,
+                item_id: options.task_item_id,
+                progress: FileProgress {
+                    downloaded_bytes: bytes,
+                    status,
+                },
             })
-            .collect();
-        let count = files.len();
-        let new_item = Self {
-            name: name.into(),
-            progress: 0.0,
-            files,
-            out_dir: out_dir.into(),
-            id,
-            task_id,
-            total_size,
-            remaining_files: count,
-            status: TaskStatus::default(),
-            downloaded_size: 0,
-        };
-        let download_options = new_item.create_download_options();
-        (Mutex::new(new_item).into(), download_options)
-    }
-
-    /// update the file progress at specific index
-    pub fn update_file_progress(&mut self, index: usize, progress: FileProgress) {
-        self.files[index].progress = progress;
-        self.downloaded_size = self.files.iter().fold(0, |acc, file| {
-            acc + match file.progress.status {
-                TaskStatus::Completed => file.info.size,
-                TaskStatus::Running => file.progress.downloaded_bytes,
-                _ => 0,
-            }
-        });
-        self.remaining_files = self
-            .files
-            .iter()
-            .filter(|file| file.progress.status != TaskStatus::Completed)
-            .count();
-        self.progress = self.downloaded_size as f64 / self.total_size as f64;
-        self.status = if self.remaining_files == 0 {
-            TaskStatus::Completed
-        } else if self
-            .files
-            .iter()
-            .any(|file| file.progress.status == TaskStatus::Failed)
-        {
-            TaskStatus::Failed
-        } else {
-            TaskStatus::Running
-        };
-    }
-
-    /// generate download options
-    fn create_download_options(&self) -> Vec<DownloadConfig> {
-        self.files
-            .iter()
-            .enumerate()
-            .map(|(index, file)| DownloadConfig {
-                task_item_id: self.id,
-                // url: file.info.url.clone(),
-                file_index: index,
-                out_path: self.out_dir.join(Path::new(
-                    &file
-                        .info
-                        .path
-                        .as_deref()
-                        .unwrap_or(&file.info.url.split('/').last().unwrap_or(&file.info.url)),
-                )),
-                info: file.info.clone(),
-            })
-            .collect()
+            .await;
     }
 }
-
-// ---------------- 🌟 ProgressMonitor 🌟 ----------------
-
-#[derive(Default)]
-pub struct ProgressMonitor {
-    task_items: DashMap<i32, Arc<Mutex<TaskItem>>>,
-}
-
-impl ProgressMonitor {
-    pub async fn with_item(self, task: Arc<Mutex<TaskItem>>) -> Self {
-        let id = {
-            let task_guard = task.lock().await;
-            task_guard.id
-        };
-        self.task_items.insert(id, task);
-        self
-    }
-
-    pub async fn start_monitoring(
-        &self,
-        mut progress_rx: mpsc::Receiver<ProgressUpdate>,
-        on_event: tauri::ipc::Channel<TaskItemReport>,
-    ) {
-        // restrain the frequency to 10 send per secend
-        const MIN_INTERVAL_MS: u128 = 100;
-        let mut last_sent_time = tokio::time::Instant::now();
-        while let Some(update) = progress_rx.recv().await {
-            let item_id = update.item_id;
-            let task_item_to_report = self
-                .task_items
-                .get(&item_id)
-                .expect("[progress minitor] wrong item id's got!!!");
-            let mut task_item_to_report = task_item_to_report.lock().await;
-            let last_download_bytes = task_item_to_report.downloaded_size;
-            task_item_to_report.update_file_progress(update.file_index, update.progress);
-            let mut report: TaskItemReport = TaskItemReport::from(&*task_item_to_report);
-            let this_downloaded_bytes = task_item_to_report.downloaded_size;
-            let this_status = report.status;
-            drop(task_item_to_report);
-            let now = tokio::time::Instant::now();
-            let during = now.duration_since(last_sent_time);
-            if during.as_millis() >= MIN_INTERVAL_MS
-                || matches!(this_status, TaskStatus::Completed | TaskStatus::Failed)
-            {
-                assert!(
-                    this_downloaded_bytes >= last_download_bytes
-                        || this_status == TaskStatus::Failed,
-                    "wrong update at: index: {:?}, report: {:?}, downloaded: {}, last: {}",
-                    update.file_index,
-                    report,
-                    this_downloaded_bytes,
-                    last_download_bytes
-                );
-
-                if this_status != TaskStatus::Failed {
-                    report.set_speed(
-                        (this_downloaded_bytes - last_download_bytes) as f64 / during.as_secs_f64(),
-                    );
-                }
-                on_event.send(report).expect("report corrupted");
-                last_sent_time = now;
-            }
-        }
-    }
-}
-
-// ---------------- 🌟 The Minecraft Download Event 🌟 ----------------
 
 #[derive(serde::Serialize, Debug)]
-#[serde(rename_all = "snake_case")]
 pub struct TaskItemReport {
     pub task_id: i32,
     pub item_id: i32,
     pub files_remaining: usize,
     pub progress: f64,
     pub status: TaskStatus,
-    pub speed: Option<f64>, // bytes per second
+    pub speed: Option<f64>,
 }
 
-impl From<&TaskItem> for TaskItemReport {
-    fn from(item: &TaskItem) -> Self {
-        TaskItemReport {
-            task_id: item.task_id,
-            item_id: item.id,
-            files_remaining: item.remaining_files,
-            progress: item.progress,
-            status: item.status,
-            speed: None,
+pub(super) struct StageProgress {
+    pub id: i32,
+    sizes: Vec<u64>,
+    files: Vec<FileProgress>,
+    total: u64,
+    downloaded: u64,
+    transferred: u64,
+    remaining: usize,
+    failed: bool,
+    last_bytes: u64,
+    last_sent: std::time::Instant,
+}
+
+impl StageProgress {
+    pub fn new(id: i32, sizes: Vec<u64>) -> Self {
+        Self {
+            id,
+            total: sizes.iter().sum(),
+            files: vec![
+                FileProgress {
+                    downloaded_bytes: 0,
+                    status: TaskStatus::Pending
+                };
+                sizes.len()
+            ],
+            remaining: sizes.len(),
+            sizes,
+            downloaded: 0,
+            transferred: 0,
+            failed: false,
+            last_bytes: 0,
+            last_sent: std::time::Instant::now(),
         }
     }
-}
 
-impl TaskItemReport {
-    fn set_speed(&mut self, speed: f64) {
-        self.speed = Some(speed);
+    pub fn update(&mut self, index: usize, progress: FileProgress) {
+        let previous = self.files[index];
+        let size = self.sizes[index];
+        let contribution = |file: FileProgress| {
+            if file.status == TaskStatus::Completed {
+                size
+            } else {
+                file.downloaded_bytes.min(size)
+            }
+        };
+        self.downloaded -= contribution(previous);
+        self.downloaded += contribution(progress);
+        self.transferred -= previous.downloaded_bytes;
+        self.transferred += progress.downloaded_bytes.min(size);
+        if previous.status != TaskStatus::Completed && progress.status == TaskStatus::Completed {
+            self.remaining -= 1;
+        }
+        self.failed |= progress.status == TaskStatus::Failed;
+        self.files[index] = FileProgress {
+            downloaded_bytes: progress.downloaded_bytes.min(self.sizes[index]),
+            ..progress
+        };
+    }
+
+    pub fn report(&mut self, task_id: i32) -> TaskItemReport {
+        let status = if self.failed {
+            TaskStatus::Failed
+        } else if self.remaining == 0 {
+            TaskStatus::Completed
+        } else {
+            TaskStatus::Running
+        };
+        let progress = if self.remaining == 0 {
+            1.0
+        } else if self.total == 0 {
+            (self.files.len() - self.remaining) as f64 / self.files.len() as f64
+        } else {
+            (self.downloaded as f64 / self.total as f64).clamp(0.0, 1.0)
+        };
+        let elapsed = self.last_sent.elapsed().as_secs_f64().max(0.001);
+        let speed = if status == TaskStatus::Running {
+            self.transferred.saturating_sub(self.last_bytes) as f64 / elapsed
+        } else {
+            0.0
+        };
+        self.last_bytes = self.transferred;
+        self.last_sent = std::time::Instant::now();
+        TaskItemReport {
+            task_id,
+            item_id: self.id,
+            files_remaining: self.remaining,
+            progress,
+            status,
+            speed: Some(speed),
+        }
+    }
+
+    pub fn should_report(&self) -> bool {
+        self.last_sent.elapsed() >= Duration::from_millis(100) || self.remaining == 0 || self.failed
     }
 }
 
-pub mod minecraft_resource {
+#[cfg(test)]
+mod tests {
     use super::*;
 
-    /// get cached version json from the temp dir if it exists,
-    /// then copy it to the vesion folder and return the value of it
-    fn try_get_temp_json(
-        version_id: &str,
-        version_folder: &Path,
-    ) -> anyhow::Result<VersionDetails> {
-        let temp_json = std::env::temp_dir().join(format!("pcl-proto-{0}/{0}.json", &version_id));
-        let reader = fs::File::open(&temp_json)?;
-        let details: VersionDetails = serde_json::from_reader(reader)?;
-        fs::copy(
-            temp_json,
-            version_folder.join(format!("{}.json", version_id)),
-        )?;
-        Ok(details)
-    }
-
-    /// This command would receive a version_id of the game to download.
-    /// The frontend would provide a task_id and a channel for the progress feedback, and the progress happended should be sent throught the channel.
-    /// ## The four task items are fixed that:
-    /// 1. Fetch the json indicating the version details
-    /// 2. Download the version jar file
-    /// 3. Download the libraries to support the version
-    /// 4. Download the resources
-    #[tauri::command(rename_all = "snake_case")]
-    pub async fn download_minecraft_version(
-        state: tauri::State<'_, Arc<tokio::sync::Mutex<crate::setup::AppState>>>,
-        on_event: tauri::ipc::Channel<TaskItemReport>,
-        version_id: &str,
-        task_id: i32,
-        instance_name: &str,
-    ) -> Result<(), String> {
-        let downloader = Downloader::new();
-        log::info!("start a task of downloading mc: {}", version_id);
-        // get the folder of this version
-        let repo = state.lock().await.active_repo_path.clone();
-        let version_folder = repo.join(format!("versions/{}", instance_name));
-        let assets_folder = repo.join("assets");
-
-        // compose the task items
-        // get the download info
-        let (jar_download, libraries_download, assets_download) = {
-            let version_details: VersionDetails;
-            if let Ok(version_details_tmp) = try_get_temp_json(&version_id, &version_folder) {
-                version_details = version_details_tmp;
-            } else {
-                version_details = ConfigManager::instance()
-                    .api_client
-                    .get_version_details(&version_id, &version_folder)
-                    .await
-                    .map_err(|err| err.to_string())?;
-            }
-            // filter the not allowed libraries
-            let libraries_download = {
-                let libraries = version_details.libraries;
-                libraries
-                    .iter()
-                    .filter(|lib| lib.rule_allow())
-                    .map(|lib| lib.downloads.artifact.to_owned())
-                    .collect::<Vec<DownloadInfo>>()
-            };
-            // modify the jar path cause api don't provide it
-            let mut jar_download = version_details.downloads.client;
-            jar_download.path = Some(format!("{}.jar", instance_name));
-
-            // fetch the assets index
-            // let assets_index_downloadInfo = version_details.asset_index;
-            let assets_download = {
-                let asset_index_file = downloader
-                    .download_without_report(
-                        &version_details.asset_index,
-                        &assets_folder.join("indexes"),
-                    )
-                    .await
-                    .map_err(|err| err.to_string())?;
-                let reader = fs::File::open(asset_index_file).unwrap();
-                let asset_index: serde_json::Value = serde_json::from_reader(reader).unwrap();
-                let objects = asset_index["objects"].as_object().unwrap();
-                let resources_base = ConfigManager::instance()
-                    .api_client
-                    .api_bases_async()
-                    .await
-                    .resources_base;
-                objects
-                    .iter()
-                    .map(|(_path, value)| {
-                        let hash = value["hash"].as_str().unwrap();
-                        let size = value["size"].as_u64().unwrap();
-                        let path = format!("{}/{}", &hash[..2], hash);
-                        DownloadInfo {
-                            sha1: hash.to_string(),
-                            size,
-                            url: format!("{}/{}", resources_base, path),
-                            path: Some(path),
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            };
-            (jar_download, libraries_download, assets_download)
-        };
-        // report the first task item: get the version json
-        on_event
-            .send(TaskItemReport {
-                task_id,
-                item_id: 0,
-                files_remaining: 0,
-                progress: 1.0,
+    #[test]
+    fn progress_handles_empty_stages_retries_and_failures() {
+        let mut empty = StageProgress::new(1, vec![]);
+        assert_eq!(empty.report(0).progress, 1.0);
+        let mut stage = StageProgress::new(1, vec![10, 10]);
+        stage.update(
+            0,
+            FileProgress {
+                downloaded_bytes: 8,
+                status: TaskStatus::Running,
+            },
+        );
+        assert_eq!(stage.report(0).progress, 0.4);
+        stage.update(
+            0,
+            FileProgress {
+                downloaded_bytes: 0,
+                status: TaskStatus::Running,
+            },
+        );
+        assert!(stage.report(0).speed.unwrap().is_finite());
+        stage.update(
+            0,
+            FileProgress {
+                downloaded_bytes: 0,
+                status: TaskStatus::Failed,
+            },
+        );
+        stage.update(
+            1,
+            FileProgress {
+                downloaded_bytes: 10,
                 status: TaskStatus::Completed,
-                speed: None,
-            })
-            .map_err(|err| err.to_string())?;
-
-        // the task info is fixed
-        let (task1, download_options1) =
-            TaskItem::build_with_infos(1, task_id, "jar", vec![jar_download], version_folder);
-        let (task2, download_options2) = TaskItem::build_with_infos(
-            2,
-            task_id,
-            "libraries",
-            libraries_download,
-            repo.join("libraries"),
+            },
         );
-        let (task3, download_options3) = TaskItem::build_with_infos(
-            3,
-            task_id,
-            "assets",
-            assets_download,
-            repo.join("assets/objects"),
+        assert_eq!(stage.report(0).status, TaskStatus::Failed);
+        let mut zero = StageProgress::new(1, vec![0]);
+        assert!(zero.report(0).progress.is_finite());
+        zero.update(
+            0,
+            FileProgress {
+                downloaded_bytes: 0,
+                status: TaskStatus::Completed,
+            },
         );
-
-        // set up the minotor
-        let (progress_tx, progress_rx) = mpsc::channel(100);
-        let monitor = ProgressMonitor::default()
-            .with_item(Arc::clone(&task1))
-            .await
-            .with_item(Arc::clone(&task2))
-            .await
-            .with_item(Arc::clone(&task3))
-            .await;
-        let monitor_handle = tokio::task::spawn(async move {
-            monitor.start_monitoring(progress_rx, on_event).await;
-        });
-
-        // start the actual downloading
-        const MAX_CONCURRENT_DOWNLOADS: usize = 8;
-        let mut all_options = Vec::new();
-        all_options.extend(download_options1);
-        all_options.extend(download_options2);
-        all_options.extend(download_options3);
-        let download_stream = futures_util::stream::iter(all_options.into_iter().map(|options| {
-            let downloader = downloader.clone();
-            let tx = progress_tx.clone();
-            async move {
-                if let Err(e) = downloader.start_download(options, tx).await {
-                    log::error!("{}", e);
-                }
-            }
-        }));
-        // wait until all the tasks has finished
-        let _ = download_stream
-            .buffer_unordered(MAX_CONCURRENT_DOWNLOADS)
-            .collect::<Vec<_>>()
-            .await;
-        drop(progress_tx);
-        monitor_handle.await.map_err(|err| err.to_string())?;
-        log::info!(
-            "finished downloading {} files!",
-            task1.lock().await.files.len()
-                + task2.lock().await.files.len()
-                + task3.lock().await.files.len()
+        assert_eq!(zero.report(0).progress, 1.0);
+    }
+    #[test]
+    fn cached_files_advance_progress_without_inflating_network_speed() {
+        let mut stage = StageProgress::new(1, vec![10, 10]);
+        stage.report(0);
+        stage.update(
+            0,
+            FileProgress {
+                downloaded_bytes: 0,
+                status: TaskStatus::Completed,
+            },
         );
-        Ok(())
+        assert!(
+            !stage.should_report(),
+            "individual files do not bypass stage throttling"
+        );
+        let report = stage.report(0);
+        assert_eq!(report.progress, 0.5);
+        assert_eq!(report.speed, Some(0.0));
+        stage.update(
+            1,
+            FileProgress {
+                downloaded_bytes: 0,
+                status: TaskStatus::Completed,
+            },
+        );
+        assert!(stage.should_report(), "stage completion is always reported");
+        assert_eq!(stage.report(0).progress, 1.0);
     }
 }

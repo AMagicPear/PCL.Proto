@@ -39,9 +39,11 @@ async function load() {
   instances.value = []
   try {
     if (!isTauri()) return
-    if (!repos.repositires) await repos.fetchFromBackend()
+    if (!repos.repositories) await repos.fetchFromBackend()
     const index = Number(route.params.repository || 0)
-    if (!Number.isInteger(index) || index < 0 || !repos.repositires?.[index]) return
+    if (!Number.isInteger(index) || index < 0 || !repos.repositories?.[index]) return
+    await repos.selectRepository(index)
+    if (current !== request) return
     const items = await repos.getInstancesInRepository(index)
     if (current === request) instances.value = items
   } catch (err) {

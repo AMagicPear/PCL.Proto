@@ -7,8 +7,6 @@
 //! GPL-3.0 License | https://github.com/HMCL-dev/HMCL
 // use crate::setup::constants::LAUNCHER_NAME;
 
-use serde::de::Error;
-
 use crate::core::api_client::game::VersionDetails;
 use crate::setup::constants::{APP_VERSION, LAUNCHER_NAME};
 use crate::{
@@ -40,6 +38,9 @@ pub enum GameLaunchError {
     #[error("Json parsing failed: {0}")]
     JsonError(#[from] serde_json::Error),
 
+    #[error("Invalid Minecraft metadata: {0}")]
+    InvalidMetadata(String),
+
     #[error("active java runtime not found")]
     MissingJava,
 
@@ -60,20 +61,20 @@ impl LaunchOption {
     pub fn launch_checked(&self) -> Result<std::process::Child, GameLaunchError> {
         // check account
         // check all the libraries
-        Ok(self.launch()?)
+        self.launch()
     }
 
     /// Launch a Minecraft game with the given options
-    fn launch(&self) -> Result<std::process::Child, std::io::Error> {
+    fn launch(&self) -> Result<std::process::Child, GameLaunchError> {
         let mut command = std::process::Command::new(&self.java_runtime.java_exe);
         command
             .args(self.build_jvm_arguments()) // build jvm arguments
             .arg("-cp")
-            .arg(self.build_classpath().unwrap_or_default())
+            .arg(build_classpath(&self.game_instance, &self.version_details)?)
             .arg(&self.version_details.main_class)
             .args(self.build_game_arguments())
             .current_dir(&self.game_instance.global_dir);
-        command.spawn()
+        Ok(command.spawn()?)
     }
 
     fn build_jvm_arguments(&self) -> Vec<String> {
@@ -89,12 +90,19 @@ impl LaunchOption {
         args.push("-Dcom.sun.jndi.rmi.object.trustURLCodebase=false".to_string());
         args.push("-Dcom.sun.jndi.cosnaming.object.trustURLCodebase=false".to_string());
         args.push("-Dlog4j2.formatMsgNoLookups=true".to_string());
-        // dlog4j2 setup
-        let log4j2_config = self.game_instance.directory.join("log4j2.xml");
-        args.push(format!(
-            "-Dlog4j.configurationFile={}",
-            log4j2_config.display()
-        ));
+        if let Some(logging) = &self.version_details.logging {
+            let path = self
+                .game_instance
+                .global_dir
+                .join("assets/log_configs")
+                .join(&logging.client.file.id);
+            args.push(
+                logging
+                    .client
+                    .argument
+                    .replace("${path}", &path.to_string_lossy()),
+            );
+        }
         // jar file
         args.push(format!(
             "-Dminecraft.client.jar={}",
@@ -136,32 +144,6 @@ impl LaunchOption {
             .collect(),
         );
         args
-    }
-
-    fn build_classpath(&self) -> Result<String, GameLaunchError> {
-        let mut classpath = Vec::new();
-        let libraries = &self.version_details.libraries;
-        for lib in libraries {
-            let lib_artifact = &lib.downloads.artifact;
-            let lib_path = lib_artifact
-                .path
-                .as_deref()
-                .ok_or(serde_json::Error::custom("Missing path in artifact"))?;
-            let lib_full_path = format!(
-                "{}/libraries/{}",
-                self.game_instance.global_dir.display(),
-                lib_path
-            );
-            classpath.push(lib_full_path);
-        }
-        if self.game_instance.jar_path.exists() {
-            classpath.push(self.game_instance.jar_path.display().to_string());
-        } else {
-            return Err(
-                std::io::Error::new(std::io::ErrorKind::NotFound, "main jar not found").into(),
-            );
-        }
-        Ok(classpath.join(":"))
     }
 
     fn build_game_arguments(&self) -> Vec<String> {
@@ -217,6 +199,48 @@ impl LaunchOption {
     }
 }
 
+fn build_classpath(
+    instance: &GameInstance,
+    details: &VersionDetails,
+) -> Result<String, GameLaunchError> {
+    let mut classpath = Vec::new();
+    let context = super::minecraft::RuleContext::current();
+    for lib in &details.libraries {
+        if !lib
+            .rule_allow(&context)
+            .map_err(|e| GameLaunchError::InvalidMetadata(e.to_string()))?
+        {
+            continue;
+        }
+        let Some(artifact) = &lib.downloads.artifact else {
+            continue;
+        };
+        let path = super::minecraft::library_path(&instance.global_dir, artifact)
+            .map_err(|e| GameLaunchError::InvalidMetadata(e.to_string()))?;
+        if !path.is_file() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("Missing library: {}", path.display()),
+            )
+            .into());
+        }
+        classpath.push(path);
+    }
+    if !instance.jar_path.is_file() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "Minecraft client JAR not found",
+        )
+        .into());
+    }
+    classpath.push(instance.jar_path.clone());
+    let joined = std::env::join_paths(classpath)
+        .map_err(|e| GameLaunchError::InvalidMetadata(e.to_string()))?;
+    joined
+        .into_string()
+        .map_err(|_| GameLaunchError::InvalidMetadata("Classpath is not valid Unicode".into()))
+}
+
 #[cfg(test)]
 #[test]
 pub fn game_launch_test() {
@@ -251,5 +275,58 @@ pub fn game_launch_test() {
             "launch failed, instance id:{:?}",
             launch_option.game_instance.id
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::fs;
+
+    #[test]
+    fn classpath_uses_install_rules_and_reports_missing_libraries() {
+        let root =
+            std::env::temp_dir().join(format!("pcl-classpath-test-{}", uuid::Uuid::new_v4()));
+        let version = root.join("versions/Custom");
+        fs::create_dir_all(&version).unwrap();
+        fs::create_dir_all(root.join("libraries/test")).unwrap();
+        fs::write(root.join("libraries/test/allowed.jar"), b"library").unwrap();
+        fs::write(version.join("Custom.jar"), b"client").unwrap();
+        let artifact = |path| json!({"sha1":"a".repeat(40), "size":1,"url":"https://example.org/library.jar","path":path});
+        let metadata = json!({
+            "id":"Custom", "clientVersion":"1.test", "type":"release", "assets":"test", "mainClass":"Main",
+            "downloads":{"client":artifact("client.jar")},
+            "assetIndex":{"id":"test","sha1":"a".repeat(40),"size":1,"url":"https://example.org/index.json"},
+            "libraries":[
+                {"name":"test:allowed:1","downloads":{"artifact":artifact("test/allowed.jar")}},
+                {"name":"test:blocked:1","rules":[{"action":"disallow"}],"downloads":{"artifact":artifact("test/absent.jar")}},
+                {"name":"test:native:1","downloads":{"classifiers":{}}}
+            ]
+        });
+        fs::write(
+            version.join("Custom.json"),
+            serde_json::to_vec(&metadata).unwrap(),
+        )
+        .unwrap();
+        let repo = super::super::repository::GameRepository::new("test", root.clone());
+        let instance = GameInstance::from_version_folder(&version, &repo).unwrap();
+        let details = instance.read_version_json().unwrap();
+        let classpath = build_classpath(&instance, &details).unwrap();
+        assert_eq!(
+            std::env::split_paths(&classpath).collect::<Vec<_>>(),
+            vec![
+                root.join("libraries/test/allowed.jar"),
+                version.join("Custom.jar")
+            ]
+        );
+        fs::remove_file(root.join("libraries/test/allowed.jar")).unwrap();
+        assert!(
+            build_classpath(&instance, &details)
+                .unwrap_err()
+                .to_string()
+                .contains("Missing library")
+        );
+        fs::remove_dir_all(root).unwrap();
     }
 }

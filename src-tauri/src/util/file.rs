@@ -5,21 +5,6 @@ use std::{
 
 use sha1::Digest;
 
-/// 从一堆文件里面找到名字是目标名的那一个，用于版本JSON查找部分
-pub fn find_file_of_name(
-    files_itr: &mut impl Iterator<Item = std::fs::DirEntry>,
-    name: &str,
-) -> Option<PathBuf> {
-    while let Some(json_file) = files_itr.next() {
-        let current_json_file_name = json_file.file_name();
-        let current_json_file_name = current_json_file_name.to_string_lossy();
-        if current_json_file_name.starts_with(name) {
-            return Some(json_file.path());
-        }
-    }
-    None
-}
-
 pub fn check_sha1(file: &Path, given: &str) -> Result<bool, std::io::Error> {
     let file = std::fs::File::open(file)?;
     let mut reader = BufReader::new(file);
@@ -37,12 +22,68 @@ pub fn check_sha1(file: &Path, given: &str) -> Result<bool, std::io::Error> {
     Ok(computed == given)
 }
 
+/// Validate names using the same portable restrictions on every supported platform.
+pub fn validate_file_name(name: &str) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        !name.is_empty()
+            && name.trim() == name
+            && !name.ends_with('.')
+            && ![".", ".."].contains(&name)
+            && !name
+                .chars()
+                .any(|c| c.is_control() || "\\/:*?\"<>|".contains(c)),
+        "Invalid file or instance name: {name:?}"
+    );
+    let stem = name.split('.').next().unwrap_or(name).to_ascii_uppercase();
+    anyhow::ensure!(
+        !matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL")
+            && !(stem.len() == 4
+                && (stem.starts_with("COM") || stem.starts_with("LPT"))
+                && matches!(stem.as_bytes()[3], b'1'..=b'9')),
+        "Reserved file or instance name: {name}"
+    );
+    Ok(())
+}
+
+/// Remote manifest paths are relative slash-separated paths, even on Windows.
+pub fn safe_join(root: &Path, relative: &str) -> anyhow::Result<PathBuf> {
+    anyhow::ensure!(!relative.is_empty(), "Empty download path");
+    for component in relative.split('/') {
+        validate_file_name(component)?;
+    }
+    Ok(root.join(relative))
+}
+
 #[cfg(test)]
-#[test]
-fn check_sha1_test() {
-    let result = check_sha1(
-        Path::new("/Users/amagicpear/Library/Application Support/cc.PCL-Community.PCL.Proto/.minecraft/assets/objects/ac/ac88b24961961f52fbaf8efc55ae7e260b6f4ad2"),
-        "ac88b24961961f52fbaf8efc55ae7e260b6f4ad2",
-    ).unwrap();
-    assert!(result);
+mod path_tests {
+    use super::*;
+
+    #[test]
+    fn rejects_portable_path_traversal_and_reserved_names() {
+        for value in [
+            "../escape",
+            "/absolute",
+            "C:/escape",
+            "a/../../b",
+            "a\\b",
+            "a//b",
+            "a/./b",
+            "NUL.txt",
+            "con",
+            "COM1",
+            "a.",
+            "a\n",
+        ] {
+            assert!(safe_join(Path::new("root"), value).is_err(), "{value:?}");
+        }
+        for value in [
+            "org/lwjgl/lwjgl.jar",
+            "1.21.1",
+            "3D Shareware v1.34",
+            "20w14∞",
+            "自定义实例",
+        ] {
+            assert!(safe_join(Path::new("root"), value).is_ok(), "{value:?}");
+        }
+    }
 }

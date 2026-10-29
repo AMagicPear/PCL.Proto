@@ -79,6 +79,22 @@ pub fn get_repositories(state: State<'_, Arc<Mutex<AppState>>>) -> Vec<GameRepos
 }
 
 #[tauri::command(rename_all = "snake_case")]
+pub async fn select_repository(
+    state: State<'_, Arc<Mutex<AppState>>>,
+    repository_index: usize,
+) -> Result<(), String> {
+    let mut state = state.lock().await;
+    let path = state
+        .repositories
+        .get(repository_index)
+        .ok_or("Minecraft folder index is out of range")?
+        .path
+        .clone();
+    state.active_repo_path = path;
+    Ok(())
+}
+
+#[tauri::command(rename_all = "snake_case")]
 pub fn add_new_repository(
     state: State<'_, Arc<Mutex<AppState>>>,
     new_repo_path: &str,
@@ -118,11 +134,17 @@ pub async fn get_account() -> Option<Account> {
 pub async fn get_instances_in_repository(
     state: State<'_, Arc<Mutex<AppState>>>,
     repository_index: usize,
-) -> Result<Vec<GameInstance>, ()> {
-    let state = state.lock().await;
-    let all_repos = &state.repositories;
-    let repo = &all_repos[repository_index];
-    Ok(repo.game_instances().to_owned())
+) -> Result<Vec<GameInstance>, String> {
+    let repo = state
+        .lock()
+        .await
+        .repositories
+        .get(repository_index)
+        .cloned()
+        .ok_or("Minecraft folder index is out of range")?;
+    tauri::async_runtime::spawn_blocking(move || repo.game_instances())
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -133,18 +155,29 @@ pub fn get_active_instance(state: State<'_, Arc<Mutex<AppState>>>) -> Option<Gam
 }
 
 #[tauri::command(rename_all = "snake_case")]
-pub fn select_instance(
+pub async fn select_instance(
     state: State<'_, Arc<Mutex<AppState>>>,
     repository_index: usize,
-    instance_id: &str,
-) {
-    let mut guard = state.blocking_lock();
-    let instances = guard.repositories[repository_index].game_instances();
+    instance_id: String,
+) -> Result<(), String> {
+    let repo = state
+        .lock()
+        .await
+        .repositories
+        .get(repository_index)
+        .cloned()
+        .ok_or("Minecraft folder index is out of range")?;
+    let instances = tauri::async_runtime::spawn_blocking(move || repo.game_instances())
+        .await
+        .map_err(|error| error.to_string())?;
     let instance = instances
-        .iter()
+        .into_iter()
         .find(|instance| instance.id == instance_id)
-        .unwrap();
-    guard.active_game_instance = Some(Arc::new(instance.clone()));
+        .ok_or("Minecraft instance was not found")?;
+    let mut guard = state.lock().await;
+    guard.active_repo_path = instance.global_dir.clone();
+    guard.active_game_instance = Some(Arc::new(instance));
+    Ok(())
 }
 
 #[tauri::command]

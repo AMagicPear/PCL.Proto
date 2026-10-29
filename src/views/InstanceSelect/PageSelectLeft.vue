@@ -22,7 +22,7 @@ const groups = computed(() => [
   {
     title: text('Select.Folder.ListTitle'),
     content:
-      repo.repositires?.map((item, index) => ({
+      repo.repositories?.map((item, index) => ({
         text: item.name,
         linkto: `/instance_select/instance_select_sub/${index}`,
       })) || [],
@@ -46,8 +46,8 @@ const groups = computed(() => [
 onMounted(async () => {
   try {
     if (!isTauri()) return
-    if (!repo.repositires) await repo.fetchFromBackend()
-    if (repo.repositires?.length && !route.params.repository)
+    if (!repo.repositories) await repo.fetchFromBackend()
+    if (repo.repositories?.length && !route.params.repository)
       await router.replace('/instance_select/instance_select_sub/0')
   } catch (err) {
     sideTip.show(pclText('Proto.Error.Folders', [String(err)]), 'warn')

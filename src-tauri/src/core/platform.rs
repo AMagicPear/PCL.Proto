@@ -31,10 +31,6 @@ impl OS {
             _ => Self::Linux,
         }
     }
-
-    pub fn is_current(&self) -> bool {
-        return *self == Self::current();
-    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]

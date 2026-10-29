@@ -1,5 +1,5 @@
 use crate::{
-    core::{api_client::plugins::McPluginReport, downloader},
+    core::api_client::plugins::McPluginReport,
     setup::{ConfigManager, constants::USER_AGENT},
 };
 use dashmap::DashMap;
@@ -22,8 +22,6 @@ pub enum ApiProvider {
     BMCLApi,
 }
 
-/// TODO)) 需要在下载时截取后面的部分才能正常使用第三方API
-/// 否则还是用的官方API
 #[derive(Clone)]
 pub struct ApiBases {
     pub meta_base: &'static str,
@@ -52,6 +50,32 @@ impl ApiBases {
             },
         }
     }
+    /// Mirror only Mojang-owned download hosts; third-party URLs retain their origin.
+    pub fn download_url(&self, url: &str) -> String {
+        if self.meta_base == "https://piston-meta.mojang.com" {
+            return url.into();
+        }
+        let Ok(parsed) = reqwest::Url::parse(url) else {
+            return url.into();
+        };
+        let prefix = match parsed.host_str() {
+            Some(
+                "piston-meta.mojang.com"
+                | "launchermeta.mojang.com"
+                | "piston-data.mojang.com"
+                | "launcher.mojang.com",
+            ) => self.meta_base.to_owned(),
+            Some("libraries.minecraft.net") => format!("{}/maven", self.meta_base),
+            Some("resources.download.minecraft.net") => self.resources_base.to_owned(),
+            _ => return url.into(),
+        };
+        let mut rewritten = format!("{prefix}{}", parsed.path());
+        if let Some(query) = parsed.query() {
+            rewritten.push('?');
+            rewritten.push_str(query);
+        }
+        rewritten
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -65,14 +89,14 @@ pub enum McApiError {
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
 
+    #[error("Invalid Minecraft metadata: {0}")]
+    InvalidMetadata(String),
+
     #[error("Version not found: {0}")]
     VersionNotFound(String),
 
     #[error("sha1 check failed: {0}")]
     Sha1Mismatch(PathBuf),
-
-    #[error("progress sender: {0}")]
-    ProgressSenderError(#[from] tokio::sync::mpsc::error::SendError<downloader::ProgressUpdate>),
 
     #[error("xml parse error: {0}")]
     XmlError(#[from] quick_xml::DeError),
@@ -85,95 +109,7 @@ pub enum McApiError {
 pub type McApiResult<T> = Result<T, McApiError>;
 
 pub mod game {
-    use serde::{Deserialize, Serialize};
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct VersionManifest {
-        pub latest: LatestVersions,
-        pub versions: Vec<VersionInfo>,
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct LatestVersions {
-        pub release: String,
-        pub snapshot: String,
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct VersionInfo {
-        pub id: String,
-        pub r#type: String,
-        pub url: String,
-        pub time: String,
-        pub release_time: String,
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct VersionDetails {
-        pub id: String,
-        pub r#type: String,
-        pub downloads: VersionDownloads,
-        pub libraries: Vec<LibraryItem>,
-        pub assets: String,
-        pub asset_index: DownloadInfo,
-        pub main_class: String,
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct VersionDownloads {
-        pub client: DownloadInfo,
-        pub server: DownloadInfo,
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct DownloadInfo {
-        pub sha1: String,
-        pub size: u64,
-        pub url: String,
-        pub path: Option<String>,
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct Rule {
-        pub action: String, // allow or not allow
-        pub os: OSRule,
-    }
-
-    impl Rule {
-        pub fn allow(&self) -> bool {
-            return self.action == "allow" && self.os.name.is_current();
-        }
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct OSRule {
-        pub name: crate::core::platform::OS,
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct LibraryItem {
-        pub name: String,
-        pub downloads: LibraryDownloads,
-        pub rules: Option<Vec<Rule>>,
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct LibraryDownloads {
-        pub artifact: DownloadInfo,
-    }
-
-    pub const VERSION_MANIFEST_ENDPOINT: &str = "mc/game/version_manifest.json";
-
-    impl LibraryItem {
-        pub fn rule_allow(&self) -> bool {
-            if let Some(rules) = &self.rules {
-                return rules.iter().any(|rule| rule.allow());
-            }
-            return true;
-        }
-    }
+    pub use crate::core::minecraft::*;
 }
 
 pub mod plugins {
@@ -258,6 +194,13 @@ impl MinecraftApiClient {
         }
     }
 
+    #[cfg(test)]
+    pub(super) fn with_test_bases(bases: ApiBases) -> Self {
+        let mut client = Self::new(Client::new(), &ApiProvider::Official);
+        client.api_bases = RwLock::new(bases);
+        client
+    }
+
     /// the provider should be managed in setup info, this will be called once the setup changed
     pub fn switch_provider(&self, provider: &ApiProvider) {
         let mut guard = self.api_bases.blocking_write();
@@ -271,17 +214,16 @@ impl MinecraftApiClient {
     }
 
     /// Get data from a URL
-    async fn get_inner<T, U>(&self, url: U) -> McApiResult<T>
-    where
-        T: DeserializeOwned,
-        U: reqwest::IntoUrl + std::fmt::Debug + Copy,
-    {
+    async fn get_inner<T: DeserializeOwned>(&self, url: &str) -> McApiResult<T> {
+        let actual_url = self.api_bases.read().await.download_url(url);
         let response = self
             .client
-            .get(url)
+            .get(&actual_url)
+            .timeout(Duration::from_secs(60))
             .header(reqwest::header::USER_AGENT, USER_AGENT)
             .send()
-            .await?;
+            .await?
+            .error_for_status()?;
         let data: T = response.json().await?;
         log::info!("got data from {:?}", url);
         Ok(data)
@@ -316,8 +258,7 @@ impl MinecraftApiClient {
         allow_from_cache: bool,
     ) -> McApiResult<T> {
         let url = format!("{}/{}", self.api_bases.read().await.meta_base, endpoint);
-        let data = self.get(&url, allow_from_cache).await?;
-        Ok(data)
+        self.get(&url, allow_from_cache).await
     }
 
     /// Get version details from version id and save the temp
@@ -326,22 +267,46 @@ impl MinecraftApiClient {
         version_id: &str,
         temp_dir: &Path,
     ) -> McApiResult<game::VersionDetails> {
-        // STEP1: get the version json
-        let endpoint = game::VERSION_MANIFEST_ENDPOINT;
-        let manifest: game::VersionManifest = self.get_with_endpoint(&endpoint, true).await?;
+        crate::util::file::validate_file_name(version_id)
+            .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
+        let version_json = self.get_version_metadata(version_id).await?;
+        let details = serde_json::from_value(version_json.clone())?;
+        tokio::fs::create_dir_all(temp_dir).await?;
+        tokio::fs::write(
+            temp_dir.join(format!("{version_id}.json")),
+            serde_json::to_vec_pretty(&version_json)?,
+        )
+        .await?;
+        Ok(details)
+    }
+
+    /// Preserve every upstream field, including launch arguments and Java requirements.
+    pub async fn get_version_metadata(&self, version_id: &str) -> McApiResult<serde_json::Value> {
+        use sha1::Digest;
+        let manifest: game::VersionManifest = self
+            .get_with_endpoint(game::VERSION_MANIFEST_ENDPOINT, true)
+            .await?;
         let version = manifest
             .versions
             .iter()
             .find(|v| v.id == version_id)
-            .ok_or(McApiError::VersionNotFound(version_id.to_string()))?;
-        let version_json = self.get::<serde_json::Value>(&version.url, false).await?;
-        // save version detail json to temp_dir
-        tokio::fs::create_dir_all(temp_dir).await?;
-        let version_json_path = temp_dir.join(format!("{}.json", version_id));
-        let version_json_str = serde_json::to_string(&version_json)?;
-        tokio::fs::write(&version_json_path, version_json_str).await?;
-        let version_detail: game::VersionDetails = serde_json::from_value(version_json)?;
-        Ok(version_detail)
+            .ok_or_else(|| McApiError::VersionNotFound(version_id.into()))?;
+        let bytes = self.get_bytes(&version.url).await?;
+        if let Some(expected) = &version.sha1 {
+            let actual = format!("{:x}", sha1::Sha1::digest(&bytes));
+            if !actual.eq_ignore_ascii_case(expected) {
+                return Err(McApiError::InvalidMetadata(
+                    "Version JSON SHA-1 mismatch".into(),
+                ));
+            }
+        }
+        let value: serde_json::Value = serde_json::from_slice(&bytes)?;
+        if value["id"].as_str() != Some(version_id) {
+            return Err(McApiError::InvalidMetadata(
+                "Version metadata ID mismatch".into(),
+            ));
+        }
+        Ok(value)
     }
 
     /// Get forge version details
@@ -358,7 +323,8 @@ impl MinecraftApiClient {
                     .get(url)
                     .header(reqwest::header::USER_AGENT, USER_AGENT)
                     .send()
-                    .await?;
+                    .await?
+                    .error_for_status()?;
                 let xml_text = response.text().await?;
                 let metadata: plugins::forge_xml::Metadata = quick_xml::de::from_str(&xml_text)?;
                 let matched_versions = metadata.find_versions_of_game(version_id);
@@ -402,7 +368,7 @@ impl MinecraftApiClient {
                 let stable = loader.get("stable")?.as_bool();
                 Some(McPluginReport {
                     version: version.to_string(),
-                    stable: stable,
+                    stable,
                 })
             })
             .collect();
@@ -419,12 +385,15 @@ impl MinecraftApiClient {
     }
 
     pub async fn get_bytes(&self, url: &str) -> McApiResult<Vec<u8>> {
+        let actual_url = self.api_bases.read().await.download_url(url);
         let response = self
             .client
-            .get(url)
+            .get(&actual_url)
+            .timeout(Duration::from_secs(60))
             .header(reqwest::header::USER_AGENT, USER_AGENT)
             .send()
-            .await?;
+            .await?
+            .error_for_status()?;
         let bytes = response.bytes().await?;
         Ok(bytes.to_vec())
     }
@@ -435,12 +404,48 @@ pub async fn fetch_with_modrinth(
     api_client: tauri::State<'_, &MinecraftApiClient>,
     endpoint: &str,
 ) -> Result<serde_json::Value, String> {
-    api_client.fetch_with_modrinth(endpoint).await.map_err(|err| err.to_string())
+    api_client
+        .fetch_with_modrinth(endpoint)
+        .await
+        .map_err(|err| err.to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mirrors_known_official_hosts_without_rewriting_third_party_origins() {
+        let bases = ApiBases::new(&ApiProvider::BMCLApi);
+        for (url, expected) in [
+            (
+                "https://piston-meta.mojang.com/v1/test.json",
+                "https://bmclapi2.bangbang93.com/v1/test.json",
+            ),
+            (
+                "https://piston-data.mojang.com/v1/client.jar",
+                "https://bmclapi2.bangbang93.com/v1/client.jar",
+            ),
+            (
+                "https://libraries.minecraft.net/org/test.jar",
+                "https://bmclapi2.bangbang93.com/maven/org/test.jar",
+            ),
+            (
+                "https://resources.download.minecraft.net/ab/hash",
+                "https://bmclapi2.bangbang93.com/assets/ab/hash",
+            ),
+            (
+                "https://example.org/test.jar?file=1",
+                "https://example.org/test.jar?file=1",
+            ),
+            (
+                "https://libraries.minecraft.net.evil.test/a",
+                "https://libraries.minecraft.net.evil.test/a",
+            ),
+        ] {
+            assert_eq!(bases.download_url(url), expected);
+        }
+    }
 
     #[tokio::test]
     async fn mc_manifest() {

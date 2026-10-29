@@ -3,6 +3,8 @@
 参考仓库：`../PCL2-CE`（PCL-Community/PCL2-CE）。
 参考 revision：`d68819990da092ed7e582b94b950874fa30baffe`。
 
+本文保留前端迁移阶段的范围与验收记录。2026-10-29 起的后端迁移及原版安装验证见 [后端迁移记录](BACKEND_ALIGNMENT.md)。
+
 ## 实现约定
 
 - 页面使用 Vue 3 SFC、响应式状态、组合式函数与 Vue Router；沿用现有卡片、按钮、左右布局和导航。

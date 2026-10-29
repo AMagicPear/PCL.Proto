@@ -119,20 +119,24 @@ export interface VersionDetails {
   type: string
   downloads: {
     client: DownloadInfo
-    server: DownloadInfo
+    server?: DownloadInfo
   }
   libraries: {
     name: string
     downloads: {
-      artifact: DownloadInfo
+      artifact?: DownloadInfo
+      classifiers?: Record<string, DownloadInfo>
     }
     rules?: {
       action: string
-      os: {
-        name: 'windows' | 'linux' | 'osx'
+      features?: Record<string, boolean>
+      os?: {
+        name?: 'windows' | 'linux' | 'osx'
+        arch?: string
+        version?: string
       }
     }[]
   }[]
   assets: string
-  assetIndex: DownloadInfo
+  assetIndex: DownloadInfo & { id: string }
 }

@@ -10,11 +10,15 @@ type Repository = { name: string; path: string }
 
 export const useRepositoriesStore = defineStore('repositories', {
   state: () => ({
-    repositires: undefined as Repository[] | undefined,
+    repositories: undefined as Repository[] | undefined,
   }),
   actions: {
     async fetchFromBackend() {
-      this.repositires = await invoke<Repository[]>('get_repositories')
+      this.repositories = await invoke<Repository[]>('get_repositories')
+    },
+
+    async selectRepository(index: number) {
+      await invoke('select_repository', { repository_index: index })
     },
 
     async getInstancesInRepository(index: number): Promise<GameInstance[]> {
@@ -55,7 +59,7 @@ export const useRepositoriesStore = defineStore('repositories', {
           new_repo_path: file,
           new_repo_name: result.input,
         })
-        this.repositires = repoUpdate
+        this.repositories = repoUpdate
       }
     },
   },
