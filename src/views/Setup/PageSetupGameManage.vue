@@ -4,9 +4,29 @@ import { usePageSettings } from '@/composables/usePageSettings'
 import PCard from '@/components/widget/PCard.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
+import { downloadSettings } from '@/api/downloadSettings'
+import { invoke, isTauri } from '@tauri-apps/api/core'
+import { onScopeDispose, watch } from 'vue'
+import sideTip from '@/composables/sideTip'
 const { values } = usePageSettings('PageSetupGameManage', {
   ComboDownloadHttpMode: '0',
 })
+let timer: ReturnType<typeof setTimeout> | undefined
+watch(
+  () => downloadSettings(values),
+  (settings) => {
+    if (!isTauri()) return
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      void invoke('set_download_settings', { settings }).catch((error) => {
+        console.error('Cannot apply download settings', error)
+        sideTip.show(String(error), 'warn')
+      })
+    }, 150)
+  },
+  { immediate: true },
+)
+onScopeDispose(() => clearTimeout(timer))
 
 const text = pclText
 </script>

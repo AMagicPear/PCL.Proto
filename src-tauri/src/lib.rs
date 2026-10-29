@@ -59,6 +59,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::launch_game,
+            core::downloader::resources::get_download_stats,
+            core::downloader::resources::set_download_settings,
             util::toys::get_lucky_today,
             commands::add_java,
             commands::get_java_list,

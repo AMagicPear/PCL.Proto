@@ -49,7 +49,7 @@ impl Drop for PartialFile {
 
 #[derive(Clone)]
 pub struct Downloader {
-    client: reqwest::Client,
+    resources: Arc<DownloadResources>,
     bases: super::api_client::ApiBases,
 }
 
@@ -61,19 +61,48 @@ impl Default for Downloader {
     }
 }
 
+#[cfg(test)]
+mod http_tests;
+mod range;
+pub mod resources;
+
+use resources::{DOWNLOAD_RESOURCES, DownloadResources, HttpMode};
+use std::sync::{Arc, LazyLock, atomic::Ordering};
+use tokio::io::BufWriter;
+
+pub(super) const SMALL_FILE_THRESHOLD: u64 = 4 * 1024 * 1024;
+type ProgressSink<'a> = Option<(&'a DownloadConfig, &'a mpsc::Sender<ProgressUpdate>)>;
+
+struct DownloadClients {
+    multiplexed: reqwest::Client,
+    http1: reqwest::Client,
+}
+static CLIENTS: LazyLock<DownloadClients> = LazyLock::new(|| {
+    let build = |http1| {
+        let mut builder = reqwest::Client::builder()
+            .user_agent(USER_AGENT)
+            .connect_timeout(Duration::from_secs(15))
+            .read_timeout(Duration::from_secs(15))
+            .pool_max_idle_per_host(64)
+            .pool_idle_timeout(Duration::from_secs(90));
+        if http1 {
+            builder = builder.http1_only();
+        }
+        builder.build().expect("static download HTTP configuration")
+    };
+    DownloadClients {
+        multiplexed: build(false),
+        http1: build(true),
+    }
+});
+
 impl Downloader {
     pub fn with_bases(bases: super::api_client::ApiBases) -> Self {
         Self {
             bases,
-            client: reqwest::Client::builder()
-                .user_agent(USER_AGENT)
-                .connect_timeout(Duration::from_secs(15))
-                .read_timeout(Duration::from_secs(30))
-                .build()
-                .expect("static HTTP client configuration"),
+            resources: DOWNLOAD_RESOURCES.clone(),
         }
     }
-
     pub async fn start_download(
         &self,
         options: DownloadConfig,
@@ -98,16 +127,14 @@ impl Downloader {
         .await;
         result.map(|_| ())
     }
-
     pub async fn download(&self, info: &DownloadInfo, path: &Path) -> Result<(), McApiError> {
         self.transfer(info, path, None).await.map(|_| ())
     }
-
     async fn transfer(
         &self,
         info: &DownloadInfo,
         path: &Path,
-        progress: Option<(&DownloadConfig, &mpsc::Sender<ProgressUpdate>)>,
+        progress: ProgressSink<'_>,
     ) -> Result<u64, McApiError> {
         if !super::minecraft::valid_sha1(&info.sha1) {
             return Err(McApiError::InvalidMetadata("Invalid download SHA-1".into()));
@@ -121,7 +148,7 @@ impl Downloader {
                     .unwrap_or(false)
         })
         .await
-        .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
+        .map_err(|e| McApiError::InvalidMetadata(e.to_string()))?;
         if cached {
             return Ok(0);
         }
@@ -129,54 +156,96 @@ impl Downloader {
             .parent()
             .ok_or_else(|| McApiError::InvalidMetadata("Missing destination parent".into()))?;
         tokio::fs::create_dir_all(parent).await?;
+        let urls = self.bases.download_urls(
+            &info.url,
+            self.resources.settings().file_source,
+            self.resources.official_fast.load(Ordering::Relaxed),
+        );
+        let mut disabled = vec![false; urls.len()];
+        let mut last_error = None;
         for attempt in 0..3 {
-            report(progress, 0, TaskStatus::Running).await;
-            match self.transfer_once(info, path, progress).await {
-                Ok(()) => return Ok(info.size),
-                Err(error) => {
-                    let permanent = matches!(&error, McApiError::RequestError(e)
-                        if e.status().is_some_and(|s| s.is_client_error() && s.as_u16() != 408 && s.as_u16() != 429));
-                    if attempt == 2 || permanent {
-                        return Err(error);
+            for (index, url) in urls.iter().enumerate() {
+                if disabled[index] {
+                    continue;
+                }
+                report(progress, 0, TaskStatus::Running).await;
+                let result = self.transfer_from(info, path, url, progress).await;
+                match result {
+                    Ok(()) => return Ok(info.size),
+                    Err(error) => {
+                        if matches!(&error, McApiError::IoError(_)) {
+                            return Err(error);
+                        }
+                        disabled[index] = permanent_http_error(&error);
+                        log::warn!("Download attempt {} failed for {url}: {error}", attempt + 1);
+                        last_error = Some(error);
                     }
-                    log::warn!(
-                        "Download failed for {} (attempt {}): {error}",
-                        path.display(),
-                        attempt + 1
-                    );
-                    tokio::time::sleep(Duration::from_millis(250 * (1 << attempt))).await;
                 }
             }
+            if attempt == 2 || disabled.iter().all(|disabled| *disabled) {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(300 * (attempt + 1))).await;
         }
-        unreachable!("bounded retry loop always returns")
+        Err(last_error
+            .unwrap_or_else(|| McApiError::InvalidMetadata("No download source available".into())))
     }
 
-    async fn transfer_once(
+    async fn transfer_from(
         &self,
         info: &DownloadInfo,
         path: &Path,
-        progress: Option<(&DownloadConfig, &mpsc::Sender<ProgressUpdate>)>,
+        url: &str,
+        progress: ProgressSink<'_>,
     ) -> Result<(), McApiError> {
-        let response = self
-            .client
-            .get(self.bases.download_url(&info.url))
-            .send()
-            .await?
-            .error_for_status()?;
-        let partial = PartialFile(
-            path.with_file_name(format!(".pcl-download-{}.part", uuid::Uuid::new_v4())),
-        );
-        let mut output = tokio::fs::OpenOptions::new()
+        if info.size >= SMALL_FILE_THRESHOLD && self.resources.settings().file_connections > 1 {
+            let partial = partial_file(path);
+            match self.download_ranges(info, &partial.0, url, progress).await {
+                Ok(()) => {
+                    let check_path = partial.0.clone();
+                    let hash = info.sha1.to_ascii_lowercase();
+                    let valid = tokio::task::spawn_blocking(move || {
+                        crate::util::file::check_sha1(&check_path, &hash)
+                    })
+                    .await
+                    .map_err(|e| McApiError::InvalidMetadata(e.to_string()))??;
+                    if !valid {
+                        return Err(McApiError::Sha1Mismatch(path.to_owned()));
+                    }
+                    tokio::fs::rename(&partial.0, path).await?;
+                    return Ok(());
+                }
+                Err(McApiError::RangeUnsupported) => {
+                    log::debug!("Range unavailable, using sequential download: {url}");
+                    report(progress, 0, TaskStatus::Running).await;
+                }
+                Err(error) => return Err(error),
+            }
+        }
+        let _lease = self.resources.acquire().await;
+        let response = send_request(
+            self.resources.settings().http_mode,
+            info.size >= SMALL_FILE_THRESHOLD,
+            url,
+            None,
+            None,
+        )
+        .await?
+        .error_for_status()?;
+        let partial = partial_file(path);
+        let output = tokio::fs::OpenOptions::new()
             .write(true)
             .create_new(true)
             .open(&partial.0)
             .await?;
+        let mut output = BufWriter::with_capacity(64 * 1024, output);
         let mut stream = response.bytes_stream();
         let mut hasher = sha1::Sha1::new();
         let mut bytes = 0_u64;
         let mut last_report = tokio::time::Instant::now();
         while let Some(chunk) = stream.next().await {
             let chunk = chunk?;
+            self.resources.record_bytes(chunk.len());
             bytes += chunk.len() as u64;
             if bytes > info.size {
                 return Err(McApiError::InvalidMetadata(format!(
@@ -184,6 +253,7 @@ impl Downloader {
                     path.display()
                 )));
             }
+            self.resources.throttle(chunk.len()).await;
             output.write_all(&chunk).await?;
             hasher.update(&chunk);
             if last_report.elapsed() >= Duration::from_millis(100) {
@@ -201,11 +271,52 @@ impl Downloader {
             return Err(McApiError::Sha1Mismatch(path.to_owned()));
         }
         output.flush().await?;
-        output.sync_all().await?;
+        // Download caches are replaceable; avoid an fsync for every tiny asset.
         drop(output);
         tokio::fs::rename(&partial.0, path).await?;
         Ok(())
     }
+}
+fn http_client(mode: HttpMode, large: bool) -> &'static reqwest::Client {
+    match mode {
+        HttpMode::Http11 => &CLIENTS.http1,
+        HttpMode::Auto if large => &CLIENTS.http1,
+        _ => &CLIENTS.multiplexed,
+    }
+}
+pub(super) async fn send_request(
+    mode: HttpMode,
+    large: bool,
+    url: &str,
+    range: Option<(u64, u64)>,
+    timeout: Option<Duration>,
+) -> Result<reqwest::Response, reqwest::Error> {
+    let send = |client: &reqwest::Client| {
+        let mut request = client
+            .get(url)
+            .header(reqwest::header::ACCEPT_ENCODING, "identity");
+        if let Some((start, end)) = range {
+            request = request.header(reqwest::header::RANGE, format!("bytes={start}-{end}"));
+        }
+        if let Some(timeout) = timeout {
+            request = request.timeout(timeout);
+        }
+        request.send()
+    };
+    let client = http_client(mode, large);
+    match send(client).await {
+        Err(error) if std::ptr::eq(client, &CLIENTS.multiplexed) && !error.is_timeout() => {
+            log::debug!("HTTP negotiation failed for {url}, retrying HTTP/1.1: {error}");
+            send(&CLIENTS.http1).await
+        }
+        result => result,
+    }
+}
+fn partial_file(path: &Path) -> PartialFile {
+    PartialFile(path.with_file_name(format!(".pcl-download-{}.part", uuid::Uuid::new_v4())))
+}
+fn permanent_http_error(error: &McApiError) -> bool {
+    matches!(error, McApiError::RequestError(e) if e.status().is_some_and(|s| s.is_client_error() && s.as_u16() != 408 && s.as_u16() != 429))
 }
 
 async fn report(

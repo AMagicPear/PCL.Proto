@@ -22,7 +22,7 @@ Proto 实现：
 | --- | --- |
 | `src-tauri/src/core/minecraft.rs` | Mojang 元数据类型、有序规则、平台上下文、本地库 classifier、共享支持库路径 |
 | `src-tauri/src/core/api_client.rs` | manifest v2、版本 JSON 的 SHA-1/ID 校验、保留完整 JSON、官方地址与 BMCLAPI 地址转换 |
-| `src-tauri/src/core/downloader.rs` | 单文件流式传输、大小与 SHA-1 校验、缓存校验、重试、临时文件发布、文件与阶段进度 |
+| `src-tauri/src/core/downloader.rs`、`downloader/` | 共享 HTTP 客户端、全局连接与带宽配额、Range 分段与会话内续传、下载源回退、校验、临时文件发布与统计 |
 | `src-tauri/src/core/installer.rs` | 安装计划、并发下载、natives 解压、旧资源映射、实例发布与失败清理 |
 | `src-tauri/src/core/version_export.rs` | 客户端/服务端导出，复用相同下载器与经校验的版本元数据 |
 | `src-tauri/src/core/repository.rs`、`game.rs` | 按需扫描、精确识别实例 JSON、自定义名称与原版版本号分离 |
@@ -85,9 +85,49 @@ cargo test -p pcl-proto --lib official_vanilla_install_with_custom_name -- --ign
 cargo test -p pcl-proto --lib official_client_and_server_export -- --ignored --nocapture
 ```
 
+## 第二批：下载策略与活动连接
+
+旧页面的活动连接写死为 `—`，Rust 没有提供活动请求统计。旧下载器每个安装任务同时处理 8 个文件，每个文件只有一个请求，出错后重新下载整个文件；多个安装任务也没有共享连接上限。设置页的下载选项此前只保存在浏览器中。
+
+本轮参考 CE 的 `AdaptiveRangeDownloader.cs`、`DownloadResourceManager.cs`、`FileDownloader.cs`、`ModDownload.cs` 和 `ModSetup.cs` 迁移原版安装与客户端/服务端导出的共享下载器：
+
+| 行为 | 当前实现 |
+| --- | --- |
+| 连接配额 | 所有安装/导出共享，默认 64，范围 1–256；单文件默认 8，范围 1–8。降低上限时允许已有请求完成，后续请求遵守新值 |
+| 小文件 | 小于 4 MiB 直接顺序下载，避免 Range 探测往返；复用连接池 |
+| 大文件 | 先用一字节 Range 探测；按约 8 MiB 划分，初始最多 1024 段，失败拆分后最多 2048 段；每段使用独立文件句柄与偏移 |
+| 中断与慢段 | 保留当前会话内已写入部分，仅续传剩余区间；剩余至少 2 MiB 时可拆分。运行至少 8 秒、还有至少 1 MiB 且明显慢于同伴的分段才恢复；限速时关闭慢段判断 |
+| Range 降级 | 忽略 Range、416、Content-Range/长度/编码不可靠时取消其他分段，丢弃临时文件并回退顺序下载；最终仍验证完整文件 SHA-1 |
+| 下载源 | 官方与 BMCLAPI 按偏好排序；库同时包含 `/maven` 和 `/libraries`。永久 4xx 跳过该来源，网络、流中断和校验错误可重试/换源；第三方来源不随意重写 |
+| 自动源选择 | 官方 manifest 成功用时低于 4 秒时，自动文件源优先官方，否则优先镜像。版本列表单独读取来源设置；Auto 官方请求超时为 5 秒，随后回退镜像 |
+| HTTP | Auto 下小文件优先协商 HTTP/2，大文件/Range 使用 HTTP/1.1；显式 HTTP/2 仍允许 HTTP/1.1 回退，协商失败也可重试 HTTP/1.1 |
+| 限速 | 共享令牌桶，128 KiB 突发容量；设置页滑块按 CE 的分段公式转换为字节/秒，可实时调整 |
+| 页面统计 | 每 300 ms 查询全局活动请求数/上限、实际接收速度；包括重试流量，不把缓存命中计为网络流量。离开页面停止轮询，迟到响应不更新已卸载组件 |
+| 磁盘 | 64 KiB 缓冲写入，完整校验后发布；可重新下载的缓存不逐个执行 `fsync` |
+
+设置页的下载源、版本列表源、连接数、单文件连接数、限速和 HTTP 协议均已接入 Rust。安装、导出和获取版本列表时也携带已保存的设置，首次下载不依赖先打开设置页。活动连接表示正在执行的 HTTP 请求/HTTP2 流，并不等于系统 TCP socket 数。
+
+新增验证：
+
+- Rust 核心离线回归 29 项通过，另有 1 项路径边界测试。覆盖全局/单文件上限、实时调整和取消释放、共享限速、分段拼接及断流续传、Range 探测及实际分段响应异常的顺序降级、校验失败保留原文件、临时文件清理、小文件不探测与缓存零流量。
+- 前端检查覆盖 CE 滑块边界、损坏配置回退、持久化设置传入安装/导出 IPC；`pnpm ui:build` 通过。
+- Chrome 使用真实 Vue 面板与模拟 Tauri 统计，验证 `23 / 64`、速度显示、空闲归零、失败清除旧数据、恢复以及卸载后停止请求。这不替代真实 Tauri WebView 验收。
+- 实网下载官方 `1.21.1` 客户端通过：文件 26,836,906 字节，实际接收 26,836,907 字节（含一字节 Range 探测），下载/校验用时 17.163 秒。
+- 本地按请求限速服务的单次对照：同一份 32 MiB 文件、同一配置下，单连接顺序下载 2.777 秒，最多 8 连接的 Range 下载 1.750 秒；两份内容及 SHA-1 一致，Range 额外接收一字节。文件实际分成 4 段；使用 Rust debug 构建，计时包含校验和磁盘操作。此结果仅说明单请求受限场景的收益，**不是 CE 实际运行对比，也不是实网加速承诺**。
+- `cargo clippy -p pcl-proto --lib` 执行通过；已有全仓告警仍单独保留。
+
+额外显式检查：
+
+```sh
+cargo test -p pcl-proto --lib controlled_range_benchmark -- --ignored --nocapture
+cargo test -p pcl-proto --lib official_large_client_range_smoke -- --ignored --nocapture
+```
+
+与 CE 的剩余差异：版本列表目前按偏好顺序超时/失败回退，尚未复刻 CE 的延时并行竞速；文件切换来源或整个传输重试会重新下载该文件，不持久化跨来源分段。没有新增 UI 取消入口、跨应用重启断点恢复或任意未知大小 URL 的通用下载入口。
+
 ## 当前边界与下一批
 
-本批没有验证真实游戏进程启动，也没有完成现代 `arguments.game/jvm`、旧 `minecraftArguments`、版本继承、Java 版本/架构选择和实例隔离的整体迁移。旧版 x64 native 在 ARM 主机上能下载和解压，并不代表能用 ARM Java 启动。BMCLAPI 的地址转换有离线测试，但没有进行 BMCLAPI 真实服务安装验收；下载源自动竞速/降级、分段下载、断点续传、用户取消及应用崩溃后的安装恢复尚未实现。新安装拒绝覆盖已有目录，原地修复另做明确入口。
+本批没有验证真实游戏进程启动，也没有完成现代 `arguments.game/jvm`、旧 `minecraftArguments`、版本继承、Java 版本/架构选择和实例隔离的整体迁移。旧版 x64 native 在 ARM 主机上能下载和解压，并不代表能用 ARM Java 启动。BMCLAPI 的地址转换有离线测试，但没有进行 BMCLAPI 真实服务安装验收；分段下载、会话内续传和下载源降级见第二批；版本列表竞速、UI 用户取消及应用崩溃后的安装恢复尚未实现。新安装拒绝覆盖已有目录，原地修复另做明确入口。
 
 后续按依赖推进：
 

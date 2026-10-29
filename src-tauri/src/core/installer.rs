@@ -210,7 +210,8 @@ async fn download_plan(
                 }
             },
         ))
-        .buffer_unordered(8)
+        // The shared quota controls requests, including live connection-limit changes.
+        .buffer_unordered(256)
         .try_collect::<Vec<_>>()
         .await;
         drop(tx);
@@ -375,7 +376,11 @@ pub async fn download_minecraft_version(
     version_id: String,
     task_id: i32,
     instance_name: String,
+    download_settings: Option<super::downloader::resources::DownloadSettings>,
 ) -> Result<(), String> {
+    if let Some(settings) = download_settings {
+        super::downloader::resources::DOWNLOAD_RESOURCES.configure(settings)?;
+    }
     let repo = state.lock().await.active_repo_path.clone();
     install_version(
         &client,

@@ -153,6 +153,53 @@ try {
     if (!manual) assert.match(html, /aria-label="另存为"/)
   }
 
+  const { downloadSettings } = await server.ssrLoadModule('/src/api/downloadSettings.ts')
+  const downloadDefaults = {
+    max_connections: 64,
+    file_connections: 8,
+    speed_limit: 0,
+    http_mode: 0,
+    file_source: 1,
+    version_source: 1,
+  }
+  assert.deepEqual(downloadSettings({}), downloadDefaults)
+  assert.deepEqual(downloadSettings(sourceDefaults.PageSetupGameManage), downloadDefaults)
+  assert.equal(downloadSettings({ ComboDownloadSource: '' }).file_source, 1)
+  for (const [value, bytes] of [
+    [0, 104858],
+    [14, 1572864],
+    [15, 2097152],
+    [31, 10485760],
+    [32, 11534336],
+    [41, 20971520],
+    [42, 0],
+  ]) {
+    assert.equal(downloadSettings({ SliderDownloadSpeed: value }).speed_limit, bytes)
+  }
+  assert.deepEqual(
+    downloadSettings({
+      SliderDownloadThread: 256,
+      SliderDownloadFileConnection: -1,
+      SliderDownloadSpeed: null,
+      ComboDownloadHttpMode: 'invalid',
+      ComboDownloadSource: false,
+    }),
+    downloadDefaults,
+  )
+  storage.set(
+    'pcl-ui:PageSetupGameManage:global',
+    JSON.stringify({
+      SliderDownloadThread: 15,
+      SliderDownloadFileConnection: 1,
+      ComboDownloadHttpMode: '1',
+      ComboDownloadVersion: '0',
+    }),
+  )
+  assert.equal(downloadSettings().max_connections, 16)
+  assert.equal(downloadSettings().file_connections, 2)
+  assert.equal(downloadSettings().http_mode, 1)
+  assert.equal(downloadSettings().version_source, 0)
+
   const calls = []
   Object.defineProperty(globalThis, 'window', {
     configurable: true,
@@ -179,6 +226,8 @@ try {
       ['export_minecraft_version', 1, true],
     ],
   )
+  assert.equal(calls[0].args.download_settings.max_connections, 16)
+  assert.equal(calls[0].args.download_settings.file_connections, 2)
   assert.equal(manager.tasks[0].items.length, 2)
   calls[0].args.on_event.onmessage({
     task_id: 0,

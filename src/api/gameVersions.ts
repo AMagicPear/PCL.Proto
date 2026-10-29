@@ -1,4 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import { downloadSettings } from './downloadSettings.ts'
 export type gameVersionType =
   | 'snapshot'
   | 'release'
@@ -74,7 +75,8 @@ export function classifyVersion(version: ManifestVersion): 'release' | 'snapshot
 }
 export async function getMinecraftVersions(): Promise<IVersionShow> {
   let data: { versions: ManifestVersion[] }
-  if (isTauri()) data = await invoke('get_version_manifest')
+  if (isTauri())
+    data = await invoke('get_version_manifest', { downloadSettings: downloadSettings() })
   else {
     const response = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest.json')
     if (!response.ok) throw new Error(`Minecraft 版本列表请求失败：HTTP ${response.status}`)

@@ -183,7 +183,11 @@ pub async fn select_instance(
 #[tauri::command]
 pub async fn get_version_manifest(
     client: State<'_, &api_client::MinecraftApiClient>,
+    download_settings: Option<crate::core::downloader::resources::DownloadSettings>,
 ) -> Result<api_client::game::VersionManifest, String> {
+    if let Some(settings) = download_settings {
+        crate::core::downloader::resources::DOWNLOAD_RESOURCES.configure(settings)?;
+    }
     match client
         .get_with_endpoint::<api_client::game::VersionManifest>(
             api_client::game::VERSION_MANIFEST_ENDPOINT,

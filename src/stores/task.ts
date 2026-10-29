@@ -1,4 +1,5 @@
 import { pclText } from '@/api/pclLocale'
+import { downloadSettings } from '@/api/downloadSettings'
 import { FloatButtonType, useFloatButton } from '@/composables/useFloatButton'
 import { Channel, invoke } from '@tauri-apps/api/core'
 import { defineStore } from 'pinia'
@@ -146,6 +147,7 @@ export const useTaskManager = defineStore('task-manager', () => {
         on_event: onEvent,
         version_id: versionId,
         task_id: id,
+        download_settings: downloadSettings(),
       })
       task.status = TaskStatus.Completed
       task.progress = 1

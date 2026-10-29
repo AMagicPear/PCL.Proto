@@ -246,7 +246,11 @@ pub async fn export_minecraft_version(
     server: bool,
     task_id: i32,
     on_event: Channel<TaskItemReport>,
+    download_settings: Option<super::downloader::resources::DownloadSettings>,
 ) -> Result<String, String> {
+    if let Some(settings) = download_settings {
+        super::downloader::resources::DOWNLOAD_RESOURCES.configure(settings)?;
+    }
     export_version(&client, &version_id, &directory, server, task_id, on_event)
         .await
         .map_err(|error| error.to_string())

@@ -76,6 +76,57 @@ impl ApiBases {
         }
         rewritten
     }
+    pub fn download_urls(
+        &self,
+        url: &str,
+        preference: super::downloader::resources::SourcePreference,
+        official_fast: bool,
+    ) -> Vec<String> {
+        use super::downloader::resources::SourcePreference;
+        // Test/private API bases remain isolated from public network fallbacks.
+        if !matches!(
+            self.meta_base,
+            "https://piston-meta.mojang.com" | "https://bmclapi2.bangbang93.com"
+        ) {
+            return vec![self.download_url(url)];
+        }
+        let canonical = if let Some(path) = url.strip_prefix("https://bmclapi2.bangbang93.com/") {
+            if let Some(tail) = path.strip_prefix("assets/") {
+                format!("https://resources.download.minecraft.net/{tail}")
+            } else if let Some(tail) = path
+                .strip_prefix("maven/")
+                .or_else(|| path.strip_prefix("libraries/"))
+            {
+                format!("https://libraries.minecraft.net/{tail}")
+            } else if path.starts_with("mc/game/") || path.ends_with(".json") {
+                format!("https://piston-meta.mojang.com/{path}")
+            } else if path.starts_with("v1/objects/") {
+                format!("https://piston-data.mojang.com/{path}")
+            } else {
+                return vec![url.into()];
+            }
+        } else {
+            url.to_owned()
+        };
+        let mirror = Self::new(&ApiProvider::BMCLApi).download_url(&canonical);
+        if mirror == canonical {
+            return vec![canonical];
+        }
+        let mut mirrors = vec![mirror.clone()];
+        if let Some(tail) = mirror.strip_prefix("https://bmclapi2.bangbang93.com/maven/") {
+            mirrors.push(format!("https://bmclapi2.bangbang93.com/libraries/{tail}"));
+        }
+        if matches!(preference, SourcePreference::Official)
+            || (matches!(preference, SourcePreference::Auto) && official_fast)
+        {
+            let mut urls = vec![canonical];
+            urls.extend(mirrors);
+            urls
+        } else {
+            mirrors.push(canonical);
+            mirrors
+        }
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -91,6 +142,12 @@ pub enum McApiError {
 
     #[error("Invalid Minecraft metadata: {0}")]
     InvalidMetadata(String),
+
+    #[error("Download source does not support reliable HTTP Range")]
+    RangeUnsupported,
+
+    #[error("Download segment is significantly slower than its peers")]
+    SlowSegment,
 
     #[error("Version not found: {0}")]
     VersionNotFound(String),
@@ -215,18 +272,86 @@ impl MinecraftApiClient {
 
     /// Get data from a URL
     async fn get_inner<T: DeserializeOwned>(&self, url: &str) -> McApiResult<T> {
-        let actual_url = self.api_bases.read().await.download_url(url);
-        let response = self
-            .client
-            .get(&actual_url)
-            .timeout(Duration::from_secs(60))
-            .header(reqwest::header::USER_AGENT, USER_AGENT)
-            .send()
-            .await?
-            .error_for_status()?;
-        let data: T = response.json().await?;
-        log::info!("got data from {:?}", url);
-        Ok(data)
+        self.fetch_checked(url, |bytes| Ok(serde_json::from_slice(bytes)?))
+            .await
+    }
+
+    async fn fetch_checked<T>(
+        &self,
+        url: &str,
+        validate: impl Fn(&[u8]) -> McApiResult<T>,
+    ) -> McApiResult<T> {
+        use super::downloader::resources::{DOWNLOAD_RESOURCES, SourcePreference};
+        use futures_util::StreamExt;
+        use std::sync::atomic::Ordering;
+        let settings = DOWNLOAD_RESOURCES.settings();
+        let manifest = url.ends_with(game::VERSION_MANIFEST_ENDPOINT);
+        let preference = if manifest {
+            settings.version_source
+        } else {
+            settings.file_source
+        };
+        let urls = self.api_bases.read().await.download_urls(
+            url,
+            preference,
+            manifest || DOWNLOAD_RESOURCES.official_fast.load(Ordering::Relaxed),
+        );
+        let mut last_error = None;
+        for actual_url in urls {
+            let official_manifest =
+                manifest && actual_url.starts_with("https://piston-meta.mojang.com/");
+            let result = async {
+                let _lease = DOWNLOAD_RESOURCES.acquire().await;
+                let started = Instant::now();
+                let timeout = Duration::from_secs(
+                    if official_manifest && matches!(preference, SourcePreference::Auto) {
+                        5
+                    } else {
+                        15
+                    },
+                );
+                let response = super::downloader::send_request(
+                    settings.http_mode,
+                    false,
+                    &actual_url,
+                    None,
+                    Some(timeout),
+                )
+                .await?
+                .error_for_status()?;
+                let mut stream = response.bytes_stream();
+                let mut bytes = Vec::new();
+                while let Some(chunk) = stream.next().await {
+                    let chunk = chunk?;
+                    DOWNLOAD_RESOURCES.record_bytes(chunk.len());
+                    DOWNLOAD_RESOURCES.throttle(chunk.len()).await;
+                    bytes.extend_from_slice(&chunk);
+                }
+                let value = validate(&bytes)?;
+                if official_manifest {
+                    DOWNLOAD_RESOURCES.official_fast.store(
+                        started.elapsed() < Duration::from_secs(4),
+                        Ordering::Relaxed,
+                    );
+                }
+                Ok(value)
+            }
+            .await;
+            if official_manifest && result.is_err() {
+                DOWNLOAD_RESOURCES
+                    .official_fast
+                    .store(false, Ordering::Relaxed);
+            }
+            match result {
+                Ok(value) => return Ok(value),
+                Err(error) => {
+                    log::warn!("Metadata source failed for {actual_url}: {error}");
+                    last_error = Some(error);
+                }
+            }
+        }
+        Err(last_error
+            .unwrap_or_else(|| McApiError::InvalidMetadata("No metadata source available".into())))
     }
 
     /// Get data from a URL with cache
@@ -257,7 +382,7 @@ impl MinecraftApiClient {
         endpoint: &str,
         allow_from_cache: bool,
     ) -> McApiResult<T> {
-        let url = format!("{}/{}", self.api_bases.read().await.meta_base, endpoint);
+        let url = format!("https://piston-meta.mojang.com/{endpoint}");
         self.get(&url, allow_from_cache).await
     }
 
@@ -291,22 +416,24 @@ impl MinecraftApiClient {
             .iter()
             .find(|v| v.id == version_id)
             .ok_or_else(|| McApiError::VersionNotFound(version_id.into()))?;
-        let bytes = self.get_bytes(&version.url).await?;
-        if let Some(expected) = &version.sha1 {
-            let actual = format!("{:x}", sha1::Sha1::digest(&bytes));
-            if !actual.eq_ignore_ascii_case(expected) {
+        self.fetch_checked(&version.url, |bytes| {
+            if let Some(expected) = &version.sha1 {
+                let actual = format!("{:x}", sha1::Sha1::digest(bytes));
+                if !actual.eq_ignore_ascii_case(expected) {
+                    return Err(McApiError::InvalidMetadata(
+                        "Version JSON SHA-1 mismatch".into(),
+                    ));
+                }
+            }
+            let value: serde_json::Value = serde_json::from_slice(bytes)?;
+            if value["id"].as_str() != Some(version_id) {
                 return Err(McApiError::InvalidMetadata(
-                    "Version JSON SHA-1 mismatch".into(),
+                    "Version metadata ID mismatch".into(),
                 ));
             }
-        }
-        let value: serde_json::Value = serde_json::from_slice(&bytes)?;
-        if value["id"].as_str() != Some(version_id) {
-            return Err(McApiError::InvalidMetadata(
-                "Version metadata ID mismatch".into(),
-            ));
-        }
-        Ok(value)
+            Ok(value)
+        })
+        .await
     }
 
     /// Get forge version details
@@ -385,17 +512,7 @@ impl MinecraftApiClient {
     }
 
     pub async fn get_bytes(&self, url: &str) -> McApiResult<Vec<u8>> {
-        let actual_url = self.api_bases.read().await.download_url(url);
-        let response = self
-            .client
-            .get(&actual_url)
-            .timeout(Duration::from_secs(60))
-            .header(reqwest::header::USER_AGENT, USER_AGENT)
-            .send()
-            .await?
-            .error_for_status()?;
-        let bytes = response.bytes().await?;
-        Ok(bytes.to_vec())
+        self.fetch_checked(url, |bytes| Ok(bytes.to_vec())).await
     }
 }
 
@@ -413,6 +530,49 @@ pub async fn fetch_with_modrinth(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_preferences_keep_official_fallback_and_both_library_mirrors() {
+        use super::super::downloader::resources::SourcePreference;
+        let bases = ApiBases::new(&ApiProvider::Official);
+        let official = "https://libraries.minecraft.net/org/test.jar";
+        let mirror = "https://bmclapi2.bangbang93.com/maven/org/test.jar";
+        let legacy = "https://bmclapi2.bangbang93.com/libraries/org/test.jar";
+        assert_eq!(
+            bases.download_urls(official, SourcePreference::Mirror, true),
+            vec![mirror, legacy, official]
+        );
+        assert_eq!(
+            bases.download_urls(mirror, SourcePreference::Official, false),
+            vec![official, mirror, legacy]
+        );
+        assert_eq!(
+            bases.download_urls(official, SourcePreference::Auto, false),
+            vec![mirror, legacy, official]
+        );
+        assert_eq!(
+            bases.download_urls(official, SourcePreference::Auto, true),
+            vec![official, mirror, legacy]
+        );
+        let assets = bases.download_urls(
+            "https://bmclapi2.bangbang93.com/assets/ab/hash",
+            SourcePreference::Official,
+            true,
+        );
+        assert_eq!(
+            assets[0],
+            "https://resources.download.minecraft.net/ab/hash"
+        );
+        for url in [
+            "https://example.org/file",
+            "https://libraries.minecraft.net.evil.test/file",
+        ] {
+            assert_eq!(
+                bases.download_urls(url, SourcePreference::Mirror, false),
+                vec![url]
+            );
+        }
+    }
 
     #[test]
     fn mirrors_known_official_hosts_without_rewriting_third_party_origins() {
