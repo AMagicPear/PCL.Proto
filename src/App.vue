@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { pclText } from '@/api/pclLocale'
 import { RouterView } from 'vue-router'
+import { useTemplateRef } from 'vue'
+import { usePageTransition } from './composables/usePageTransition'
 import TitleMessage from './components/website/TitleMessage.vue'
 import useSideNavState from '@/stores/windowState'
 import WindowHeader from './components/WindowHeader.vue'
@@ -16,6 +18,7 @@ const sideNavState = useSideNavState()
 const modal = useModal()
 const { floatButtonState } = useFloatButton()
 const website = !isTauri()
+usePageTransition(useTemplateRef<HTMLElement>('page'))
 
 if (isTauri())
   listen<string>('modal-open', (event) => {
@@ -34,7 +37,7 @@ if (isTauri())
     <!-- 标题框 -->
     <WindowHeader />
     <!-- 主页面 -->
-    <div id="page">
+    <div id="page" ref="page">
       <!-- 页面 -->
       <RouterView />
       <!-- 用作动画 -->
