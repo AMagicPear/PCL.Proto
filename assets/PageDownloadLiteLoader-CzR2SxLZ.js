@@ -1,1 +1,0 @@
-import{W as e,X as a,nt as t}from"./index-DKJXkQky.js";import{t as o}from"./PageDownloadVersionList-CsD81Eme.js";var r=a({__name:"PageDownloadLiteLoader",setup(_){return(d,l)=>(t(),e(o,{loader:"LiteLoader",website:"https://www.liteloader.com"}))}}),i=r;export{i as default};

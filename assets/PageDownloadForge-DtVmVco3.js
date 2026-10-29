@@ -1,0 +1,1 @@
+import{Q as e,it as o,ut as t}from"./index-AfYNj-VM.js";import{t as a}from"./PageDownloadVersionList-C4TWYoME.js";var r=o({__name:"PageDownloadForge",setup(_){return(n,s)=>(t(),e(a,{loader:"Forge",website:"https://files.minecraftforge.net",supported:""}))}}),u=r;export{u as default};

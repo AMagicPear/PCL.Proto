@@ -1,0 +1,1 @@
+import{Q as e,it as a,ut as t}from"./index-AfYNj-VM.js";import{t as r}from"./PageDownloadVersionList-C4TWYoME.js";var o=a({__name:"PageDownloadLegacyFabric",setup(c){return(_,n)=>(t(),e(r,{loader:"LegacyFabric",website:"https://legacyfabric.net/"}))}}),s=o;export{s as default};

@@ -1,0 +1,1 @@
+import{Q as e,it as o,ut as a}from"./index-AfYNj-VM.js";import{t}from"./PageComp-D83_29Mi.js";var r=o({__name:"PageDownloadWorld",setup(_){return(l,p)=>(a(),e(t,{"project-type":"world"}))}}),n=r;export{n as default};

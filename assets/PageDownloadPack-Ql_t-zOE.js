@@ -1,0 +1,1 @@
+import{Q as e,it as a,ut as t}from"./index-AfYNj-VM.js";import{t as o}from"./PageComp-D83_29Mi.js";var r=a({__name:"PageDownloadPack",setup(_){return(p,c)=>(t(),e(o,{"project-type":"modpack"}))}}),l=r;export{l as default};

@@ -1,1 +1,0 @@
-import{W as e,X as a,nt as o}from"./index-DKJXkQky.js";import{t}from"./PageDownloadVersionList-CsD81Eme.js";var r=a({__name:"PageDownloadLabyMod",setup(_){return(d,n)=>(o(),e(t,{loader:"LabyMod",website:"https://labymod.net"}))}}),p=r;export{p as default};

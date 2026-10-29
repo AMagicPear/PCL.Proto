@@ -1,1 +1,0 @@
-import{W as e,X as o,nt as a}from"./index-DKJXkQky.js";import{t}from"./PageDownloadVersionList-CsD81Eme.js";var r=o({__name:"PageDownloadNeoForge",setup(n){return(_,s)=>(a(),e(t,{loader:"NeoForge",website:"https://neoforged.net"}))}}),d=r;export{d as default};

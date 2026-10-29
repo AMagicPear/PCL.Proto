@@ -1,0 +1,1 @@
+import{Q as e,it as a,ut as t}from"./index-AfYNj-VM.js";import{t as r}from"./PageComp-D83_29Mi.js";var o=a({__name:"PageDownloadShader",setup(_){return(p,d)=>(t(),e(r,{"project-type":"shader"}))}}),l=o;export{l as default};

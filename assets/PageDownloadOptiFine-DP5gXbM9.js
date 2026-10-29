@@ -1,1 +1,0 @@
-import{W as e,X as t,nt as a}from"./index-DKJXkQky.js";import{t as o}from"./PageDownloadVersionList-CsD81Eme.js";var n=t({__name:"PageDownloadOptiFine",setup(i){return(p,r)=>(a(),e(o,{loader:"OptiFine",website:"https://www.optifine.net/"}))}}),l=n;export{l as default};

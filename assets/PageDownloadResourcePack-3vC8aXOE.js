@@ -1,0 +1,1 @@
+import{Q as e,it as a,ut as o}from"./index-AfYNj-VM.js";import{t}from"./PageComp-D83_29Mi.js";var r=a({__name:"PageDownloadResourcePack",setup(c){return(u,_)=>(o(),e(t,{"project-type":"resourcepack"}))}}),n=r;export{n as default};

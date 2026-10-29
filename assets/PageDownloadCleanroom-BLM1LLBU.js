@@ -1,0 +1,1 @@
+import{Q as e,it as o,ut as a}from"./index-AfYNj-VM.js";import{t}from"./PageDownloadVersionList-C4TWYoME.js";var r=o({__name:"PageDownloadCleanroom",setup(n){return(l,_)=>(a(),e(t,{loader:"Cleanroom",website:"https://cleanroommc.com/zh/"}))}}),p=r;export{p as default};
