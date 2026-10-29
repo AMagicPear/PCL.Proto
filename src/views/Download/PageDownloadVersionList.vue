@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, shallowRef, watch, onMounted } from 'vue'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { getMinecraftVersions } from '@/api/gameVersions'
 import type { McPluginReport } from '@/types/mcPlugin'
 import PCard from '@/components/widget/PCard.vue'
+import PVirtualList from '@/components/widget/PVirtualList.vue'
 import PListItem from '@/components/widget/PListItem.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
 import PButton from '@/components/widget/PButton.vue'
@@ -16,7 +17,7 @@ const localeName = computed(() => (props.loader === 'OptiFine' ? 'Optifine' : pr
 const text = pclText
 const minecraft = ref('')
 const minecraftOptions = ref<{ key: string; text: string }[]>([])
-const versions = ref<McPluginReport[]>([])
+const versions = shallowRef<McPluginReport[]>([])
 const error = ref('')
 const loading = ref(false)
 let request = 0
@@ -89,14 +90,19 @@ watch(minecraft, load)
         }}</PButton></PHint
       ><PCard v-else :title="minecraft || loader"
         ><div class="version-list">
-          <PListItem
-            v-for="version in versions"
-            :key="version.version"
-            :title="version.version"
-            :subtitle="version.stable ? text('Download.Version.Type.Stable') : undefined"
-            clickable
-            @click="() => sideTip.show(pclText('Proto.NotImplemented.Installer'))"
-          />
+          <PVirtualList
+            :items="versions"
+            :item-key="(version) => version.version"
+            v-slot="{ item: version }"
+          >
+            <PListItem
+              :key="version.version"
+              :title="version.version"
+              :subtitle="version.stable ? text('Download.Version.Type.Stable') : undefined"
+              clickable
+              @click="() => sideTip.show(pclText('Proto.NotImplemented.Installer'))"
+            />
+          </PVirtualList>
           <p v-if="!versions.length" class="pcl-empty">
             {{ pclText('Download.Install.State.NoAvailableVersion') }}
           </p>

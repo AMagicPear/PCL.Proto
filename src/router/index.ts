@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import { lastSubTabOf, rememberSubTab } from '@/layout/navMemory'
 import HomeView from '@/views/Home/PageLaunch.vue'
 import SetupView from '@/views/Setup/PageSetupLeft'
 import HomeSubView from '@/views/Home/PageLaunchRight.vue'
@@ -33,16 +34,10 @@ const router = createRouter({
       ],
     },
     {
-      path: '/account/:login?',
-      component: HomeView,
-      meta: { isSubPage: true, title: 'Proto.Title.Accounts' },
-      children: [{ path: '', component: HomeSubView }],
-    },
-    {
       path: '/download',
       name: 'download',
       component: DownloadView,
-      redirect: '/download/game',
+      redirect: () => lastSubTabOf('/download') ?? '/download/game',
       children: [
         {
           path: 'favorites',
@@ -107,7 +102,7 @@ const router = createRouter({
       path: '/setup',
       name: 'setup',
       component: SetupView,
-      redirect: '/setup/launch',
+      redirect: () => lastSubTabOf('/setup') ?? '/setup/launch',
       children: [
         { path: 'manage', component: () => import('@/views/Setup/PageSetupGameManage.vue') },
         {
@@ -142,7 +137,7 @@ const router = createRouter({
       path: '/tools',
       name: 'tools',
       component: () => import('@/views/Tools/PageToolsLeft.ts'),
-      redirect: '/tools/lobby',
+      redirect: () => lastSubTabOf('/tools') ?? '/tools/lobby',
       children: [
         {
           path: 'lobby',
@@ -283,7 +278,7 @@ const router = createRouter({
       path: '/resource',
       name: 'resource',
       component: ResouceVersions,
-      meta: { isSubPage: true, title: 'download.resource_download', fullPage: true },
+      meta: { isSubPage: true, title: 'Proto.Title.ResourceDownload', fullPage: true },
     },
     {
       path: '/homepageeditor',
@@ -298,6 +293,11 @@ const router = createRouter({
       meta: { fullPage: false, isSubPage: true, title: 'Main.Title.TaskManager' },
     },
   ],
+})
+
+// 记录每个一级标签页最后停留的二级标签页，便于切走再切回时恢复
+router.afterEach((to) => {
+  rememberSubTab(to.path)
 })
 
 export default router

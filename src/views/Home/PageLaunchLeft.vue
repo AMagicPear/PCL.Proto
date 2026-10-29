@@ -6,7 +6,8 @@ import PageLoginOffline from './PageLoginOffline.vue'
 import PageLoginMs from './PageLoginMs.vue'
 import PageLoginAuth from './PageLoginAuth.vue'
 import { useSelectedInstance } from '@/stores/gameLaunch'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
+import type { ProfileView } from '@/types/profile'
 import { invoke } from '@tauri-apps/api/core'
 import { prepareGameJava, downloadGameJava, type JavaInstallProgress } from '@/api/javaReq'
 import { useModal } from '@/composables/useModal'
@@ -25,17 +26,18 @@ defineProps<{
     trivia?: string
   }
 }>()
-const route = useRoute()
 const router = useRouter()
 const instance = useSelectedInstance()
 const text = pclText
-const accountView = computed(() =>
-  route.path.startsWith('/account')
-    ? { offline: PageLoginOffline, microsoft: PageLoginMs, auth: PageLoginAuth }[
-        String(route.params.login)
-      ] || PageLoginProfile
-    : PageLoginProfileSkin,
-)
+const profileView = ref<ProfileView>('skin')
+const accountViews = {
+  skin: PageLoginProfileSkin,
+  profiles: PageLoginProfile,
+  offline: PageLoginOffline,
+  microsoft: PageLoginMs,
+  auth: PageLoginAuth,
+}
+const accountView = computed(() => accountViews[profileView.value])
 const modal = useModal()
 const preparing = ref(false)
 const javaCancelled = ref(false)
@@ -139,7 +141,7 @@ function settings() {
       }}</PButton>
     </div>
     <template v-else
-      ><div class="login-panel"><component :is="accountView" /></div>
+      ><div class="login-panel"><component :is="accountView" @view="profileView = $event" /></div>
       <PHint v-if="preparing" severity="info" aria-live="polite">
         {{
           javaProgress

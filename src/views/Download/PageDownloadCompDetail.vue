@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import modrinthApi, { type IProject, type IVersion } from '@/api/modrinthApi'
 import PCard from '@/components/widget/PCard.vue'
+import PVirtualList from '@/components/widget/PVirtualList.vue'
+import { groupCompVersions } from '@/api/compResources'
 import PCompItem from '@/components/widget/PCompItem.vue'
 import PListItem from '@/components/widget/PListItem.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
@@ -9,7 +11,7 @@ import PLoading from '@/components/widget/PLoading.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { useRoute } from 'vue-router'
-import { computed, ref, watch } from 'vue'
+import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 import { useCompFavorites } from '@/stores/compFavorites'
@@ -17,8 +19,8 @@ const favorites = useCompFavorites()
 
 const route = useRoute()
 const text = pclText
-const project = ref<IProject>()
-const versions = ref<IVersion[]>([])
+const project = shallowRef<IProject>()
+const versions = shallowRef<IVersion[]>([])
 const loading = ref(false)
 const error = ref('')
 const versionFilter = ref('')
@@ -32,15 +34,18 @@ const item = computed(
       versions: gameVersions.value,
     },
 )
-const gameVersions = computed(() => [
-  ...new Set(versions.value.flatMap((version) => version.game_versions)),
-])
+const gameVersions = computed(() =>
+  [...new Set(versions.value.flatMap((version) => version.game_versions))]
+    .sort(new Intl.Collator('en', { numeric: true }).compare)
+    .reverse(),
+)
 const loaders = computed(() => [...new Set(versions.value.flatMap((version) => version.loaders))])
-const filtered = computed(() =>
-  versions.value.filter(
-    (version) =>
-      (!versionFilter.value || version.game_versions.includes(versionFilter.value)) &&
-      (!loaderFilter.value || version.loaders.includes(loaderFilter.value)),
+const groups = computed(() =>
+  groupCompVersions(
+    versions.value,
+    versionFilter.value,
+    loaderFilter.value,
+    project.value?.project_type === 'mod' && loaders.value.length > 1,
   ),
 )
 const projectUrl = computed(() =>
@@ -50,6 +55,9 @@ function safeUrl(value: string) {
   return /^https:\/\//i.test(value) ? value : undefined
 }
 let request = 0
+onScopeDispose(() => {
+  request++
+})
 async function load() {
   const current = ++request
   loading.value = true
@@ -168,29 +176,41 @@ watch(
           />
         </div>
       </PCard>
-      <PCard v-for="version in filtered" :key="version.id" :title="version.name">
+      <PCard
+        v-for="group in groups"
+        :key="`${versionFilter}:${loaderFilter}:${group.key}`"
+        :title="group.name"
+        :default-fold-status="groups.length === 1 ? 'unfold' : 'fold'"
+      >
         <div class="version-files">
-          <PListItem
-            v-for="file in version.files"
-            :key="file.url"
-            :title="file.filename"
-            :subtitle="`${version.game_versions.join(', ')} · ${version.loaders.join(', ')} · ${new Date(version.date_published).toLocaleString()}`"
+          <PVirtualList
+            :items="
+              group.versions.flatMap((version) => version.files.map((file) => ({ version, file })))
+            "
+            :item-key="(row) => `${row.version.id}:${row.file.url}`"
+            v-slot="{ item: { version, file } }"
           >
-            <template #actions
-              ><a
-                v-if="safeUrl(file.url)"
-                :href="safeUrl(file.url)"
-                target="_blank"
-                rel="noopener noreferrer"
-                :download="file.filename"
-                class="file-download"
-                ><PSvgIcon name="lucide/download" />{{ pclText('Common.Action.Download') }}</a
-              ></template
+            <PListItem
+              :title="version.name"
+              :subtitle="`${file.filename} · ${version.loaders.join(', ')} · ${new Date(version.date_published).toLocaleString()}`"
             >
-          </PListItem>
+              <template #actions>
+                <a
+                  v-if="safeUrl(file.url)"
+                  :href="safeUrl(file.url)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  :download="file.filename"
+                  class="file-download"
+                >
+                  <PSvgIcon name="lucide/download" />{{ pclText('Common.Action.Download') }}
+                </a>
+              </template>
+            </PListItem>
+          </PVirtualList>
         </div>
       </PCard>
-      <p v-if="!filtered.length" class="pcl-empty">{{ pclText('Proto.Empty.FilteredVersions') }}</p>
+      <p v-if="!groups.length" class="pcl-empty">{{ pclText('Proto.Empty.FilteredVersions') }}</p>
     </template>
   </article>
 </template>

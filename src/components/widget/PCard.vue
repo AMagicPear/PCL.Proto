@@ -1,7 +1,6 @@
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import IconUnfold from '../icons/control/IconUnfold.vue'
-import { motion } from 'motion-v'
 
 export type FoldStatus = 'unfold' | 'fold' | 'unfoldable'
 
@@ -20,6 +19,8 @@ const props = withDefaults(
 )
 
 const foldState = ref<FoldStatus>(props.defaultFoldStatus)
+// Keep opened content alive so folding preserves form and selection state.
+const contentMounted = ref(props.defaultFoldStatus !== 'fold')
 const cardHeight = ref<number>(40)
 const mycardInnerRef = useTemplateRef<HTMLElement>('mycardInner')
 const shouldSpring = ref<boolean>(true)
@@ -37,31 +38,46 @@ function toggleFold() {
       cardHeight.value = 40
       break
     case 'fold':
+      contentMounted.value = true
       foldState.value = 'unfold'
       break
   }
 }
 
-onMounted(() => {
-  observer = new ResizeObserver(() => {
-    // 若非折叠状态需要根据内容调整高度
-    // 为了方便使高度动画具有回弹动效，使用observer侦测内容来赋值而非让其自动撑开
-    if (foldState.value != 'fold') {
-      shouldSpring.value = mycardInnerRef.value!.offsetHeight < 500
-      cardHeight.value = mycardInnerRef.value!.offsetHeight
-    }
-  })
-  observer.observe(mycardInnerRef.value!)
-})
+watch(
+  [mycardInnerRef, contentMounted],
+  ([inner, mounted]) => {
+    observer?.disconnect()
+    // Only opened, foldable cards need height measurement.
+    if (!inner || !mounted || foldState.value === 'unfoldable') return
+    observer = new ResizeObserver(() => {
+      // 若非折叠状态需要根据内容调整高度
+      // 为了方便使高度动画具有回弹动效，使用observer侦测内容来赋值而非让其自动撑开
+      if (foldState.value != 'fold') {
+        const height = inner.offsetHeight
+        shouldSpring.value = height < 500
+        cardHeight.value = height
+      }
+    })
+    observer.observe(inner)
+  },
+  { flush: 'post' },
+)
 
 onUnmounted(() => observer?.disconnect())
 </script>
 
 <template>
-  <motion.div
+  <div
     :class="['mycard-container', foldState, { 'overflow-visible': overflowVisible }]"
-    :animate="{ height: cardHeight }"
-    :transition="{ type: shouldSpring ? 'spring' : 'tween', stiffness: 330, damping: 25, mass: 1 }"
+    :style="
+      foldState === 'unfoldable'
+        ? undefined
+        : {
+            height: `${cardHeight}px`,
+            '--card-height-easing': shouldSpring ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : 'ease',
+          }
+    "
   >
     <div class="mycard" ref="mycardInner" :class="{ 'hide-title': hideTitle }">
       <header
@@ -86,7 +102,7 @@ onUnmounted(() => observer?.disconnect())
       <Transition name="card-content">
         <section
           class="mycard-content"
-          v-if="$slots.content || $slots.default"
+          v-if="contentMounted && ($slots.content || $slots.default)"
           v-show="foldState == 'unfold' || foldState == 'unfoldable'"
         >
           <!-- 此处为兼容性设计：content被设置时显示content内容，否则显示默认插槽内容 -->
@@ -94,7 +110,7 @@ onUnmounted(() => observer?.disconnect())
         </section>
       </Transition>
     </div>
-  </motion.div>
+  </div>
 </template>
 
 <style>
@@ -110,17 +126,23 @@ onUnmounted(() => observer?.disconnect())
 
 .mycard-container {
   flex-shrink: 0;
-  transition: box-shadow 0.4s;
+  transition:
+    height 0.4s var(--card-height-easing, ease),
+    box-shadow 0.4s;
   border-radius: 6px;
   background: var(--color-background-soft);
   box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  will-change: height;
 }
 
 .mycard-container.overflow-visible,
 .mycard-container.overflow-visible > .mycard > .mycard-content {
   overflow: visible;
+}
+
+.mycard-container.fold {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 40px;
 }
 
 .mycard-container:hover {
@@ -197,5 +219,11 @@ onUnmounted(() => observer?.disconnect())
 
 .pcl-page .mycard-content {
   font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mycard-container {
+    transition: box-shadow 0.4s;
+  }
 }
 </style>

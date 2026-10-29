@@ -5,10 +5,10 @@ import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
-import { useRouter } from 'vue-router'
+import type { ProfileView } from '@/types/profile'
 import { pclText } from '@/api/pclLocale'
 const account = useAccountInfo()
-const router = useRouter()
+const emit = defineEmits<{ view: [view: ProfileView] }>()
 const text = pclText
 defineProps<{ createAndSelect?: boolean; requireMicrosoft?: boolean }>()
 </script>
@@ -29,7 +29,7 @@ defineProps<{ createAndSelect?: boolean; requireMicrosoft?: boolean }>()
       :title="account.username"
       :subtitle="text('Launch.Account.Type.Offline')"
       clickable
-      @click="() => router.push('/home')"
+      @click="() => emit('view', 'skin')"
     />
     <PCard hide-title class="create-card" overflow-visible>
       <details>
@@ -41,18 +41,19 @@ defineProps<{ createAndSelect?: boolean; requireMicrosoft?: boolean }>()
         </summary>
         <div class="account-types">
           <p>{{ text('Launch.Account.Profile.Create.SelectAuthType.Title') }}</p>
-          <PButton v-if="!requireMicrosoft" inline @click="() => router.push('/account/offline')">{{
+          <PButton v-if="!requireMicrosoft" inline @click="() => emit('view', 'offline')">{{
             text('Launch.Account.Type.Offline')
           }}</PButton
-          ><PButton inline @click="() => router.push('/account/microsoft')">{{
+          ><PButton inline @click="() => emit('view', 'microsoft')">{{
             text('Launch.Account.Type.Microsoft')
           }}</PButton
-          ><PButton v-if="!requireMicrosoft" inline @click="() => router.push('/account/auth')">{{
+          ><PButton v-if="!requireMicrosoft" inline @click="() => emit('view', 'auth')">{{
             text('Launch.Account.Type.ThirdParty')
           }}</PButton>
         </div>
       </details>
     </PCard>
+    <PButton inline @click="emit('view', 'skin')">{{ text('Launch.Account.Back') }}</PButton>
   </section>
 </template>
 <style scoped>

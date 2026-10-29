@@ -192,5 +192,6 @@
   "Proto.Java.ManualRequired": "未找到符合要求的 Java（最低 {0}，最高 {1}）。该版本或更新范围需要手动安装，请安装后在“设置 → 游戏 Java”中导入。",
   "Proto.Java.DownloadProgress": "正在下载 Java：{0} / {1} 个文件",
   "Proto.Java.Preparing": "正在检查游戏 Java……",
-  "Proto.Resource.Search": "搜索{0}"
+  "Proto.Resource.Search": "搜索{0}",
+  "Proto.Title.ResourceDownload": "资源下载"
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { pclText } from '@/api/pclLocale'
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
+import { vPageEntrance } from './util/cardDropAnimate'
 import { useTemplateRef } from 'vue'
 import { usePageTransition } from './composables/usePageTransition'
 import TitleMessage from './components/website/TitleMessage.vue'
@@ -14,6 +15,7 @@ import { useModal } from './composables/useModal'
 import FloatButton from './components/widget/FloatButton.vue'
 import { useFloatButton } from './composables/useFloatButton'
 
+const route = useRoute()
 const sideNavState = useSideNavState()
 const modal = useModal()
 const { floatButtonState } = useFloatButton()
@@ -37,7 +39,7 @@ if (isTauri())
     <!-- 标题框 -->
     <WindowHeader />
     <!-- 主页面 -->
-    <div id="page" ref="page">
+    <div id="page" ref="page" v-page-entrance="route.path">
       <!-- 页面 -->
       <RouterView />
       <!-- 用作动画 -->

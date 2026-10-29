@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import TitleLogo from '@/assets/icons/TitleLogo.svg'
 import useSideNavState from '@/stores/windowState'
 import navItems from '@/layout/navItems'
+import { lastSubTabOf } from '@/layout/navMemory'
 import currentPlatform from '@/util/platform'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { debug } from '@tauri-apps/plugin-log'
@@ -73,7 +74,7 @@ appWindow?.onResized(async () => {
     Transition(name="nav")
       .center(v-if="!isSubPage" data-tauri-drag-region)
         nav#main-nav(:class="{ 'mac-margin-nav': currentPlatform == 'macos' }")
-          RouterLink(v-for="item in navItems" :key="item.to" :to="item.to")
+          RouterLink(v-for="item in navItems" :key="item.to" :to="lastSubTabOf(item.to) ?? item.to")
             component(:is="item.icon")
             | {{ pclText(item.label) }}
 

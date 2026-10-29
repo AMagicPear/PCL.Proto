@@ -95,12 +95,21 @@ export async function getMinecraftVersions(): Promise<IVersionShow> {
   )
     throw new Error('Minecraft 版本列表格式错误')
   const result: IVersionShow = { latest: {}, release: [], snapshot: [], old: [], fool: [] }
+  // Reuse the formatter instead of constructing one for every manifest entry.
+  const dateFormat = new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+  })
   for (const version of [...data.versions].sort(
     (a, b) => Date.parse(b.releaseTime) - Date.parse(a.releaseTime),
   )) {
     result[classifyVersion(version)].push({
       id: version.id,
-      releaseTime: new Date(version.releaseTime).toLocaleString(),
+      releaseTime: dateFormat.format(new Date(version.releaseTime)),
       timestamp: Date.parse(version.releaseTime),
     })
   }

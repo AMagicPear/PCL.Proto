@@ -145,7 +145,9 @@ async function getProjectVersions(id: string) {
         typeof item.id !== 'string' ||
         typeof item.name !== 'string' ||
         !Array.isArray(item.game_versions) ||
+        item.game_versions.some((value) => typeof value !== 'string') ||
         !Array.isArray(item.loaders) ||
+        item.loaders.some((value) => typeof value !== 'string') ||
         !Array.isArray(item.files) ||
         item.files.some(
           (file) => !file || typeof file.url !== 'string' || typeof file.filename !== 'string',

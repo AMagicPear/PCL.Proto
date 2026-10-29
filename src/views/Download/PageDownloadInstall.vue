@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import PCard from '@/components/widget/PCard.vue'
+import PVirtualList from '@/components/widget/PVirtualList.vue'
 import PListItem from '@/components/widget/PListItem.vue'
 import PVersionActions from '@/components/widget/PVersionActions.vue'
 import PButton from '@/components/widget/PButton.vue'
@@ -24,7 +25,7 @@ const props = defineProps<{ manual?: boolean; modify?: boolean }>()
 const route = useRoute()
 const router = useRouter()
 const text = pclText
-const versions = ref<IVersionShow>()
+const versions = shallowRef<IVersionShow>()
 const loading = ref(false)
 const error = ref('')
 const installing = ref(false)
@@ -163,7 +164,7 @@ watch(versionId, (id) => {
 })
 </script>
 <template>
-  <section class="pcl-page install-page" v-card-drop-children-animate="!!versions">
+  <section class="pcl-page install-page">
     <p v-if="modify && !versionId" class="pcl-empty">{{ pclText('Proto.Instance.SelectFirst') }}</p>
     <template v-else-if="!versionId">
       <PLoading v-if="loading" :loading-text="text('Download.Version.LoadingList')" />
@@ -196,17 +197,22 @@ watch(versionId, (id) => {
             default-fold-status="fold"
           >
             <div class="version-list">
-              <PListItem
-                v-for="version in versions[category.key]"
-                :key="version.id"
-                :title="version.id"
-                :icon="category.icon"
-                :subtitle="version.releaseTime"
-                clickable
-                @click="() => choose(version.id, category.key)"
-                ><template #actions
-                  ><PVersionActions :version-id="version.id" :manual="manual" /></template
-              ></PListItem>
+              <PVirtualList
+                :items="versions[category.key]"
+                :item-key="(version) => version.id"
+                v-slot="{ item: version }"
+              >
+                <PListItem
+                  :key="version.id"
+                  :title="version.id"
+                  :icon="category.icon"
+                  :subtitle="version.releaseTime"
+                  clickable
+                  @click="() => choose(version.id, category.key)"
+                  ><template #actions
+                    ><PVersionActions :version-id="version.id" :manual="manual" /></template
+                ></PListItem>
+              </PVirtualList>
             </div>
           </PCard>
         </template>
@@ -262,14 +268,19 @@ watch(versionId, (id) => {
               @click="() => selectLoader(selected, loader, '')"
               >{{ pclText('Proto.Action.ClearSelection') }}</PButton
             >
-            <PListItem
-              v-for="version in plugins[loader]?.versions"
-              :key="version.version"
-              :title="version.version"
-              :subtitle="version.stable ? text('Download.Version.Type.Stable') : undefined"
-              clickable
-              @click="() => selectLoader(selected, loader, version.version)"
-            />
+            <PVirtualList
+              :items="plugins[loader]!.versions"
+              :item-key="(version) => version.version"
+              v-slot="{ item: version }"
+            >
+              <PListItem
+                :key="version.version"
+                :title="version.version"
+                :subtitle="version.stable ? text('Download.Version.Type.Stable') : undefined"
+                clickable
+                @click="() => selectLoader(selected, loader, version.version)"
+              />
+            </PVirtualList>
           </template>
           <p v-else class="pcl-empty">
             {{

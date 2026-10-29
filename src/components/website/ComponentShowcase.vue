@@ -53,7 +53,7 @@ async function showDialog(withInput: boolean) {
 </script>
 
 <template>
-  <div class="component-showcase" v-card-drop-children-animate>
+  <div class="component-showcase">
     <PButton type="tint" @click="() => sideTip.show(pclText('Proto.Demo.Clicked', [++count]))">{{
       pclText('Proto.Demo.ClickHint')
     }}</PButton>

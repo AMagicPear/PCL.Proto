@@ -192,5 +192,6 @@
   "Proto.Java.ManualRequired": "No suitable Java found (minimum {0}, maximum {1}). This version or update range requires manual installation. Install it, then import it in Settings → Game Java.",
   "Proto.Java.DownloadProgress": "Downloading Java: {0} / {1} files",
   "Proto.Java.Preparing": "Checking game Java…",
-  "Proto.Resource.Search": "Search {0}"
+  "Proto.Resource.Search": "Search {0}",
+  "Proto.Title.ResourceDownload": "Resource download"
 }

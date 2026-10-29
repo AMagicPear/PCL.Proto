@@ -4,12 +4,12 @@ import PSkin from '@/components/widget/PSkin.vue'
 import PButton from '@/components/widget/PButton.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { useAccountInfo } from '@/stores/account'
-import { useRouter } from 'vue-router'
+import type { ProfileView } from '@/types/profile'
 import { pclText } from '@/api/pclLocale'
 import PCard from '@/components/widget/PCard.vue'
 
 const account = useAccountInfo()
-const router = useRouter()
+const emit = defineEmits<{ view: [view: ProfileView] }>()
 const text = pclText
 </script>
 <template>
@@ -49,7 +49,7 @@ const text = pclText
               <PButton inline @click="showUnavailable">{{
                 text('Launch.Account.ProfileSkin.EditPassword')
               }}</PButton
-              ><PButton inline @click="() => router.push('/account/offline')">{{
+              ><PButton inline @click="() => emit('view', 'offline')">{{
                 text('Launch.Account.ProfileSkin.EditUsername')
               }}</PButton>
             </div>
@@ -57,7 +57,7 @@ const text = pclText
           <button
             type="button"
             class="profile-action"
-            @click="router.push('/account')"
+            @click="emit('view', 'profiles')"
             :aria-label="text('Launch.Account.ProfileSkin.SwitchProfile')"
             :title="text('Launch.Account.ProfileSkin.SwitchProfile')"
           >

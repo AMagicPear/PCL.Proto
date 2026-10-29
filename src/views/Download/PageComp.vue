@@ -2,6 +2,7 @@
 import modrinthApi, { type ISearchHit } from '@/api/modrinthApi'
 import PCompItem from '@/components/widget/PCompItem.vue'
 import PCard from '@/components/widget/PCard.vue'
+import PVirtualList from '@/components/widget/PVirtualList.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
 import PButton from '@/components/widget/PButton.vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
@@ -186,14 +187,19 @@ watch(() => props.projectType, reset, { immediate: true })
     <template v-else>
       <PCard hide-title
         ><div class="projects">
-          <PCompItem
-            v-for="project in hits"
-            :key="project.project_id"
-            :data="project"
-            :game-version="values.version.trim()"
-            :loader="projectType === 'datapack' ? 'datapack' : values.loader"
-            clickable
-          />
+          <PVirtualList
+            :items="hits"
+            :item-key="(project) => project.project_id"
+            :row-height="64"
+            v-slot="{ item: project }"
+          >
+            <PCompItem
+              :data="project"
+              :game-version="values.version.trim()"
+              :loader="projectType === 'datapack' ? 'datapack' : values.loader"
+              clickable
+            />
+          </PVirtualList>
           <p v-if="!hits.length" class="pcl-empty">{{ pclText('Proto.Empty.Resources') }}</p>
         </div></PCard
       >

@@ -4,10 +4,10 @@ import PButton from '@/components/widget/PButton.vue'
 import PPath from '@/components/widget/PPath.vue'
 import paths from '@/assets/vector-paths.json'
 const loginShape = paths['05803c336117c503'].data
-import { useRouter } from 'vue-router'
+import type { ProfileView } from '@/types/profile'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
-const router = useRouter()
+const emit = defineEmits<{ view: [view: ProfileView] }>()
 const text = pclText
 defineExpose({ showLoginDialog: PMsgLogin })
 function login() {
@@ -29,7 +29,7 @@ function open(url: string) {
       inline
       @click="() => open('https://www.minecraft.net/store/minecraft-java-bedrock-edition-pc')"
       >{{ text('Launch.Account.Microsoft.Purchase') }}</PButton
-    ><PButton inline @click="() => router.push('/account')">{{
+    ><PButton inline @click="() => emit('view', 'profiles')">{{
       text('Launch.Account.Back')
     }}</PButton>
   </section>

@@ -4,14 +4,10 @@ import { onMounted, onUnmounted, useTemplateRef, ref, provide } from 'vue'
 import useSideNavState from '@/stores/windowState'
 import SideNavItem from '@/components/widget/SideNavItem.vue'
 import { type INavItemGroup } from '@/types/naviOptions'
-import cardDropAnimate, { getPageAnimationElements } from '@/util/cardDropAnimate'
 import { useModal } from '@/composables/useModal'
-import { useRoute } from 'vue-router'
 
 defineProps<{ sideNavGroups: INavItemGroup[] }>()
 
-const route = useRoute()
-let animatedPath = ''
 const revision = ref(0)
 provide('navAction', (kind: string) => {
   if (kind === 'refresh') revision.value++
@@ -24,24 +20,12 @@ provide('navAction', (kind: string) => {
 })
 let observer: ResizeObserver | null = null
 const asideRef = useTemplateRef<HTMLElement>('asideRef')
-const subviewRef = useTemplateRef<HTMLElement>('subviewRef')
 const sideNavState = useSideNavState()
 
 function updateAsideBackgroundWidth() {
   if (asideRef.value) {
     sideNavState.setWidth(asideRef.value.offsetWidth)
   }
-}
-
-function animateSubview() {
-  if (subviewRef.value) {
-    cardDropAnimate(getPageAnimationElements(subviewRef.value))
-    animatedPath = route.path
-  }
-}
-
-function animateOnNavigation() {
-  if (animatedPath !== route.path) animateSubview()
 }
 
 onMounted(() => {
@@ -76,13 +60,9 @@ onUnmounted(() => {
         </div>
       </div>
     </aside>
-    <article class="subview" ref="subviewRef">
+    <article class="subview">
       <RouterView :key="revision" v-slot="{ Component }">
-        <component
-          :is="Component"
-          @vue:mounted="animateSubview"
-          @vue:updated="animateOnNavigation"
-        />
+        <component :is="Component" />
       </RouterView>
     </article>
   </div>

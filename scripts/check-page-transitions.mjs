@@ -28,6 +28,7 @@ try {
   app.use(router)
   await router.push('/a')
   const animations = []
+  const styleOperations = []
   const timers = []
   let reducedMotion = false
   let expectedDelay = 110
@@ -38,11 +39,16 @@ try {
       timers.push(callback)
     },
   }
-  globalThis.getComputedStyle = () => ({ opacity: '1', transform: 'none' })
+  globalThis.getComputedStyle = () => {
+    styleOperations.push('read')
+    return { opacity: '1', transform: 'none' }
+  }
   const block = () => ({
     children: [],
+    getBoundingClientRect: () => ({ top: 0, bottom: 40, height: 40 }),
     matches: () => true,
     animate: (frames, options) => {
+      styleOperations.push('write')
       const animation = {
         frames,
         options,
@@ -55,8 +61,14 @@ try {
       return animation
     },
   })
-  const content = { style: { pointerEvents: '' }, children: [block(), block(), block()] }
-  const page = shallowRef({ querySelector: () => content })
+  const content = {
+    style: { pointerEvents: '' },
+    children: [block(), block(), block()],
+    getBoundingClientRect: () => ({ top: 0, bottom: 400, height: 400 }),
+  }
+  const page = shallowRef({
+    querySelector: (selector) => (selector.includes('> aside') ? null : content),
+  })
   app.runWithContext(() => scope.run(() => usePageTransition(page)))
   const flush = () => new Promise((resolve) => setImmediate(resolve))
   const finish = () => timers.splice(0).forEach((callback) => callback())
@@ -65,6 +77,11 @@ try {
   await flush()
   assert.equal(router.currentRoute.value.path, '/a', 'keep outgoing content until exit finishes')
   assert.equal(content.style.pointerEvents, 'none')
+  assert.deepEqual(
+    styleOperations,
+    ['read', 'read', 'read', 'write', 'write', 'write'],
+    'read styles in one batch before animation writes',
+  )
   assert.deepEqual(
     animations.map(({ options }) => options.delay),
     [0, 15, 30],
@@ -114,7 +131,10 @@ try {
   reducedMotion = false
 
   const standalone = { ...block(), style: { pointerEvents: '' } }
-  page.value = { querySelector: (selector) => (selector.includes('.subview') ? null : standalone) }
+  page.value = {
+    querySelector: (selector) =>
+      selector.includes('> aside') || selector.includes('.subview') ? null : standalone,
+  }
   const fullPage = router.push('/b')
   await flush()
   assert.equal(animations.length, count + 1, 'standalone content such as the editor also exits')
@@ -132,6 +152,43 @@ try {
   await flush()
   finish()
   await subpage
+  content.children = Array.from({ length: 100 }, block)
+  content.children.push({
+    ...block(),
+    getBoundingClientRect: () => ({ top: 500, bottom: 540, height: 40 }),
+  })
+  page.value = { querySelector: (selector) => (selector.includes('> aside') ? null : content) }
+  const manyCards = router.push('/group/one')
+  const beforeExit = animations.length
+  await flush()
+  assert.equal(animations.length - beforeExit, 100, 'offscreen cards do not start exit animations')
+  assert.ok(
+    animations.slice(-100).every(({ options }) => options.delay + options.duration <= 130),
+    'all exit animations fit inside the navigation delay regardless of list length',
+  )
+  finish()
+  await manyCards
+  expectedDelay = 110
+  for (const launch of [false, true]) {
+    const aside = { ...block(), classList: { contains: () => launch } }
+    page.value = { querySelector: (selector) => (selector.includes('> aside') ? aside : content) }
+    const offset = animations.length
+    const leaving = router.push(launch ? '/b' : '/a')
+    await flush()
+    const current = animations.slice(offset)
+    assert.equal(current.length, 101, 'main-tab navigation also exits the sidebar')
+    assert.equal(
+      current[0].options.delay,
+      current.at(-1).options.delay,
+      'left and right start together',
+    )
+    assert.ok(
+      current.at(-1).frames[1].transform.includes(launch ? 'scale(0.9)' : 'translateX(-6px)'),
+    )
+    finish()
+    await leaving
+    assert.ok(current.every((animation) => animation.cancelled))
+  }
   console.log(
     'Page exit timing, rapid/duplicate/aborted navigation, full pages and reduced motion passed.',
   )

@@ -3,10 +3,10 @@ import { ref } from 'vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
 import PButton from '@/components/widget/PButton.vue'
 import { useAccountInfo } from '@/stores/account'
-import { useRouter } from 'vue-router'
+import type { ProfileView } from '@/types/profile'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
-const router = useRouter()
+const emit = defineEmits<{ view: [view: ProfileView] }>()
 const text = pclText
 const username = ref(useAccountInfo().username || '')
 const uuidType = ref('standard')
@@ -40,7 +40,7 @@ function create() {
     </div>
     <label v-if="uuidType === 'custom'">UUID<PTextBox v-model="uuid" /></label>
     <div class="form-actions">
-      <PButton @click="() => router.push('/account')">{{
+      <PButton @click="() => emit('view', 'profiles')">{{
         text('Launch.Account.Offline.Back')
       }}</PButton
       ><PButton type="tint" @click="create">{{ text('Launch.Account.Offline.Create') }}</PButton>

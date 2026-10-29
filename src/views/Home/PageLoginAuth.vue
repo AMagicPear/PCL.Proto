@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
 import PButton from '@/components/widget/PButton.vue'
-import { useRouter } from 'vue-router'
+import type { ProfileView } from '@/types/profile'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 import PPath from '@/components/widget/PPath.vue'
@@ -13,7 +13,7 @@ const oauthMode = ref(false)
 function open(url: string | undefined) {
   if (url && /^https?:\/\//i.test(url)) window.open(url, '_blank', 'noopener,noreferrer')
 }
-const router = useRouter()
+const emit = defineEmits<{ view: [view: ProfileView] }>()
 const text = pclText
 const server = ref('')
 const username = ref('')
@@ -60,7 +60,7 @@ function login() {
       text('Launch.Account.Microsoft.Website')
     }}</PButton>
     <div>
-      <PButton @click="() => router.push('/account')">{{
+      <PButton @click="() => emit('view', 'profiles')">{{
         text('Launch.Account.Auth.Back')
       }}</PButton
       ><PButton v-if="!oauthMode" type="tint" @click="login">{{

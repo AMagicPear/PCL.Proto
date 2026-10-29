@@ -115,3 +115,53 @@ export function latestCompFile(versions: IVersion[], gameVersion = '', loader = 
   const file = files.find((file) => file.primary) || files[0]
   return file && /^https:\/\//i.test(file.url) ? file : undefined
 }
+
+export function groupCompVersions(
+  versions: readonly IVersion[],
+  gameVersion = '',
+  loader = '',
+  splitLoaders = false,
+) {
+  const groups = new Map<
+    string,
+    { key: string; name: string; gameVersion: string; versions: IVersion[] }
+  >()
+  const comparer = new Intl.Collator('en', { numeric: true })
+  for (const version of [...versions].sort(
+    (a, b) => Date.parse(b.date_published) - Date.parse(a.date_published),
+  )) {
+    if (loader && !version.loaders.includes(loader)) continue
+    for (const game of new Set(version.game_versions.length ? version.game_versions : [''])) {
+      if (gameVersion && game !== gameVersion) continue
+      const name = !game
+        ? pclText('Download.Comp.Detail.VersionGroup.Other')
+        : game.includes('w')
+          ? pclText('Download.Comp.Detail.VersionGroup.Snapshot')
+          : game
+      const loaders =
+        splitLoaders && game.includes('.')
+          ? [...new Set(version.loaders)].filter((value) => !loader || value === loader)
+          : ['']
+      for (const value of loaders.length ? loaders : ['']) {
+        const key = `${value}:${name}`
+        let group = groups.get(key)
+        if (!group) {
+          group = {
+            key,
+            name: `${loaderNames[value] || value}${value ? ' ' : ''}${name}`,
+            gameVersion: name,
+            versions: [],
+          }
+          groups.set(key, group)
+        }
+        if (group.versions[group.versions.length - 1] !== version) group.versions.push(version)
+      }
+    }
+  }
+  return [...groups.values()].sort(
+    (a, b) =>
+      Number(b.gameVersion.includes('.')) - Number(a.gameVersion.includes('.')) ||
+      comparer.compare(b.gameVersion, a.gameVersion) ||
+      comparer.compare(b.name, a.name),
+  )
+}

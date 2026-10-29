@@ -26,6 +26,62 @@ try {
   const [PTextBox, PComboBox, PCheckBox, SetupItem] = await Promise.all(
     ['PTextBox', 'PComboBox', 'PCheckBox', 'SetupItem'].map(load),
   )
+  const [PCard, PVirtualList] = await Promise.all(['PCard', 'PVirtualList'].map(load))
+  for (const state of ['fold', 'unfold', 'unfoldable']) {
+    let rendered = 0
+    const html = await renderToString(
+      createSSRApp({
+        render: () =>
+          h(
+            PCard,
+            { defaultFoldStatus: state, title: 'Versions' },
+            {
+              default: () => {
+                rendered++
+                return h('input', { value: 'saved' })
+              },
+            },
+          ),
+      }),
+    )
+    assert.equal(rendered, state === 'fold' ? 0 : 1, 'folded content is lazy')
+    assert.equal(html.includes('value="saved"'), state !== 'fold')
+    if (state === 'unfoldable')
+      assert.doesNotMatch(html, /height:40px/, 'ordinary cards size naturally')
+  }
+  for (const [count, rowHeight] of [
+    [0, 42],
+    [1, 42],
+    [20, 42],
+    [21, 42],
+    [4000, 42],
+    [40, 64],
+  ]) {
+    const html = await renderToString(
+      createSSRApp({
+        render: () =>
+          h(
+            PVirtualList,
+            { items: Array.from({ length: count }, (_, i) => i), itemKey: String, rowHeight },
+            {
+              default: ({ item }) => h('p', { class: 'page-row' }, String(item)),
+            },
+          ),
+      }),
+    )
+    assert.equal(
+      [...html.matchAll(/class="page-row"/g)].length,
+      Math.min(count, 16),
+      'large backend responses never create an unbounded list',
+    )
+    assert.equal(html.includes('aria-label="分页"'), false)
+    assert.match(
+      html,
+      new RegExp(`height:${count * rowHeight}px`),
+      'the full continuous scroll range remains available',
+    )
+  }
+  console.log('Lazy folded cards, natural card sizing and bounded list rendering passed.')
   for (const [control, extra, tag] of [
     [PTextBox, {}, 'input'],
     [PTextBox, { multiline: true }, 'textarea'],
@@ -172,7 +228,7 @@ try {
     if (!manual) assert.match(html, /aria-label="另存为"/)
   }
 
-  const { compTags, compTagOptions, compFacets, compVersions, latestCompFile } =
+  const { compTags, compTagOptions, compFacets, compVersions, latestCompFile, groupCompVersions } =
     await server.ssrLoadModule('/src/api/compResources.ts')
   const project = {
     project_id: 'sodium',
@@ -229,6 +285,45 @@ try {
       files: [{ url: 'https://example.com/new.jar', filename: 'new.jar', primary: true }],
     },
   ]
+  const groupedVersions = groupCompVersions(
+    [
+      {
+        ...files[0],
+        id: 'older',
+        date_published: '2024-01-01',
+        game_versions: ['1.20.1', '1.20.1'],
+        loaders: ['fabric', 'forge'],
+      },
+      {
+        ...files[0],
+        id: 'newer',
+        date_published: '2025-01-01',
+        game_versions: ['1.21.1', '1.20.1'],
+        loaders: ['fabric'],
+      },
+      {
+        ...files[0],
+        id: 'snapshot',
+        date_published: '2025-01-01',
+        game_versions: ['25w01a', '25w02a'],
+        loaders: ['fabric'],
+      },
+    ],
+    '',
+    '',
+    true,
+  )
+  assert.deepEqual(
+    groupedVersions.map((group) => group.name),
+    ['Fabric 1.21.1', 'Forge 1.20.1', 'Fabric 1.20.1', '快照版'],
+  )
+  assert.deepEqual(
+    groupedVersions[2].versions.map((version) => version.id),
+    ['newer', 'older'],
+  )
+  assert.equal(groupedVersions[3].versions.length, 1, 'one file appears once per game-version card')
+  assert.equal(groupCompVersions(files, 'missing').length, 0)
+  assert.equal(groupCompVersions(files, '', 'missing').length, 0)
   assert.equal(latestCompFile(files).filename, 'new.jar')
   assert.equal(latestCompFile(files, '1.21.1', 'fabric').filename, 'old.jar')
   assert.equal(latestCompFile(files, '1.21.1', 'forge'), undefined)
