@@ -17,7 +17,13 @@ export const useCompFavorites = defineStore('comp-favorites', () => {
           ) &&
           typeof item.downloads === 'number' &&
           Array.isArray(item.categories) &&
-          item.categories.every((value: unknown) => typeof value === 'string'),
+          item.categories.every((value: unknown) => typeof value === 'string') &&
+          ['versions', 'loaders'].every(
+            (field) =>
+              item[field] === undefined ||
+              (Array.isArray(item[field]) &&
+                item[field].every((value: unknown) => typeof value === 'string')),
+          ),
       )
   } catch {
     /* Invalid local preferences must not prevent opening the resource pages. */

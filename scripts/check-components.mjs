@@ -3,6 +3,7 @@ import { createServer } from 'vite'
 import { createSSRApp, effectScope, h, nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { renderToString } from 'vue/server-renderer'
+import { createRouter, createMemoryHistory } from 'vue-router'
 
 const server = await createServer({
   server: { middlewareMode: true, hmr: false, watch: null },
@@ -170,6 +171,87 @@ try {
     assert.match(html, /aria-label="下载服务端"/)
     if (!manual) assert.match(html, /aria-label="另存为"/)
   }
+
+  const { compTags, compTagOptions, compFacets, compVersions, latestCompFile } =
+    await server.ssrLoadModule('/src/api/compResources.ts')
+  const project = {
+    project_id: 'sodium',
+    title: 'Sodium',
+    description: 'Fast rendering',
+    icon_url: '',
+    project_type: 'mod',
+    downloads: 100,
+    date_modified: '2026-10-01',
+    categories: ['fabric', 'optimization', 'decoration', 'optimization'],
+    versions: ['1.19.4', '1.20.1', '1.21.1'],
+  }
+  assert.deepEqual(compTags(project), ['性能优化', '装饰'])
+  assert.deepEqual(
+    compTags({ ...project, project_type: 'resourcepack', categories: ['decoration', '16x'] }),
+    ['16x'],
+  )
+  assert.deepEqual(compTags({ ...project, categories: ['fabric', 'unknown'] }), ['其他'])
+  assert.deepEqual(compTags({ ...project, project_type: 'shader', categories: ['iris', 'high'] }), [
+    'Iris',
+  ])
+  assert.ok(compTagOptions('mod').some((option) => option.key === '6814/optimization'))
+  assert.ok(compTagOptions('mod').every((option) => !option.key || option.key.split('/')[1]))
+  const headings = compTagOptions('resourcepack').filter((option) => option.disabled)
+  assert.equal(headings.length, 3)
+  assert.equal(new Set(headings.map((option) => option.key)).size, headings.length)
+  assert.deepEqual(
+    compFacets('mod', { loader: 'fabric', version: ' 1.21.1 ', tag: '6814/optimization' }),
+    [['project_type:mod'], ['categories:fabric'], ['versions:1.21.1'], ['categories:optimization']],
+  )
+  assert.deepEqual(compFacets('datapack', { loader: 'fabric', version: '', tag: '/adventure' }), [
+    ['project_type:mod'],
+    ['categories:datapack'],
+    ['categories:adventure'],
+  ])
+  assert.equal(compVersions(project.versions), '1.19~1.21')
+  assert.equal(compVersions(['1.21.1', '1.21.4', '1.19.2']), '1.21, 1.19')
+  assert.equal(compVersions(['26.1', '26.2', '1.21.1']), '26.1~26.2, 1.21')
+  assert.equal(compVersions(['25w01a']), '仅快照版本')
+  assert.equal(compVersions(), '未知版本')
+  const files = [
+    {
+      id: 'old',
+      date_published: '2026-01-01',
+      game_versions: ['1.21.1'],
+      loaders: ['fabric'],
+      files: [{ url: 'https://example.com/old.jar', filename: 'old.jar', primary: true }],
+    },
+    {
+      id: 'new',
+      date_published: '2026-10-01',
+      game_versions: ['26.1'],
+      loaders: ['neoforge'],
+      files: [{ url: 'https://example.com/new.jar', filename: 'new.jar', primary: true }],
+    },
+  ]
+  assert.equal(latestCompFile(files).filename, 'new.jar')
+  assert.equal(latestCompFile(files, '1.21.1', 'fabric').filename, 'old.jar')
+  assert.equal(latestCompFile(files, '1.21.1', 'forge'), undefined)
+  assert.equal(
+    latestCompFile([{ ...files[0], files: [{ url: 'javascript:alert(1)' }] }]),
+    undefined,
+  )
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/', component: {} }],
+  })
+  const PCompItem = await load('PCompItem')
+  const app = createSSRApp({ render: () => h(PCompItem, { data: project, clickable: true }) })
+  app.use(router).use(createPinia())
+  const resourceHtml = await renderToString(app)
+  assert.equal([...resourceHtml.matchAll(/class="inline-icon"/g)].length, 4)
+  assert.match(resourceHtml, /<span[^>]*>Fabric 1.19~1.21<\/span>/)
+  assert.match(resourceHtml, /aria-label="快速下载最新版本"/)
+  assert.match(resourceHtml, /aria-label="收藏"/)
+  assert.doesNotMatch(resourceHtml, /<span class="desc-tag"[^>]*>fabric<\/span>/)
+  console.log(
+    'Resource categories, facet intersections, version summaries and compatible quick downloads passed.',
+  )
 
   const { downloadSettings } = await server.ssrLoadModule('/src/api/downloadSettings.ts')
   const downloadDefaults = {

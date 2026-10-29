@@ -10,6 +10,7 @@ defineProps<{ versionId: string; manual?: boolean }>()
 <template>
   <PListActions>
     <button
+      class="pcl-icon-button"
       v-if="!manual"
       type="button"
       :title="pclText('Download.Version.SaveAs')"
@@ -19,6 +20,7 @@ defineProps<{ versionId: string; manual?: boolean }>()
       <PSvgIcon name="lucide/save" :size="15" />
     </button>
     <button
+      class="pcl-icon-button"
       type="button"
       :title="pclText('Download.Version.Changelog')"
       :aria-label="pclText('Download.Version.Changelog')"
@@ -27,6 +29,7 @@ defineProps<{ versionId: string; manual?: boolean }>()
       <PSvgIcon name="lucide/info" :size="15" />
     </button>
     <button
+      class="pcl-icon-button"
       type="button"
       :title="pclText('Download.Version.DownloadServer')"
       :aria-label="pclText('Download.Version.DownloadServer')"

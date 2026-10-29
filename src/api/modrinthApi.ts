@@ -25,6 +25,8 @@ export interface ISearchHit {
   date_modified: string
   project_id: string
   project_type: 'mod' | 'modpack' | 'resourcepack' | 'shader'
+  versions?: string[]
+  loaders?: string[]
 }
 
 export interface IProject {
@@ -100,7 +102,15 @@ async function searchProjects(options: SearchOptions = {}) {
         typeof item.description !== 'string' ||
         !Number.isFinite(item.downloads) ||
         typeof item.date_modified !== 'string' ||
-        !Array.isArray(item.categories),
+        !Array.isArray(item.categories) ||
+        item.categories.some((category) => typeof category !== 'string') ||
+        ['versions', 'loaders'].some((field) => {
+          const values = item[field as 'versions' | 'loaders']
+          return (
+            values !== undefined &&
+            (!Array.isArray(values) || values.some((value) => typeof value !== 'string'))
+          )
+        }),
     )
   )
     throw new Error('Modrinth 搜索结果格式错误')

@@ -102,12 +102,7 @@ const items = computed(() =>
             class="select-favorite"
             @update:model-value="(checked) => select(item.project_id, checked)"
           />
-          <PCompItem :data="item" clickable /><PButton
-            inline
-            @click="() => favorites.toggle(item)"
-            :title="text('Download.Comp.Detail.Unfavorite')"
-            ><PSvgIcon name="lucide/heart-filled"
-          /></PButton>
+          <PCompItem :data="item" clickable />
         </div></div></PCard
     ><PCard v-else hide-title class="empty-card"
       ><div class="empty-content">

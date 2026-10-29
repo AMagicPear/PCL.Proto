@@ -1,137 +1,267 @@
 <script setup lang="ts">
-import { pclLocale } from '@/api/pclLocale'
-import { computed } from 'vue'
+import { pclLocale, pclText } from '@/api/pclLocale'
+import { compLoaders, compTags, compVersions, latestCompFile } from '@/api/compResources'
+import modrinthApi, { type ISearchHit } from '@/api/modrinthApi'
+import { useCompFavorites } from '@/stores/compFavorites'
+import sideTip from '@/composables/sideTip'
+import { computed, ref } from 'vue'
 import PSvgIcon from './PSvgIcon.vue'
-import type { ISearchHit } from '@/api/modrinthApi'
+import PListActions from './PListActions.vue'
 import { useRouter } from 'vue-router'
+
 const router = useRouter()
-
-const props = withDefaults(defineProps<{ clickable?: boolean; data: ISearchHit }>(), {
-  clickable: false,
-})
-
+const base = import.meta.env.BASE_URL
+const favorites = useCompFavorites()
+const props = withDefaults(
+  defineProps<{ clickable?: boolean; data: ISearchHit; gameVersion?: string; loader?: string }>(),
+  {
+    clickable: false,
+  },
+)
+const downloading = ref(false)
+const tags = computed(() => compTags(props.data))
+const versionText = computed(() =>
+  [compLoaders(props.data), compVersions(props.data.versions)].filter(Boolean).join(' '),
+)
 const downloadsText = computed(() =>
   new Intl.NumberFormat(pclLocale.value, { notation: 'compact', maximumFractionDigits: 1 }).format(
     props.data.downloads,
   ),
 )
-
 const dateText = computed(() => {
-  let date = new Date(props.data.date_modified)
-  return date.toLocaleDateString()
+  const seconds = (new Date(props.data.date_modified).getTime() - Date.now()) / 1000
+  if (!Number.isFinite(seconds)) return ''
+  const unit =
+    Math.abs(seconds) >= 31536000
+      ? 'year'
+      : Math.abs(seconds) >= 2592000
+        ? 'month'
+        : Math.abs(seconds) >= 86400
+          ? 'day'
+          : Math.abs(seconds) >= 3600
+            ? 'hour'
+            : 'minute'
+  const divisor = { year: 31536000, month: 2592000, day: 86400, hour: 3600, minute: 60 }[unit]
+  return new Intl.RelativeTimeFormat(pclLocale.value, { numeric: 'auto' }).format(
+    Math.round(seconds / divisor),
+    unit,
+  )
 })
 
-const navigateToProject = () => {
-  if (!props.clickable) return
-  router.push({ name: 'resource', query: { id: props.data.project_id, version: 'all' } })
+function navigateToProject() {
+  if (props.clickable)
+    router.push({
+      name: 'resource',
+      query: {
+        id: props.data.project_id,
+        version: props.gameVersion || 'all',
+        loader: props.loader || undefined,
+      },
+    })
+}
+
+async function download() {
+  if (downloading.value) return
+  downloading.value = true
+  try {
+    const versions = await modrinthApi.getProjectVersions(props.data.project_id)
+    const file = latestCompFile(versions, props.gameVersion, props.loader)
+    if (!file) {
+      sideTip.show(pclText('Download.Comp.QuickDownload.Hint.NoFile'), 'warn')
+      return
+    }
+    const link = document.createElement('a')
+    link.href = file.url
+    link.download = file.filename
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    link.click()
+  } catch (error) {
+    sideTip.show(pclText('Proto.Error.Resource', [String(error)]), 'warn')
+  } finally {
+    downloading.value = false
+  }
 }
 </script>
 
 <template>
-  <article
-    class="comp-item"
-    @click="navigateToProject"
-    :class="{ clickable }"
-    :role="clickable ? 'button' : undefined"
-    :tabindex="clickable ? 0 : undefined"
-    @keydown.enter="navigateToProject"
-    @keydown.space.prevent="navigateToProject"
-  >
-    <i class="comp-icon"><img :src="data.icon_url" alt="" loading="lazy" /></i>
-    <div class="lab-title-row">
-      <span class="lab-title">{{ data.title }}</span>
+  <article class="comp-item" :class="{ clickable }">
+    <button
+      v-if="clickable"
+      type="button"
+      class="project-link"
+      :aria-label="data.title"
+      :title="data.description"
+      @click="navigateToProject"
+    />
+    <i class="comp-icon"
+      ><img :src="data.icon_url || `${base}pcl/images/Icons/NoIcon.png`" alt="" loading="lazy"
+    /></i>
+    <div class="comp-content">
+      <div class="lab-title">{{ data.title }}</div>
+      <div class="description-row">
+        <span class="desc-tag" v-for="tag in tags" :key="tag">{{ tag }}</span>
+        <span class="lab-desc" :title="data.description">{{ data.description }}</span>
+      </div>
+      <div class="metadata">
+        <span class="inline-icon" :title="[compLoaders(data), ...(data.versions || [])].join(' ')"
+          ><PSvgIcon name="lucide/layout-list" :size="12" /><span>{{ versionText }}</span></span
+        >
+        <span class="inline-icon"
+          ><PSvgIcon name="lucide/download" :size="12" /><span>{{ downloadsText }}</span></span
+        >
+        <span class="inline-icon" :title="new Date(data.date_modified).toLocaleString(pclLocale)"
+          ><PSvgIcon name="lucide/arrow-up-from-line" :size="12" /><span>{{ dateText }}</span></span
+        >
+        <span class="inline-icon"
+          ><PSvgIcon name="lucide/globe" :size="12" /><span>Modrinth</span></span
+        >
+      </div>
     </div>
-    <div class="lab-desc" :title="data.description">
-      <span class="desc-tag" v-for="category in data.categories" :key="category">{{
-        category
-      }}</span
-      >{{ data.description }}
-    </div>
-    <p class="inline-icon"><PSvgIcon name="lucide/box" />{{ data.categories[0] }}</p>
-    <p class="inline-icon icon-download"><PSvgIcon name="lucide/download" />{{ downloadsText }}</p>
-    <p class="inline-icon"><PSvgIcon name="lucide/clock" />{{ dateText }}</p>
-    <p class="inline-icon"><PSvgIcon name="lucide/globe" />Modrinth</p>
+    <PListActions v-if="clickable" class="comp-actions">
+      <button
+        class="pcl-icon-button"
+        type="button"
+        :disabled="downloading"
+        :title="pclText('Download.Comp.QuickDownload.Btn.ToolTip')"
+        :aria-label="pclText('Download.Comp.QuickDownload.Btn.ToolTip')"
+        @click="download"
+      >
+        <PSvgIcon name="lucide/download" :size="16" />
+      </button>
+      <button
+        class="pcl-icon-button"
+        type="button"
+        :title="
+          pclText(
+            favorites.has(data.project_id)
+              ? 'Download.Comp.Detail.Unfavorite'
+              : 'Download.Comp.Detail.Favorite',
+          )
+        "
+        :aria-label="
+          pclText(
+            favorites.has(data.project_id)
+              ? 'Download.Comp.Detail.Unfavorite'
+              : 'Download.Comp.Detail.Favorite',
+          )
+        "
+        :aria-pressed="favorites.has(data.project_id)"
+        @click="favorites.toggle(data)"
+      >
+        <PSvgIcon
+          :name="favorites.has(data.project_id) ? 'lucide/heart-filled' : 'lucide/heart'"
+          :size="16"
+        />
+      </button>
+    </PListActions>
   </article>
 </template>
 
-<style lang="css" scoped>
+<style scoped>
 .comp-item {
-  display: grid;
-  grid-template-columns: 50px 2fr 1fr 1fr 1fr;
-  grid-template-rows: 20px 18px 16px;
-  gap: 0 10px;
+  position: relative;
+  display: flex;
+  gap: 8px;
+  height: 64px;
   border-radius: 4px;
-  padding: 6px;
-  transition:
-    background-color 0.4s,
-    scale 0.2s;
+  padding: 5px 5px 5px 7px;
   align-items: center;
-  line-height: 1rem;
   color: var(--color-text-grey);
-  overflow: hidden;
+  transition: background-color 0.4s;
+  min-width: 0;
 }
-
-.comp-item.clickable:hover {
+.comp-item.clickable:hover,
+.comp-item.clickable:focus-within {
   background-color: var(--color-tint-lighter);
 }
-
-.comp-item.clickable:active {
-  scale: 0.98;
-  background-color: var(--half-transparent-blue);
+.project-link {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
 }
-
 .comp-icon {
-  grid-row: 1 / 4;
-  grid-column: 1 / 2;
-}
-
-.lab-title-row {
-  grid-column: 2 / 6;
-}
-
-.comp-icon img {
-  height: 50px;
+  flex-shrink: 0;
   width: 50px;
+  height: 50px;
+}
+.comp-icon img {
+  width: 50px;
+  height: 50px;
   border-radius: 6px;
 }
-
+.comp-content {
+  flex: 1;
+  min-width: 0;
+}
 .lab-title {
   font-size: 14px;
+  line-height: 20px;
   color: var(--color-text-black);
 }
-
+.lab-title,
 .lab-desc {
-  grid-column: 2 / 6;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
+.description-row {
+  display: flex;
+  align-items: center;
+  height: 18px;
+  font-size: 12px;
+  gap: 4px;
+  overflow: hidden;
+}
+.lab-desc {
+  position: relative;
+  pointer-events: none;
+}
+.desc-tag {
+  flex-shrink: 0;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 15px;
+  background: rgba(140, 140, 140, 0.15);
+  color: var(--color-text-grey);
+  padding: 0 3px;
+}
+.metadata {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 0.65fr) minmax(0, 0.8fr) auto;
+  align-items: center;
+  gap: 10px;
+  height: 16px;
+  font-size: 12px;
+  line-height: 16px;
+}
 .inline-icon {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
-
-:deep(.inline-icon > svg) {
-  width: 13px;
-  height: 13px;
-  max-width: 13px !important;
-  max-height: 13px !important;
+.inline-icon > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-:deep(.icon-download > svg) {
-  width: 11px;
+.comp-actions {
+  position: relative;
+  gap: 4px;
+  flex-shrink: 0;
 }
-
-.desc-tag {
-  display: inline-block;
-  border-radius: 4px;
-  font-size: 11px;
-  background-color: gainsboro;
-  padding: 0 3px;
-  margin-inline-end: 4px;
+@media (max-width: 600px) {
+  .metadata {
+    gap: 6px;
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 0.65fr) minmax(0, 0.8fr);
+  }
+  .inline-icon:last-child {
+    display: none;
+  }
 }
 </style>

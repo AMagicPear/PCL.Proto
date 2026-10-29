@@ -191,5 +191,6 @@
   "Proto.Java.RelativePathHint": "Choose Java inside the launcher folder. Its relative path is preserved when the launcher is moved.",
   "Proto.Java.ManualRequired": "No suitable Java found (minimum {0}, maximum {1}). This version or update range requires manual installation. Install it, then import it in Settings → Game Java.",
   "Proto.Java.DownloadProgress": "Downloading Java: {0} / {1} files",
-  "Proto.Java.Preparing": "Checking game Java…"
+  "Proto.Java.Preparing": "Checking game Java…",
+  "Proto.Resource.Search": "Search {0}"
 }

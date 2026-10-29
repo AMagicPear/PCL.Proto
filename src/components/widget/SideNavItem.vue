@@ -22,7 +22,8 @@ defineProps<INavItem>()
     </component>
     <button
       v-if="action"
-      class="refresh-icon button-animated"
+      class="refresh-icon pcl-icon-button"
+      type="button"
       :title="action.title"
       :aria-label="action.title"
       @click="runAction?.(action.kind)"
@@ -71,19 +72,11 @@ a.custom {
   width: 22px;
   height: 22px;
   padding: 3px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--color-tint-light);
   opacity: 0;
-  transition: 0.4s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.refresh-icon:hover {
-  color: var(--color-titlebar);
+  transition:
+    opacity 0.4s,
+    color 150ms,
+    transform 250ms;
 }
 
 .sidenav-line:has(a.router-link-active):hover .refresh-icon,

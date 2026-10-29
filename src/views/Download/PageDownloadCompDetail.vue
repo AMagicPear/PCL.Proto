@@ -29,6 +29,7 @@ const item = computed(
       ...project.value,
       date_modified: project.value.updated,
       project_id: project.value.id,
+      versions: gameVersions.value,
     },
 )
 const gameVersions = computed(() => [
@@ -88,8 +89,8 @@ function openProject() {
 watch(
   () => route.query.id,
   () => {
-    versionFilter.value = ''
-    loaderFilter.value = ''
+    versionFilter.value = route.query.version === 'all' ? '' : String(route.query.version || '')
+    loaderFilter.value = String(route.query.loader || '')
     void load()
   },
   { immediate: true },

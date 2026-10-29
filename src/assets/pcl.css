@@ -101,3 +101,39 @@
   row-gap: 9px;
   align-items: center;
 }
+
+.pcl-icon-button {
+  width: 25px;
+  height: 25px;
+  padding: 5px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-tint-light, var(--color-tint));
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition:
+    color 150ms,
+    transform 250ms;
+}
+.pcl-icon-button:not(:disabled):hover,
+.pcl-icon-button:not(:disabled):focus-visible {
+  color: var(--color-tint-dark, var(--color-tint));
+  transition-duration: 120ms, 250ms;
+}
+.pcl-icon-button:not(:disabled):active {
+  transform: scale(0.8);
+}
+.pcl-icon-button:focus-visible {
+  outline: 2px solid var(--color-tint);
+  outline-offset: 2px;
+}
+.pcl-icon-button:disabled {
+  color: var(--color-text-grey);
+  cursor: not-allowed;
+}
+.pcl-icon-button > svg {
+  max-width: 100%;
+  max-height: 100%;
+}
