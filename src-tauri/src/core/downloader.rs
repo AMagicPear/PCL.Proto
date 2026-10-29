@@ -158,7 +158,12 @@ impl Downloader {
         option: &DownloadConfig,
         progress_tx: mpsc::Sender<ProgressUpdate>,
     ) -> Result<(), McApiError> {
-        let response = self.client.get(&option.info.url).send().await?;
+        let response = self
+            .client
+            .get(&option.info.url)
+            .send()
+            .await?
+            .error_for_status()?;
         let parent_path = option.out_path.parent().unwrap();
         if !parent_path.is_dir() {
             fs::create_dir_all(parent_path)?;

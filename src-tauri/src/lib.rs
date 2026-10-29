@@ -71,6 +71,8 @@ pub fn run() {
             commands::select_instance,
             commands::get_version_manifest,
             commands::handle_clicked_on_version,
+            core::version_export::export_minecraft_version,
+            core::version_export::open_minecraft_wiki,
             downloader::minecraft_resource::download_minecraft_version,
             commands::get_plugin_versions,
             commands::get_active_instance,

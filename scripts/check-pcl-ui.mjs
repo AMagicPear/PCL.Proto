@@ -4,7 +4,11 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import { pclIcons } from '../src/components/icons/pclIcons.ts'
-import { classifyVersion, getMinecraftVersions } from '../src/api/gameVersions.ts'
+import {
+  classifyVersion,
+  getMinecraftVersions,
+  getMinecraftChangelogUrl,
+} from '../src/api/gameVersions.ts'
 import modrinthApi from '../src/api/modrinthApi.ts'
 import { pclImagePath } from '../src/api/pclAssets.ts'
 import {
@@ -197,6 +201,18 @@ for (const loader of [
 const options = read('../src/assets/export-options.json')
 const defaults = read('../src/assets/setting-defaults.json')
 const originalFetch = globalThis.fetch
+for (const [id, locale, host, query] of [
+  ['1.21.1', 'zh-CN', 'zh.minecraft.wiki', 'Java版1.21.1'],
+  ['25w14craftmine', 'en-US', 'minecraft.wiki', 'Java Edition 25w14craftmine'],
+  ['25w14craftmine', 'zh-CN', 'zh.minecraft.wiki', '25w14craftmine'],
+  ['b1.7.3', 'zh-TW', 'zh.minecraft.wiki', 'Java版Beta 1.7.3'],
+  ['1.21 & test', 'fr-FR', 'fr.minecraft.wiki', 'Java Edition 1.21 & test'],
+]) {
+  const url = new URL(getMinecraftChangelogUrl(id, locale))
+  assert.equal(url.hostname, host)
+  assert.equal(url.searchParams.get('search'), query)
+  assert.equal(url.searchParams.get('go'), 'Go')
+}
 try {
   let requested = ''
   globalThis.fetch = async (url) => {

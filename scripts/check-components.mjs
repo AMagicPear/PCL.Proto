@@ -9,6 +9,7 @@ const server = await createServer({
   appType: 'custom',
 })
 const savedStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+const savedWindow = Object.getOwnPropertyDescriptor(globalThis, 'window')
 const storage = new Map()
 Object.defineProperty(globalThis, 'localStorage', {
   configurable: true,
@@ -141,6 +142,68 @@ try {
     JSON.parse(storage.get('pcl-ui:PageInstanceSetup:second')).TextArgumentInfo,
     'Second edited',
   )
+  const PVersionActions = await load('PVersionActions')
+  for (const manual of [false, true]) {
+    const html = await renderToString(
+      createSSRApp({ render: () => h(PVersionActions, { versionId: '1.21.1', manual }) }),
+    )
+    assert.equal([...html.matchAll(/<button\b/g)].length, manual ? 2 : 3)
+    assert.match(html, /aria-label="更新日志"/)
+    assert.match(html, /aria-label="下载服务端"/)
+    if (!manual) assert.match(html, /aria-label="另存为"/)
+  }
+
+  const calls = []
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: {
+      __TAURI_INTERNALS__: {
+        transformCallback: () => 1,
+        invoke: (command, args) =>
+          new Promise((resolve, reject) => calls.push({ command, args, resolve, reject })),
+      },
+    },
+  })
+  const { useTaskManager, TaskStatus } = await server.ssrLoadModule('/src/stores/task.ts')
+  const manager = useTaskManager()
+  const clientDownload = manager.exportMinecraftVersion('1.21.1', '/exports', false)
+  const serverDownload = manager.exportMinecraftVersion('1.21.1', '/exports', true)
+  assert.equal(manager.activeTaskCount, 2)
+  assert.throws(() => manager.exportMinecraftVersion('1.21.1', '/exports', false))
+  assert.deepEqual(
+    calls.map(({ command, args }) => [command, args.task_id, args.server]),
+    [
+      ['export_minecraft_version', 0, false],
+      ['export_minecraft_version', 1, true],
+    ],
+  )
+  assert.equal(manager.tasks[0].items.length, 2)
+  calls[0].args.on_event.onmessage({
+    task_id: 0,
+    item_id: 1,
+    files_remaining: 1,
+    progress: 0.5,
+    status: TaskStatus.Running,
+    speed: 100,
+  })
+  assert.equal(manager.tasks[0].progress, 0.25)
+  assert.equal(manager.tasks[1].progress, 0)
+  calls[0].resolve('/exports/1.21.1')
+  assert.equal(await clientDownload, '/exports/1.21.1')
+  assert.equal(manager.tasks[0].status, TaskStatus.Completed)
+  calls[1].reject(new Error('SHA-1 mismatch'))
+  await assert.rejects(serverDownload, /SHA-1/)
+  assert.equal(manager.tasks[1].status, TaskStatus.Failed)
+  assert.equal(manager.activeTaskCount, 0)
+  const install = manager.startDownloadMCVersion('1.21.1', 'instance')
+  assert.equal(manager.tasks[2].items.length, 4)
+  assert.equal(calls[2].command, 'download_minecraft_version')
+  assert.equal(calls[2].args.instance_name, 'instance')
+  calls[2].resolve()
+  await install
+  console.log(
+    'Version action buttons, export IPC, progress, duplicate prevention and download failure checks passed.',
+  )
   console.log(
     'Component attributes, labels, settings persistence/reset and instance isolation passed.',
   )
@@ -148,5 +211,7 @@ try {
   scopes.forEach((scope) => scope.stop())
   if (savedStorage) Object.defineProperty(globalThis, 'localStorage', savedStorage)
   else delete globalThis.localStorage
+  if (savedWindow) Object.defineProperty(globalThis, 'window', savedWindow)
+  else delete globalThis.window
   await server.close()
 }

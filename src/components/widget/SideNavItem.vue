@@ -56,7 +56,7 @@ a {
   padding-inline-end: 40px;
 }
 
-a:hover {
+.sidenav-line:hover > a {
   background-color: var(--color-tint-lighter);
 }
 

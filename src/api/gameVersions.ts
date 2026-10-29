@@ -17,6 +17,25 @@ export interface SingleVersionShowInfo {
   releaseTime: string
   timestamp: number
 }
+
+export function getMinecraftChangelogUrl(id: string, locale: string): string {
+  const language = locale.split('-')[0] || 'en'
+  const host = ['zh', 'ja', 'fr', 'es'].includes(language)
+    ? `${language}.minecraft.wiki`
+    : 'minecraft.wiki'
+  // Wiki search also resolves historical manifest IDs without guessing page names.
+  const url = new URL(`https://${host}/w/Special:Search`)
+  const version = id
+    .replace(/^b(?=\d)/, 'Beta ')
+    .replace(/^a(?=\d)/, 'Alpha v')
+    .replace(/^c(?=\d)/, 'Classic ')
+  url.searchParams.set(
+    'search',
+    `${language === 'zh' ? (id.includes('w') ? '' : 'Java版') : 'Java Edition '}${version}`,
+  )
+  url.searchParams.set('go', 'Go')
+  return url.href
+}
 export interface IVersionShow {
   latest: { release?: SingleVersionShowInfo; snapshot?: SingleVersionShowInfo }
   release: SingleVersionShowInfo[]

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import PCard from '@/components/widget/PCard.vue'
 import PListItem from '@/components/widget/PListItem.vue'
+import PVersionActions from '@/components/widget/PVersionActions.vue'
 import PButton from '@/components/widget/PButton.vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
 import PHint from '@/components/widget/PHint.vue'
@@ -17,6 +18,7 @@ import { useSelectedInstance } from '@/stores/gameLaunch'
 import { showIconPath } from '@/types/gameInfo'
 import type { McPluginReport } from '@/types/mcPlugin'
 import { installWarnings, loaderVisible, selectLoader } from '@/api/installSelection'
+import { saveMinecraftVersion } from '@/api/versionActions'
 
 const props = defineProps<{ manual?: boolean; modify?: boolean }>()
 const route = useRoute()
@@ -84,7 +86,7 @@ async function load() {
 }
 function choose(id: string, type: string) {
   if (props.manual) {
-    sideTip.show(pclText('Proto.NotImplemented.SaveInstaller'))
+    void saveMinecraftVersion(id)
     return
   }
   void router.push({ path: '/download/game/inner', query: { version_id: id, version_type: type } })
@@ -182,7 +184,9 @@ watch(versionId, (id) => {
               :subtitle="text(`Download.Version.Latest.${version.label}`, [version.releaseTime])"
               clickable
               @click="() => choose(version.id, version.type)"
-            />
+              ><template #actions
+                ><PVersionActions :version-id="version.id" :manual="manual" /></template
+            ></PListItem>
           </div>
         </PCard>
         <template v-for="category in categories" :key="category.key">
@@ -200,7 +204,9 @@ watch(versionId, (id) => {
                 :subtitle="version.releaseTime"
                 clickable
                 @click="() => choose(version.id, category.key)"
-              />
+                ><template #actions
+                  ><PVersionActions :version-id="version.id" :manual="manual" /></template
+              ></PListItem>
             </div>
           </PCard>
         </template>
@@ -209,12 +215,14 @@ watch(versionId, (id) => {
     <template v-else>
       <PCard hide-title>
         <div class="instance-name-row">
-          <PButton
-            inline
+          <button
+            type="button"
+            class="install-back"
             @click="() => router.push('/download/game')"
             :aria-label="pclText('Common.Action.Back')"
-            ><PSvgIcon name="lucide/arrow-left"
-          /></PButton>
+          >
+            <PSvgIcon name="lucide/arrow-left" :size="16" />
+          </button>
           <img :src="showIconPath.grass" alt="" />
           <PTextBox v-model="instanceName" :aria-label="pclText('Proto.Label.InstanceName')" />
           <span v-if="modify">{{ text('Instance.Install.Action.ModifyLabel') }}</span>
@@ -290,6 +298,13 @@ watch(versionId, (id) => {
 .version-list {
   padding: 0 18px 12px 20px;
 }
+.version-list :deep(.gameinfo-container:hover .version-actions),
+.version-list :deep(.gameinfo-container:focus-within .version-actions) {
+  opacity: 1;
+  pointer-events: auto;
+  transition-duration: 84ms;
+  transition-delay: 36ms;
+}
 .instance-name-row {
   display: flex;
   align-items: center;
@@ -299,6 +314,45 @@ watch(versionId, (id) => {
 .instance-name-row > img {
   width: 32px;
   height: 32px;
+}
+.install-back {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  padding: 5px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.62745);
+  opacity: 0.6;
+  cursor: pointer;
+  transition: color 150ms;
+}
+.install-back:hover,
+.install-back:focus-visible {
+  color: rgba(0, 0, 0, 0.90196);
+  transition-duration: 120ms;
+}
+.install-back:focus-visible {
+  outline: 2px solid var(--color-tint);
+  outline-offset: 2px;
+}
+.install-back :deep(.pcl-icon) {
+  transition: transform 250ms;
+}
+.install-back:active :deep(.pcl-icon) {
+  transform: scale(0.8);
+}
+@media (prefers-color-scheme: dark) {
+  .install-back {
+    color: rgba(255, 255, 255, 0.62745);
+  }
+  .install-back:hover,
+  .install-back:focus-visible {
+    color: rgba(255, 255, 255, 0.90196);
+  }
 }
 .instance-name-row > :last-child {
   flex: 1;

@@ -10,6 +10,7 @@ export enum TaskStatus {
   Completed = 2,
   Failed = 3,
 }
+type DownloadKind = 'install' | 'client' | 'server'
 
 export class Task {
   id: number
@@ -18,22 +19,37 @@ export class Task {
   speed: number
   items: TaskItem[]
   progress: number
+  kind: DownloadKind
 
   get name() {
-    return pclText('Proto.Task.Download', [this.versionId])
+    return pclText(
+      this.kind === 'server'
+        ? 'Minecraft.Download.Stage.MinecraftServerDownload'
+        : 'Proto.Task.Download',
+      [this.versionId],
+    )
   }
 
-  constructor(id: number, version_id: string) {
+  constructor(id: number, version_id: string, kind: DownloadKind = 'install') {
     this.id = id
     this.versionId = version_id
+    this.kind = kind
     this.status = TaskStatus.Pending
     this.speed = 0
     this.items = [
       new TaskItem(0, 'Proto.Task.Manifest', id, 1),
-      new TaskItem(1, 'Proto.Task.Client', id, 1),
-      new TaskItem(2, 'Proto.Task.Libraries', id),
-      new TaskItem(3, 'Minecraft.Download.Stage.DownloadAssets', id),
+      new TaskItem(
+        1,
+        kind === 'server' ? 'Minecraft.Download.Stage.DownloadServerFile' : 'Proto.Task.Client',
+        id,
+        1,
+      ),
     ]
+    if (kind === 'install')
+      this.items.push(
+        new TaskItem(2, 'Proto.Task.Libraries', id),
+        new TaskItem(3, 'Minecraft.Download.Stage.DownloadAssets', id),
+      )
     this.progress = 0
   }
 }
@@ -117,13 +133,22 @@ export const useTaskManager = defineStore('task-manager', () => {
   })
   const floatButton = useFloatButton()
 
-  async function startDownloadMCVersion(version_id: string, instance_name: string) {
-    let newTask = new Task(++current_taskid, version_id)
+  async function runDownload(
+    version_id: string,
+    command: string,
+    args: Record<string, unknown>,
+    kind: DownloadKind,
+  ) {
+    const newTask = new Task(++current_taskid, version_id, kind)
     tasks.value.push(newTask)
     const onEvent = new Channel<TaskItemReport>()
     onEvent.onmessage = (message) => {
       const taskToUpdate = tasks.value[message.task_id]
-      if (taskToUpdate) {
+      if (
+        taskToUpdate &&
+        taskToUpdate.status !== TaskStatus.Failed &&
+        taskToUpdate.status !== TaskStatus.Completed
+      ) {
         const itemToUpdate = taskToUpdate.items[message.item_id]
         if (itemToUpdate) {
           itemToUpdate.update(message)
@@ -141,12 +166,25 @@ export const useTaskManager = defineStore('task-manager', () => {
       }
     }
     try {
-      await invoke('download_minecraft_version', {
+      const result = await invoke<string | void>(command, {
+        ...args,
         on_event: onEvent,
         version_id,
-        task_id: current_taskid,
-        instance_name,
+        task_id: newTask.id,
       })
+      if (kind !== 'install') {
+        const completed = tasks.value.find((task) => task.id === newTask.id)!
+        completed.status = TaskStatus.Completed
+        completed.progress = 1
+        completed.speed = 0
+        completed.items.forEach((item) => {
+          item.status = TaskStatus.Completed
+          item.progress = 1
+          item.speed = 0
+          item.remaining = 0
+        })
+      }
+      return result
     } catch (err) {
       const failedTask = tasks.value.find((task) => task.id === newTask.id)!
       failedTask.status = TaskStatus.Failed
@@ -154,14 +192,36 @@ export const useTaskManager = defineStore('task-manager', () => {
         .filter((item) => item.status !== TaskStatus.Completed)
         .forEach((item) => (item.status = TaskStatus.Failed))
       throw err
+    } finally {
+      if (activeTaskCount.value <= 0) floatButton.floatButtonState.visible = false
     }
-    console.log('download task completed', tasks.value)
+  }
+
+  async function startDownloadMCVersion(version_id: string, instance_name: string) {
+    await runDownload(version_id, 'download_minecraft_version', { instance_name }, 'install')
+  }
+
+  function exportMinecraftVersion(version_id: string, directory: string, server: boolean) {
+    const kind = server ? 'server' : 'client'
     if (
-      activeTaskCount.value <= 0 ||
-      floatButton.floatButtonState.type === FloatButtonType.TaskManage
-    ) {
-      floatButton.floatButtonState.visible = false
-    }
+      tasks.value.some(
+        (task) =>
+          task.versionId === version_id &&
+          task.kind === kind &&
+          task.status !== TaskStatus.Completed &&
+          task.status !== TaskStatus.Failed,
+      )
+    )
+      throw new Error(
+        pclText(
+          server
+            ? 'Minecraft.Download.Error.ServerDownloading'
+            : 'Minecraft.Download.Error.InstanceDownloading',
+        ),
+      )
+    floatButton.setFloatButton(FloatButtonType.TaskManage)
+    floatButton.floatButtonState.visible = true
+    return runDownload(version_id, 'export_minecraft_version', { directory, server }, kind)
   }
 
   return {
@@ -170,6 +230,7 @@ export const useTaskManager = defineStore('task-manager', () => {
     totalSpeed,
     totalRemaining,
     startDownloadMCVersion,
+    exportMinecraftVersion,
     activeTaskCount,
   }
 })

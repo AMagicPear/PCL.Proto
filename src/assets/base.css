@@ -33,6 +33,7 @@
   --color-titlebar: var(--pcl-blue);
   /* 标亮的按钮颜色 */
   --color-tint: var(--tint-blue);
+  --color-tint-dark: #0b5bcb;
   --color-tint-light: var(--light-blue);
   --color-tint-lighter: var(--lighter-blue);
   --color-tint-lightist: var(--half-transparent-blue);

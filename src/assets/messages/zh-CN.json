@@ -39,7 +39,7 @@
   "Proto.Storage.FavoritesFailed": "收藏保存失败，请检查可用存储空间。",
   "Proto.NotImplemented.Action": "此操作尚未接入 PCL.Proto。",
   "Proto.NotImplemented.Initialize": "初始化设置尚未接入 PCL.Proto。",
-  "Proto.NotImplemented.SaveInstaller": "Minecraft 安装包另存为尚未接入 PCL.Proto。",
+  "Proto.Download.Saved": "已保存到：{0}",
   "Proto.NotImplemented.ModifyCore": "实例核心修改尚未接入 PCL.Proto。",
   "Proto.NotImplemented.LoaderInstall": "加载器安装尚未接入 PCL.Proto，请先下载原版游戏。",
   "Proto.NotImplemented.Installer": "安装包下载尚未接入 PCL.Proto。",

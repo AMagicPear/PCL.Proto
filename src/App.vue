@@ -104,25 +104,29 @@ html.website,
 
 @supports selector(::-webkit-scrollbar) {
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+    height: 8px;
   }
 
   ::-webkit-scrollbar-track {
     background: transparent;
+    margin: 2px;
   }
 
   ::-webkit-scrollbar-thumb {
     background-color: var(--color-tint-lightist);
-    border-radius: 3px;
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-tint-light);
+    background-color: var(--color-tint-light);
   }
 }
 
-@supports (scrollbar-width: thin) {
-  html {
+@supports (scrollbar-width: thin) and (not selector(::-webkit-scrollbar)) {
+  * {
     scrollbar-width: thin;
     scrollbar-color: var(--color-tint-lightist) transparent;
   }

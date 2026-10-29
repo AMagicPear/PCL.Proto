@@ -39,7 +39,7 @@
   "Proto.Storage.FavoritesFailed": "Cannot save favorites. Check available storage space.",
   "Proto.NotImplemented.Action": "This action is not yet available in PCL.Proto.",
   "Proto.NotImplemented.Initialize": "Resetting settings is not yet available in PCL.Proto.",
-  "Proto.NotImplemented.SaveInstaller": "Saving a Minecraft installer is not yet available in PCL.Proto.",
+  "Proto.Download.Saved": "Saved to: {0}",
   "Proto.NotImplemented.ModifyCore": "Changing the instance core is not yet available in PCL.Proto.",
   "Proto.NotImplemented.LoaderInstall": "Loader installation is not yet available in PCL.Proto. Download vanilla Minecraft first.",
   "Proto.NotImplemented.Installer": "Installer downloads are not yet available in PCL.Proto.",
