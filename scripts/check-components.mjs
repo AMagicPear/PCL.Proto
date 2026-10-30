@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'vite'
-import { createSSRApp, effectScope, h, nextTick } from 'vue'
+import { createSSRApp, effectScope, h, nextTick, ref } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { renderToString } from 'vue/server-renderer'
 import { createRouter, createMemoryHistory } from 'vue-router'
@@ -17,6 +17,8 @@ Object.defineProperty(globalThis, 'localStorage', {
   value: {
     getItem: (key) => storage.get(key) ?? null,
     setItem: (key, value) => storage.set(key, value),
+    get length() { return storage.size },
+    key: (index) => [...storage.keys()][index] ?? null,
   },
 })
 const scopes = []
@@ -179,26 +181,29 @@ try {
     assert.equal(open('Invalid', { enabled: true }).values.enabled, true)
   }
   const instance = useSelectedInstance()
-  instance.instance_info = { id: 'first' }
+  const firstKey = 'pcl-instance-ui:PageInstanceSetup:%2Frepo%20one%2Fversions%2Fshared'
+  const secondKey = 'pcl-instance-ui:PageInstanceSetup:%2Frepo%20two%2Fversions%2Fshared'
+  storage.set('pcl-ui:PageInstanceSetup:shared', JSON.stringify({ TextArgumentInfo: 'Legacy' }))
+  instance.instance_info = { id: 'shared', directory: '/repo one/versions/shared' }
   const scoped = open('PageInstanceSetup')
   scoped.values.TextArgumentInfo = 'First instance'
-  await nextTick()
-  storage.set(
-    'pcl-ui:PageInstanceSetup:second',
-    JSON.stringify({ TextArgumentInfo: 'Second instance' }),
-  )
-  instance.instance_info = { id: 'second' }
-  await nextTick()
+  storage.set(secondKey, JSON.stringify({ TextArgumentInfo: 'Second instance' }))
+  instance.instance_info = { id: 'shared', directory: '/repo two/versions/shared' }
   assert.equal(scoped.values.TextArgumentInfo, 'Second instance')
   scoped.values.TextArgumentInfo = 'Second edited'
+  instance.instance_info = { id: 'shared', directory: '/repo one/versions/shared' }
+  assert.equal(scoped.values.TextArgumentInfo, 'First instance')
+  assert.equal(JSON.parse(storage.get(firstKey)).TextArgumentInfo, 'First instance')
+  assert.equal(JSON.parse(storage.get(secondKey)).TextArgumentInfo, 'Second edited')
+  assert.equal(JSON.parse(storage.get('pcl-ui:PageInstanceSetup:shared')).TextArgumentInfo, 'Legacy')
+  instance.instance_info = null
   await nextTick()
-  instance.instance_info = { id: 'first' }
+  scoped.values.TextArgumentInfo = 'No instance'
+  await nextTick()
+  assert.equal(storage.has('pcl-ui:PageInstanceSetup:none'), false)
+  instance.instance_info = { id: 'shared', directory: '/repo one/versions/shared' }
   await nextTick()
   assert.equal(scoped.values.TextArgumentInfo, 'First instance')
-  assert.equal(
-    JSON.parse(storage.get('pcl-ui:PageInstanceSetup:second')).TextArgumentInfo,
-    'Second edited',
-  )
   const PListItem = await load('PListItem')
   for (const selected of [undefined, false, true]) {
     const html = await renderToString(
@@ -356,6 +361,7 @@ try {
     http_mode: 0,
     file_source: 1,
     version_source: 1,
+    auto_select_instance: true,
   }
   assert.deepEqual(downloadSettings({}), downloadDefaults)
   assert.deepEqual(downloadSettings(sourceDefaults.PageSetupGameManage), downloadDefaults)
@@ -388,6 +394,7 @@ try {
       SliderDownloadFileConnection: 1,
       ComboDownloadHttpMode: '1',
       ComboDownloadVersion: '0',
+      CheckDownloadAutoSelectVersion: false,
     }),
   )
   assert.equal(downloadSettings().max_connections, 16)
@@ -407,6 +414,235 @@ try {
     },
   })
   const originalInvoke = window.__TAURI_INTERNALS__.invoke
+  const { downloadGameJava } = await server.ssrLoadModule('/src/api/javaReq.ts')
+  const javaDownload = downloadGameJava('/games/current', () => {})
+  assert.equal(calls[0].command, 'download_game_java')
+  assert.equal(calls[0].args.instanceDirectory, '/games/current')
+  assert.equal(calls[0].args.downloadSettings, undefined)
+  calls.shift().resolve({})
+  await javaDownload
+  const {
+    initializeDownloadSettings,
+    readDownloadSettings,
+    saveDownloadSettings,
+    downloadSaveError,
+    downloadSettingValues,
+  } = await server.ssrLoadModule('/src/api/downloadSettings.ts')
+  const init = initializeDownloadSettings()
+  assert.equal(calls[0].command, 'initialize_download_settings')
+  assert.equal(calls[0].args.legacy.max_connections, 16)
+  assert.equal(calls[0].args.legacy.auto_select_instance, false)
+  calls.shift().resolve(downloadDefaults)
+  await init
+  const existingInit = initializeDownloadSettings()
+  calls.shift().resolve(downloadDefaults)
+  assert.deepEqual(await existingInit, downloadDefaults)
+  assert.equal(calls.length, 0)
+  assert.deepEqual(downloadSettings(downloadSettingValues(downloadDefaults)), downloadDefaults)
+  const firstSettings = { ...downloadDefaults, max_connections: 9 }
+  const secondSettings = { ...downloadDefaults, max_connections: 10 }
+  const firstSave = saveDownloadSettings(firstSettings)
+  const secondSave = saveDownloadSettings(secondSettings)
+  await Promise.resolve()
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].args.settings.max_connections, 9)
+  calls.shift().resolve(firstSettings)
+  await firstSave
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(calls[0].args.settings.max_connections, 10)
+  calls.shift().reject(new Error('disk full'))
+  await assert.rejects(secondSave, /disk full/)
+  assert.match(downloadSaveError.value, /disk full/)
+  assert.deepEqual(await readDownloadSettings(), secondSettings)
+  const retrySave = saveDownloadSettings(secondSettings)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  calls.shift().resolve(secondSettings)
+  await retrySave
+  assert.equal(downloadSaveError.value, '')
+  const { initializeWindowSettings, legacyWindowSettings, readWindowSettings, saveWindowSettings, windowSaveError } =
+    await server.ssrLoadModule('/src/api/windowSettings.ts')
+  storage.set('pcl-ui:PageSetupLaunch:global', JSON.stringify({ ComboArgumentWindowType: '3', TextArgumentWindowWidth: '1280', TextArgumentWindowHeight: '720' }))
+  const windowInit = initializeWindowSettings()
+  calls.shift().resolve(null)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const customWindow = { mode: 'custom', width: 1280, height: 720 }
+  assert.deepEqual(calls[0].args.settings, customWindow)
+  calls.shift().resolve(customWindow)
+  await windowInit
+  assert.deepEqual(legacyWindowSettings(), customWindow)
+  const failedWindow = saveWindowSettings({ ...customWindow, width: 1600 })
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  calls.shift().reject(new Error('disk full'))
+  await assert.rejects(failedWindow, /disk full/)
+  assert.match(windowSaveError.value, /disk full/)
+  assert.equal((await readWindowSettings()).width, 1600)
+  const { migrateLegacyInstanceJava } = await server.ssrLoadModule('/src/api/javaMigration.ts')
+  storage.set('pcl-ui:PageInstanceSetup:legacy', JSON.stringify({ ComboArgumentJava: '/jdk25/bin/java', CheckAdvanceJava: true }))
+  storage.set('pcl-ui:PageInstanceSetup:none', JSON.stringify({ ComboArgumentJava: '/bad' }))
+  const migration = migrateLegacyInstanceJava()
+  assert.equal(calls[0].command, 'migrate_instance_java_settings')
+  assert.deepEqual(calls[0].args.legacy.legacy, { preference: { kind: 'exist', java_exe: '/jdk25/bin/java' }, ignore_compatibility: true })
+  assert.equal(calls[0].args.legacy.none, undefined)
+  calls.shift().resolve(['legacy'])
+  assert.deepEqual(await migration, ['legacy'])
+  const { migrateLegacyInstancePages } = await server.ssrLoadModule('/src/api/instancePageMigration.ts')
+  const oldPage = 'pcl-ui:PageInstanceOverall:unique'
+  const oldDuplicate = 'pcl-ui:PageInstanceOverall:duplicate'
+  storage.set(oldPage, JSON.stringify({ ComboDisplayLogo: '2', unknown: 'ignored' }))
+  storage.set(oldDuplicate, JSON.stringify({ ComboDisplayLogo: '1' }))
+  storage.set('pcl-ui:PageInstanceSavesDatapack:unique', JSON.stringify({ filter: 'Enabled', SearchBox: 'stone' }))
+  const existingPage = 'pcl-instance-ui:PageInstanceSavesDatapack:%2Frepo%2Fversions%2Fone'
+  storage.set(existingPage, JSON.stringify({ filter: 'Disabled' }))
+  const pageMigration = migrateLegacyInstancePages()
+  assert.equal(calls[0].command, 'resolve_legacy_instance_ids')
+  calls.shift().resolve({ unique: '/repo/versions/one' })
+  assert.equal(await pageMigration, 1)
+  assert.deepEqual(JSON.parse(storage.get('pcl-instance-ui:PageInstanceOverall:%2Frepo%2Fversions%2Fone')), { ComboDisplayLogo: '2' })
+  assert.equal(JSON.parse(storage.get(existingPage)).filter, 'Disabled')
+  assert.equal(JSON.parse(storage.get(oldPage)).unknown, 'ignored')
+  const retryPages = migrateLegacyInstancePages()
+  assert.deepEqual(calls[0].args.ids, ['duplicate'])
+  calls.shift().reject(new Error('repository unavailable'))
+  assert.equal(await retryPages, 1)
+  const { initializeMemorySettings, memoryTickToMib, saveMemorySettings, readMemorySettings, previewMemorySettings } =
+    await server.ssrLoadModule('/src/api/memorySettings.ts')
+  assert.equal(memoryTickToMib(0), 307)
+  assert.equal(memoryTickToMib(13), 2048)
+  assert.equal(memoryTickToMib(49), 49152)
+  const previewRequest = previewMemorySettings('/repo/a', { mode: 'auto' }, false)
+  assert.deepEqual(calls[0].args, { instanceDirectory: '/repo/a', settings: { mode: 'auto' }, is64Bit: false })
+  calls.shift().resolve({ total_bytes: 8192, available_bytes: 4096, allocation_mib: 1024 })
+  assert.equal((await previewRequest).allocation_mib, 1024)
+  storage.set('pcl-ui:PageSetupLaunch:global', JSON.stringify({ LaunchRamType: '1', SliderRamCustom: 13, SliderRamInitialCustom: 20 }))
+  storage.set('pcl-ui:PageInstanceSetup:memory', JSON.stringify({ VersionRamType: '0' }))
+  storage.set('pcl-ui:PageInstanceSetup:follow', JSON.stringify({ VersionRamType: '2' }))
+  const memoryInit = initializeMemorySettings()
+  assert.deepEqual(calls[0].args.settings, { mode: 'custom', maximum_mib: 2048, initial_mib: 2048 })
+  assert.equal(calls[0].args.custom.initial_mib, memoryTickToMib(20))
+  calls.shift().resolve(null)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(calls[0].command, 'migrate_instance_memory_settings')
+  assert.deepEqual(calls[0].args.legacy.memory.settings, { mode: 'auto' })
+  assert.equal(calls[0].args.legacy.follow.settings, null)
+  assert.equal(calls[0].args.legacy.none, undefined)
+  calls.shift().resolve(['memory'])
+  assert.equal(await memoryInit, 1)
+  const firstMemory = { settings: { mode: 'custom', maximum_mib: 2048, initial_mib: null }, custom: { maximum_mib: 2048, initial_mib: null } }
+  const secondMemory = { settings: { mode: 'custom', maximum_mib: 3072, initial_mib: 1024 }, custom: { maximum_mib: 3072, initial_mib: 1024 } }
+  const saveFirstMemory = saveMemorySettings('/repo/a', firstMemory)
+  const saveSecondMemory = saveMemorySettings('/repo/a', secondMemory)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.deepEqual(calls[0].args.settings, firstMemory.settings)
+  calls.shift().resolve(firstMemory)
+  await saveFirstMemory
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.deepEqual(calls[0].args.settings, secondMemory.settings)
+  calls.shift().reject(new Error('memory disk full'))
+  await assert.rejects(saveSecondMemory, /memory disk full/)
+  assert.deepEqual(await readMemorySettings('/repo/a'), { ...secondMemory, error: 'Error: memory disk full' })
+  const inherited = { settings: null, custom: { maximum_mib: 6144, initial_mib: 4096 } }
+  const inheritFirst = saveMemorySettings('/repo/inherit', inherited)
+  const inheritSecond = saveMemorySettings('/repo/inherit', inherited)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  calls.shift().resolve(null)
+  await inheritFirst
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  calls.shift().reject(new Error('inherit failed'))
+  await assert.rejects(inheritSecond, /inherit failed/)
+  assert.deepEqual(await readMemorySettings('/repo/inherit'), { ...inherited, error: 'Error: inherit failed' })
+  globalThis.isTauri = true
+  const { useMemorySettings } = await server.ssrLoadModule('/src/composables/useMemorySettings.ts')
+  const memoryScope = effectScope()
+  scopes.push(memoryScope)
+  const memoryPath = ref('/repo/old')
+  const memoryForm = memoryScope.run(() => useMemorySettings(memoryPath))
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const oldRead = calls.shift()
+  memoryPath.value = '/repo/new'
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const newRead = calls.shift()
+  assert.equal(newRead.args.instanceDirectory, '/repo/new')
+  newRead.resolve(secondMemory)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  oldRead.resolve({ settings: { mode: 'auto' }, custom: { maximum_mib: 2048, initial_mib: null } })
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(memoryForm.mode.value, 'custom')
+  assert.equal(memoryForm.maximum.value, 15)
+  memoryForm.mode.value = 'auto'
+  memoryForm.save()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.deepEqual(calls[0].args.custom, secondMemory.custom)
+  calls.shift().resolve({ settings: { mode: 'auto' }, custom: secondMemory.custom })
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const reloadMemory = memoryForm.load()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  calls.shift().resolve({ settings: { mode: 'auto' }, custom: secondMemory.custom })
+  await reloadMemory
+  assert.equal(memoryForm.mode.value, 'auto')
+  assert.equal(memoryForm.maximum.value, 15)
+  assert.equal(memoryTickToMib(memoryForm.initial.value), 1024)
+  const { useLaunchArguments } = await server.ssrLoadModule('/src/composables/useLaunchArguments.ts')
+  const { readLaunchArguments } = await server.ssrLoadModule('/src/api/launchArguments.ts')
+  const argumentScope = effectScope()
+  scopes.push(argumentScope)
+  const argumentPath = ref('/repo/argument-old')
+  const argumentForm = argumentScope.run(() => useLaunchArguments(argumentPath))
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const oldArguments = calls.shift()
+  argumentPath.value = '/repo/argument-new'
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const newArguments = calls.shift()
+  newArguments.resolve({ jvm: '-Dnew=true', game: '', classpath: '' })
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  oldArguments.resolve({ jvm: '-Dold=true', game: '', classpath: '' })
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(argumentForm.jvm.value, '-Dnew=true')
+  argumentForm.game.value = "--server 'my host'"
+  argumentForm.save()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(calls[0].command, 'set_launch_arguments')
+  assert.equal(calls[0].args.instanceDirectory, '/repo/argument-new')
+  calls.shift().reject(new Error('arguments disk full'))
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.match(argumentForm.error.value, /arguments disk full/)
+  assert.equal((await readLaunchArguments('/repo/argument-new')).settings.game, "--server 'my host'")
+  argumentForm.game.value = '--demo'
+  argumentForm.save()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(calls[0].args.settings.game, '--demo')
+  calls.shift().resolve(null)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(argumentForm.error.value, '')
+  const { initializeLogSettings, logSlider, logSaveError, updateLogSlider, saveLogSettings } =
+    await server.ssrLoadModule('/src/api/logSettings.ts')
+  globalThis.isTauri = true
+  storage.set('pcl-ui:PageLogRight:global', JSON.stringify({ SliderMaxLog: 5 }))
+  storage.set('pcl-ui:PageSetupLauncherMisc:global', JSON.stringify({ SliderMaxLog: 13 }))
+  const logInit = initializeLogSettings()
+  calls.shift().resolve(null)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(calls[0].args.lines, 100)
+  calls.shift().resolve(100)
+  await logInit
+  assert.equal(logSlider.value, 5)
+  const logExisting = initializeLogSettings()
+  calls.shift().resolve(500)
+  await logExisting
+  assert.equal(logSlider.value, 13)
+  assert.equal(calls.length, 0)
+  updateLogSlider(29)
+  saveLogSettings()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(calls[0].args.lines, 0)
+  calls.shift().reject(new Error('disk full'))
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.match(logSaveError.value, /disk full/)
+  saveLogSettings()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  calls.shift().resolve(0)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(logSaveError.value, '')
+  delete globalThis.isTauri
   const javaCalls = []
   const javaRuntime = {
     java_exe: '/jdk25/bin/java',
@@ -462,13 +698,12 @@ try {
         TextArgumentTitle: 'keep',
       }),
     )
-    await javaStore.load('/games/legacy', false, 'legacy')
-    assert.equal(javaStore.instances['/games/legacy'].preference.java_exe, '/jdk25/bin/java')
-    assert.equal(javaStore.instances['/games/legacy'].ignore_compatibility, true)
+    await javaStore.load('/games/legacy')
+    assert.equal(javaStore.instances['/games/legacy'].preference.kind, 'global')
     const migrations = javaCalls.filter(
       ({ command }) => command === 'set_instance_java_settings',
     ).length
-    await javaStore.load('/games/legacy', false, 'legacy')
+    await javaStore.load('/games/legacy')
     assert.equal(
       javaCalls.filter(({ command }) => command === 'set_instance_java_settings').length,
       migrations,
@@ -534,8 +769,7 @@ try {
       ['export_minecraft_version', 1, true],
     ],
   )
-  assert.equal(calls[0].args.download_settings.max_connections, 16)
-  assert.equal(calls[0].args.download_settings.file_connections, 2)
+  assert.equal(calls[0].args.download_settings, undefined)
   assert.equal(manager.tasks[0].items.length, 2)
   calls[0].args.on_event.onmessage({
     task_id: 0,
@@ -614,6 +848,34 @@ try {
   assert.equal(manager.totalSpeed, 0)
   assert.equal(manager.totalRemaining, 0)
   assert.equal(button.visible, false)
+  const fabricInstall = manager.startDownloadMCVersion('1.20.1', 'Fabric', { family: 'fabric', version: '0.16.14' })
+  assert.deepEqual(calls[5].args.fabric, { family: 'fabric', version: '0.16.14' })
+  calls[5].resolve()
+  await fabricInstall
+  const legacyInstall = manager.startDownloadMCVersion('1.12.2', 'Legacy', { family: 'legacyfabric', version: '0.20.1' })
+  assert.deepEqual(calls[6].args.fabric, { family: 'legacyfabric', version: '0.20.1' })
+  calls[6].resolve()
+  await legacyInstall
+  const selectedInstall = manager.startDownloadMCVersion('1.20.1', 'selected')
+  calls[7].resolve({ selected: true, selection_error: null })
+  await selectedInstall
+  assert.equal(calls[8].command, 'get_active_instance')
+  calls[8].resolve({ id: 'selected' })
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(useSelectedInstance().instance_info.id, 'selected')
+  const selectedStore = useSelectedInstance()
+  const staleFetch = selectedStore.fetch()
+  selectedStore.setInstance({ id: 'new-selection' })
+  calls[9].resolve({ id: 'old-selection' })
+  await staleFetch
+  assert.equal(selectedStore.instance_info.id, 'new-selection')
+  const firstFetch = selectedStore.fetch()
+  const secondFetch = selectedStore.fetch()
+  calls[11].resolve({ id: 'newest' })
+  await secondFetch
+  calls[10].resolve({ id: 'older' })
+  await firstFetch
+  assert.equal(selectedStore.instance_info.id, 'newest')
   console.log(
     'Version actions, IPC isolation, download progress, publication failures and concurrent tasks passed.',
   )

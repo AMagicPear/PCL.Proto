@@ -29,7 +29,7 @@ const visibleOptions = computed(() =>
         (option.require === 'optifine'
           ? instance.plugins.includes('optifine')
           : instance.plugins.some((plugin) =>
-              ['forge', 'neoforge', 'fabric', 'quilt'].includes(plugin),
+              ['forge', 'neoforge', 'fabric', 'legacyfabric', 'quilt', 'liteloader', 'cleanroom'].includes(plugin),
             ))),
   ),
 )

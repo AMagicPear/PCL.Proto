@@ -5,6 +5,7 @@ pub enum PluginType {
     Forge,
     NeoForge,
     Fabric,
+    LegacyFabric,
     Quilt,
     Optifine,
 }

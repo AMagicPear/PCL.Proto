@@ -49,4 +49,34 @@ impl GameRepository {
         instances.sort_by(|a, b| a.name.cmp(&b.name));
         instances
     }
+
+    pub fn game_instance_named(&self, name: &str) -> Option<GameInstance> {
+        self.game_instances()
+            .into_iter()
+            .find(|instance| instance.name == name)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn selection_uses_directory_name_when_metadata_ids_match() {
+        let root =
+            std::env::temp_dir().join(format!("pcl-repo-identities-{}", uuid::Uuid::new_v4()));
+        for name in ["first", "second"] {
+            let dir = root.join("versions").join(name);
+            fs::create_dir_all(&dir).unwrap();
+            fs::write(dir.join(format!("{name}.json")), r#"{"id":"same"}"#).unwrap();
+            fs::write(dir.join(format!("{name}.jar")), b"jar").unwrap();
+        }
+        let repo = GameRepository::new("test", root.clone());
+        assert_eq!(repo.game_instances().len(), 2);
+        let selected = repo.game_instance_named("second").unwrap();
+        assert_eq!(selected.id, "same");
+        assert_eq!(selected.directory, root.join("versions/second"));
+        assert!(repo.game_instance_named("same").is_none());
+        fs::remove_dir_all(root).unwrap();
+    }
 }

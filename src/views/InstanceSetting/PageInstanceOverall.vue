@@ -3,18 +3,29 @@ import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
 import { useSelectedInstance } from '@/stores/gameLaunch'
 import PListItem from '@/components/widget/PListItem.vue'
-import { showIconPath } from '@/types/gameInfo'
+import { pluginShowText, showIconPath } from '@/types/gameInfo'
 const instance = useSelectedInstance()
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
+import { invoke, isTauri } from '@tauri-apps/api/core'
+import sideTip from '@/composables/sideTip'
 const { values } = usePageSettings('PageInstanceOverall', {
   ComboDisplayLogo: '0',
   ComboDisplayType: '0',
 })
 
 const text = pclText
+async function openFolder(kind: 'instance' | 'saves' | 'mods') {
+  const instanceDirectory = instance.instance_info?.directory
+  if (!instanceDirectory || !isTauri()) return
+  try {
+    await invoke('open_instance_folder', { instanceDirectory, kind })
+  } catch (error) {
+    sideTip.show(pclText('Proto.Error.OpenFolder', [String(error)]), 'warn')
+  }
+}
 </script>
 <template>
   <div class="pcl-page">
@@ -42,7 +53,7 @@ const text = pclText
             >
               <p v-if="instance.instance_info">Minecraft {{ instance.instance_info.version }}</p>
               <p v-for="(version, loader) in instance.instance_info?.pluginsVersion" :key="loader">
-                {{ loader }} {{ version }}
+                {{ pluginShowText[loader] || loader }} {{ version }}
               </p>
               <p>{{ instance.instance_info?.directory }}</p>
             </div>
@@ -187,6 +198,7 @@ const text = pclText
               >
                 <PButton
                   data-control="BtnFolderVersion"
+                  :disabled="!instance.instance_info || !isTauri()"
                   style="
                     min-width: 140px;
                     margin: 0px 20px 0px 0px;
@@ -194,11 +206,12 @@ const text = pclText
                     grid-row: 1 / span 1;
                     grid-column: 1 / span 1;
                   "
-                  @click="showUnavailable"
+                  @click="openFolder('instance')"
                   >{{ text('Instance.Overall.Shortcuts.InstanceFolder') }}</PButton
                 >
                 <PButton
                   data-control="BtnFolderSaves"
+                  :disabled="!instance.instance_info || !isTauri()"
                   style="
                     min-width: 140px;
                     margin: 0px 20px 0px 0px;
@@ -206,11 +219,12 @@ const text = pclText
                     grid-row: 1 / span 1;
                     grid-column: 2 / span 1;
                   "
-                  @click="showUnavailable"
+                  @click="openFolder('saves')"
                   >{{ text('Instance.Overall.Shortcuts.SavesFolder') }}</PButton
                 >
                 <PButton
                   data-control="BtnFolderMods"
+                  :disabled="!instance.instance_info || !isTauri()"
                   style="
                     min-width: 140px;
                     margin: 0px 20px 0px 0px;
@@ -218,7 +232,7 @@ const text = pclText
                     grid-row: 1 / span 1;
                     grid-column: 3 / span 1;
                   "
-                  @click="showUnavailable"
+                  @click="openFolder('mods')"
                   >{{ text('Instance.Overall.Shortcuts.ModsFolder') }}</PButton
                 >
               </div>

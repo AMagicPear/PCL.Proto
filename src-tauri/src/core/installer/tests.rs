@@ -2,6 +2,35 @@ use super::*;
 use serde_json::json;
 
 #[test]
+fn legacy_assets_preserve_existing_files_and_reject_conflicts() {
+    use sha1::Digest;
+    let root = std::env::temp_dir().join(format!("pcl-assets-test-{}", uuid::Uuid::new_v4()));
+    let instance = root.join("instance");
+    let hash = format!("{:x}", sha1::Sha1::digest(b"sound"));
+    let source = root.join("assets/objects").join(&hash[..2]).join(&hash);
+    fs::create_dir_all(source.parent().unwrap()).unwrap();
+    fs::write(&source, b"sound").unwrap();
+    let index: AssetIndex = serde_json::from_value(json!({
+        "map_to_resources": true, "objects": {"sounds/a.ogg": {"hash": hash, "size": 5}}
+    }))
+    .unwrap();
+    materialize_assets(&index, &root, &instance, "test").unwrap();
+    materialize_assets(&index, &root, &instance, "test").unwrap();
+    let target = instance.join("resources/sounds/a.ogg");
+    fs::write(&target, b"user data").unwrap();
+    assert!(materialize_assets(&index, &root, &instance, "test").is_err());
+    assert_eq!(fs::read(&target).unwrap(), b"user data");
+    #[cfg(unix)]
+    {
+        fs::remove_dir_all(instance.join("resources/sounds")).unwrap();
+        std::os::unix::fs::symlink(&root, instance.join("resources/sounds")).unwrap();
+        assert!(materialize_assets(&index, &root, &instance, "test").is_err());
+        assert!(!root.join("a.ogg").exists());
+    }
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn duplicate_assets_are_downloaded_once_and_invalid_metadata_is_rejected() {
     let hash = "a".repeat(40);
     let index: AssetIndex = serde_json::from_value(
@@ -37,6 +66,31 @@ fn duplicate_assets_are_downloaded_once_and_invalid_metadata_is_rejected() {
 }
 
 #[test]
+fn inherited_native_libraries_prefer_child_version() {
+    let download = |name| json!({"path":format!("{name}.jar"), "url":"https://example.org/native.jar", "sha1":"a".repeat(40), "size":1});
+    let details: VersionDetails = serde_json::from_value(json!({
+        "id":"test", "type":"release", "assets":"test", "mainClass":"Main",
+        "downloads":{"client":download("client")}, "assetIndex":{"id":"test", "sha1":"a".repeat(40), "size":1,"url":"https://example.org/index"},
+        "libraries":[
+            {"name":"org.lwjgl:lwjgl:3.3", "natives":{"linux":"natives-linux"}, "downloads":{"classifiers":{"natives-linux":download("child")}}},
+            {"name":"org.lwjgl:lwjgl:3.2", "natives":{"linux":"natives-linux"}, "downloads":{"classifiers":{"natives-linux":download("parent")}}}
+        ]
+    })).unwrap();
+    let context = RuleContext {
+        os: "linux".into(),
+        arch: "x86_64".into(),
+        version: String::new(),
+        features: Default::default(),
+    };
+    let mut plan = InstallPlan::new();
+    plan.libraries(&details, Path::new("repo"), &context)
+        .unwrap();
+    assert_eq!(plan.natives.len(), 1);
+    assert_eq!(plan.natives[0].path, Path::new("repo/libraries/child.jar"));
+    assert_eq!(plan.files.len(), 1);
+}
+
+#[test]
 fn failed_installations_clean_only_their_own_directory() {
     let root = std::env::temp_dir().join(format!("pcl-install-test-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();
@@ -66,6 +120,7 @@ async fn official_vanilla_install_with_custom_name() {
         &root,
         "1.2.5",
         "Custom Vanilla",
+        None,
         0,
         &Channel::new(|_| Ok(())),
     )
@@ -154,6 +209,9 @@ impl MockMirror {
             &super::super::api_client::ApiProvider::Official,
         );
         bases.meta_base = self.url;
+        bases.fabric_base = Box::leak(format!("{}/fabric", self.url).into_boxed_str());
+        bases.legacy_fabric_base =
+            Box::leak(format!("{}/legacy-fabric", self.url).into_boxed_str());
         bases.resources_base = Box::leak(format!("{}/assets", self.url).into_boxed_str());
         MinecraftApiClient::with_test_bases(bases)
     }
@@ -178,6 +236,199 @@ impl Drop for MockMirror {
     }
 }
 
+#[tokio::test]
+async fn maven_libraries_are_verified_and_published_before_launch() {
+    let body = b"verified fabric library";
+    let hash = format!("{:x}", sha1::Sha1::digest(body));
+    let artifact = "/maven/net/fabricmc/fabric-loader/0.16/fabric-loader-0.16.jar";
+    let server = MockMirror::new(
+        HashMap::from([
+            (artifact.into(), body.to_vec()),
+            (format!("{artifact}.sha1"), hash.as_bytes().to_vec()),
+        ]),
+        false,
+    );
+    let downloader = Downloader::with_bases(server.client().api_bases_async().await);
+    let root = std::env::temp_dir().join(format!("pcl-maven-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&root).unwrap();
+    let download = json!({"sha1":"a".repeat(40),"size":1,"url":"https://example.org/file"});
+    let mut details: VersionDetails = serde_json::from_value(json!({
+        "id":"test", "type":"release", "assets":"test", "mainClass":"Main",
+        "downloads":{"client":download}, "assetIndex":{"id":"test","sha1":"a".repeat(40),"size":1,"url":"https://example.org/index"},
+        "libraries":[{"name":"net.fabricmc:fabric-loader:0.16", "url":"https://libraries.minecraft.net/"}]
+    })).unwrap();
+    let natives =
+        prepare_launch_libraries(&details, &root, &root, &RuleContext::current(), &downloader)
+            .await
+            .unwrap();
+    let path = root.join("libraries/net/fabricmc/fabric-loader/0.16/fabric-loader-0.16.jar");
+    assert_eq!(fs::read(&path).unwrap(), body);
+    assert_eq!(server.count(&format!("{artifact}.sha1")), 1);
+    drop(natives);
+    fs::write(&path, b"previous").unwrap();
+    details.libraries[0].sha1 = Some("b".repeat(40));
+    details.libraries[0].size = Some(body.len() as u64);
+    assert!(
+        prepare_launch_libraries(&details, &root, &root, &RuleContext::current(), &downloader)
+            .await
+            .is_err()
+    );
+    assert_eq!(fs::read(&path).unwrap(), b"previous");
+    details.libraries[0].url = Some("http://localhost/".into());
+    assert!(
+        prepare_launch_libraries(&details, &root, &root, &RuleContext::current(), &downloader)
+            .await
+            .is_err()
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test]
+#[ignore = "Downloads official Fabric profile libraries into a temporary directory"]
+async fn official_fabric_maven_libraries_smoke() {
+    use super::super::api_client::{ApiProvider, FabricFamily};
+    let client = MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::Official);
+    for (game, version, family) in [
+        ("1.20.1", "0.16.14", FabricFamily::Fabric),
+        ("1.12.2", "0.20.1", FabricFamily::Legacyfabric),
+    ] {
+        let profile = client
+            .get_fabric_profile(game, version, family)
+            .await
+            .unwrap();
+        let download = json!({"sha1":"a".repeat(40),"size":1,"url":"https://example.org/file"});
+        let details: VersionDetails = serde_json::from_value(json!({
+        "id":"test", "type":"release", "assets":"test", "mainClass":"Main",
+        "downloads":{"client":download}, "assetIndex":{"id":"test","sha1":"a".repeat(40),"size":1,"url":"https://example.org/index"},
+        "libraries":profile["libraries"]
+    })).unwrap();
+        let root = std::env::temp_dir().join(format!("pcl-fabric-smoke-{}", uuid::Uuid::new_v4()));
+        fs::create_dir(&root).unwrap();
+        let result = prepare_launch_libraries(
+            &details,
+            &root,
+            &root,
+            &RuleContext::current(),
+            &Downloader::default(),
+        )
+        .await;
+        let valid = result.is_ok()
+            && details.libraries.iter().all(|library| {
+                library
+                    .classpath_path(&root, &root)
+                    .unwrap()
+                    .is_none_or(|path| path.is_file())
+            });
+        let error = result.as_ref().err().map(|error| format!("{error:#}"));
+        drop(result);
+        fs::remove_dir_all(root).unwrap();
+        assert!(
+            valid,
+            "{family:?} libraries could not be prepared: {error:?}"
+        );
+    }
+}
+
+#[cfg(unix)]
+#[tokio::test]
+#[ignore = "Downloads a complete official Legacy Fabric instance into a temporary directory"]
+async fn official_legacy_fabric_install_smoke() {
+    official_fabric_install(
+        "1.12.2",
+        "0.20.1",
+        super::super::api_client::FabricFamily::Legacyfabric,
+        "net/legacyfabric/intermediary/1.12.2/",
+    )
+    .await;
+}
+
+#[cfg(unix)]
+#[tokio::test]
+#[ignore = "Downloads a complete official Fabric instance into a temporary directory"]
+async fn official_fabric_install_smoke() {
+    official_fabric_install(
+        "1.20.1",
+        "0.16.14",
+        super::super::api_client::FabricFamily::Fabric,
+        "net/fabricmc/intermediary/1.20.1/",
+    )
+    .await;
+}
+
+#[cfg(unix)]
+async fn official_fabric_install(
+    game: &str,
+    version: &str,
+    family: super::super::api_client::FabricFamily,
+    intermediary: &str,
+) {
+    use super::super::{api_client::ApiProvider, auth::Account, launcher::LaunchOption};
+    use std::os::unix::fs::PermissionsExt;
+    let root = std::env::temp_dir().join(format!("pcl-fabric-full-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&root).unwrap();
+    let result: anyhow::Result<()> = async {
+        let client = MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::Official);
+        let choice = FabricInstall {
+            family,
+            version: version.into(),
+        };
+        install_version(
+            &client,
+            &root,
+            game,
+            "Fabric Test",
+            Some(&choice),
+            0,
+            &Channel::new(|_| Ok(())),
+        )
+        .await?;
+        let repo = super::super::repository::GameRepository::new("test", root.clone());
+        let instance = repo
+            .game_instances()
+            .pop()
+            .context("Installed instance not found")?;
+        let executable = root.join("fake-java");
+        fs::write(
+            &executable,
+            "#!/bin/sh\nprintf '%s\\n' \"$@\" > captured-args\n",
+        )?;
+        fs::set_permissions(&executable, fs::Permissions::from_mode(0o755))?;
+        let runtime = serde_json::from_value(json!({
+            "directory_path":root, "is_user_imported":false, "version":"8", "slug_version":8,
+            "is_64_bit":true, "architecture":"X64", "compability":"Perfect", "is_jdk":true,
+            "java_exe":executable, "implementor":"fixture"
+        }))?;
+        let state = crate::setup::AppState {
+            active_account: Some(Arc::new(Account::Offline {
+                username: "test".into(),
+                uuid: "uuid".into(),
+            })),
+            active_game_instance: Some(Arc::new(instance)),
+            ..Default::default()
+        };
+        let mut option = LaunchOption::from_state(&state, Arc::new(runtime))?;
+        let natives = option
+            .prepare_natives(&Downloader::with_bases(client.api_bases_async().await))
+            .await?;
+        ensure!(
+            option.launch_checked()?.wait()?.success(),
+            "Fake Java failed"
+        );
+        let args = fs::read_to_string(root.join("captured-args"))?;
+        ensure!(
+            args.lines()
+                .any(|arg| arg == "net.fabricmc.loader.impl.launch.knot.KnotClient"),
+            "Missing Fabric main class"
+        );
+        ensure!(args.contains(intermediary), "Missing Fabric intermediary");
+        drop(natives);
+        Ok(())
+    }
+    .await;
+    fs::remove_dir_all(root).unwrap();
+    result.unwrap();
+}
+
 fn fixture_archive(entries: &[(&str, &[u8])]) -> Vec<u8> {
     let mut archive = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
     for (name, bytes) in entries {
@@ -187,6 +438,180 @@ fn fixture_archive(entries: &[(&str, &[u8])]) -> Vec<u8> {
         archive.write_all(bytes).unwrap();
     }
     archive.finish().unwrap().into_inner()
+}
+
+#[test]
+fn legacy_lwjgl_checks_actual_binary_architecture() {
+    fn macho(cpu: u32) -> Vec<u8> {
+        [0xfeedfacfu32, cpu, 3, 6, 0, 0, 0, 0]
+            .into_iter()
+            .flat_map(u32::to_le_bytes)
+            .collect()
+    }
+    let x64 = macho(goblin::mach::constants::cputype::CPU_TYPE_X86_64);
+    let arm = macho(goblin::mach::constants::cputype::CPU_TYPE_ARM64);
+    assert!(native_binary_matches(&x64, "osx", "x86_64").unwrap());
+    assert!(!native_binary_matches(&x64, "osx", "aarch64").unwrap());
+    assert!(native_binary_matches(&arm, "osx", "aarch64").unwrap());
+    assert!(!native_binary_matches(&arm, "linux", "aarch64").unwrap());
+    let root = std::env::temp_dir().join(format!("pcl-native-arch-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&root).unwrap();
+    let path = root.join("lwjgl.jar");
+    fs::write(&path, fixture_archive(&[("liblwjgl.dylib", &x64)])).unwrap();
+    let archive = NativeArchive {
+        path: path.clone(),
+        exclude: vec![],
+        lwjgl_core: true,
+    };
+    let mut context = RuleContext {
+        os: "osx".into(),
+        arch: "x86_64".into(),
+        version: String::new(),
+        features: Default::default(),
+    };
+    assert!(validate_lwjgl_natives(std::slice::from_ref(&archive), &context).is_ok());
+    context.arch = "aarch64".into();
+    assert!(
+        validate_lwjgl_natives(std::slice::from_ref(&archive), &context)
+            .unwrap_err()
+            .to_string()
+            .contains("does not support")
+    );
+    fs::write(
+        &path,
+        fixture_archive(&[("liblwjgl.dylib", &x64), ("liblwjgl-arm.dylib", &arm)]),
+    )
+    .unwrap();
+    assert!(validate_lwjgl_natives(&[archive], &context).is_ok());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test]
+#[ignore = "Downloads the official 1.16.5 LWJGL macOS native archive"]
+async fn official_legacy_lwjgl_architecture_smoke() {
+    let info: DownloadInfo = serde_json::from_value(json!({
+        "path":"org/lwjgl/lwjgl/3.2.1/lwjgl-3.2.1-natives-macos.jar",
+        "sha1":"5a4c271d150906858d475603dcb9479453c60555", "size":39835,
+        "url":"https://libraries.minecraft.net/org/lwjgl/lwjgl/3.2.1/lwjgl-3.2.1-natives-macos.jar"
+    }))
+    .unwrap();
+    let root = std::env::temp_dir().join(format!("pcl-official-native-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&root).unwrap();
+    let path = root.join("native.jar");
+    let result = async {
+        Downloader::default().download(&info, &path).await?;
+        let archive = NativeArchive {
+            path,
+            exclude: vec![],
+            lwjgl_core: true,
+        };
+        let mut context = RuleContext {
+            os: "osx".into(),
+            arch: "x86_64".into(),
+            version: String::new(),
+            features: Default::default(),
+        };
+        validate_lwjgl_natives(std::slice::from_ref(&archive), &context)?;
+        context.arch = "aarch64".into();
+        assert!(validate_lwjgl_natives(&[archive], &context).is_err());
+        Ok::<(), anyhow::Error>(())
+    }
+    .await;
+    fs::remove_dir_all(root).unwrap();
+    result.unwrap();
+}
+
+#[tokio::test]
+#[ignore = "Downloads the official 1.2.5 LWJGL 2 native archives"]
+async fn official_lwjgl2_architectures_smoke() {
+    let root = std::env::temp_dir().join(format!("pcl-official-lwjgl2-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&root).unwrap();
+    let result = async {
+        for (os, suffix, size, sha1) in [
+            ("osx", "osx", 518924, "6621b382cb14cc409b041d8d72829156a87c31aa"),
+            ("linux", "linux", 569061, "2ba5dcb11048147f1a74eff2deb192c001321f77"),
+            ("windows", "windows", 609967, "3f11873dc8e84c854ec7c5a8fd2e869f8aaef764"),
+        ] {
+            let path = root.join(format!("{suffix}.jar"));
+            let info = DownloadInfo { path: None, size, sha1: sha1.into(), url: format!("https://libraries.minecraft.net/org/lwjgl/lwjgl/lwjgl-platform/2.9.0/lwjgl-platform-2.9.0-natives-{suffix}.jar") };
+            Downloader::default().download(&info, &path).await?;
+            let native = NativeArchive { path, exclude: vec![], lwjgl_core: true };
+            let mut context = RuleContext { os: os.into(), arch: "x86_64".into(), version: String::new(), features: Default::default() };
+            validate_lwjgl_natives(std::slice::from_ref(&native), &context)?;
+            context.arch = "x86".into();
+            validate_lwjgl_natives(std::slice::from_ref(&native), &context)?;
+            context.arch = "aarch64".into();
+            assert!(validate_lwjgl_natives(&[native], &context).is_err());
+        }
+        Ok::<(), anyhow::Error>(())
+    }.await;
+    fs::remove_dir_all(root).unwrap();
+    result.unwrap();
+}
+
+#[tokio::test]
+async fn launch_preparation_selects_java_classifier_and_isolates_natives() {
+    let root =
+        std::env::temp_dir().join(format!("pcl-launch-native-test-{}", uuid::Uuid::new_v4()));
+    fs::create_dir_all(root.join("libraries/test")).unwrap();
+    let archive32 = fixture_archive(&[("native.bin", b"32"), ("META-INF/ignored", b"ignored")]);
+    let archive64 = fixture_archive(&[("native.bin", b"64")]);
+    let info = |name: &str, data: &[u8]| {
+        json!({
+            "path":format!("test/{name}.jar"), "url":format!("https://libraries.minecraft.net/test/{name}.jar"),
+            "sha1":format!("{:x}", sha1::Sha1::digest(data)), "size":data.len()
+        })
+    };
+    fs::write(root.join("libraries/test/32.jar"), &archive32).unwrap();
+    fs::write(root.join("libraries/test/64.jar"), &archive64).unwrap();
+    let details: VersionDetails = serde_json::from_value(json!({
+        "id":"test", "type":"release", "assets":"test", "mainClass":"Main",
+        "downloads":{"client":info("client", b"client")},
+        "assetIndex":{"id":"test", "sha1":"a".repeat(40), "size":0, "url":"https://example.org/index"},
+        "libraries":[{"name":"test:native:1", "natives":{"linux":"natives-linux-${arch}"},
+            "downloads":{"classifiers":{"natives-linux-32":info("32", &archive32), "natives-linux-64":info("64", &archive64)}}}]
+    })).unwrap();
+    let context = |arch: &str| RuleContext {
+        os: "linux".into(),
+        arch: arch.into(),
+        version: String::new(),
+        features: Default::default(),
+    };
+    let downloader = Downloader::default();
+    let x86 = context("x86");
+    let x64 = context("x86_64");
+    let (a, b) = tokio::join!(
+        prepare_launch_libraries(&details, &root, &root, &x86, &downloader),
+        prepare_launch_libraries(&details, &root, &root, &x64, &downloader),
+    );
+    let (a, b) = (a.unwrap(), b.unwrap());
+    assert_ne!(a.path(), b.path());
+    assert_eq!(fs::read(a.path().join("native.bin")).unwrap(), b"32");
+    assert_eq!(fs::read(b.path().join("native.bin")).unwrap(), b"64");
+    assert!(!a.path().join("META-INF").exists());
+    let first_path = a.path().to_owned();
+    drop(a);
+    assert!(!first_path.exists());
+    assert!(b.path().join("native.bin").is_file());
+    drop(b);
+    fs::remove_file(root.join("libraries/test/32.jar")).unwrap();
+    let mirror = MockMirror::new([("/maven/test/32.jar".into(), archive32)].into(), false);
+    let downloader = Downloader::with_bases(mirror.client().api_bases_async().await);
+    let downloaded = prepare_launch_libraries(&details, &root, &root, &x86, &downloader)
+        .await
+        .unwrap();
+    assert_eq!(
+        fs::read(downloaded.path().join("native.bin")).unwrap(),
+        b"32"
+    );
+    assert_eq!(mirror.count("/maven/test/32.jar"), 1);
+    drop(downloaded);
+    let cached = prepare_launch_libraries(&details, &root, &root, &x86, &downloader)
+        .await
+        .unwrap();
+    assert_eq!(mirror.count("/maven/test/32.jar"), 1);
+    drop(cached);
+    fs::remove_dir_all(root).unwrap();
 }
 
 fn fixture_files(bad_client_hash: bool) -> HashMap<String, Vec<u8>> {
@@ -249,6 +674,271 @@ fn fixture_files(bad_client_hash: bool) -> HashMap<String, Vec<u8>> {
 }
 
 #[tokio::test]
+async fn fabric_install_merges_profile_and_publishes_only_after_verified_files() {
+    let mut files = fixture_files(false);
+    let body = b"fabric loader";
+    let profile = json!({"id":"fabric-loader-0.16-1.test", "inheritsFrom":"1.test",
+        "mainClass":"net.fabricmc.loader.impl.launch.knot.KnotClient",
+        "arguments":{"jvm":["-Dfabric=true"],"game":["--fabric"]},
+        "libraries":[{"name":"net.fabricmc:fabric-loader:0.16", "url":"https://libraries.minecraft.net/",
+            "sha1":format!("{:x}", sha1::Sha1::digest(body)), "size":body.len()}]});
+    files.insert(
+        "/fabric/1.test/0.16/profile/json".into(),
+        serde_json::to_vec(&profile).unwrap(),
+    );
+    files.insert(
+        "/maven/net/fabricmc/fabric-loader/0.16/fabric-loader-0.16.jar".into(),
+        body.to_vec(),
+    );
+    let mirror = MockMirror::new(files.clone(), false);
+    let root = std::env::temp_dir().join(format!("pcl-fabric-install-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&root).unwrap();
+    install_version(
+        &mirror.client(),
+        &root,
+        "1.test",
+        "Fabric Custom",
+        Some(&FabricInstall {
+            family: super::super::api_client::FabricFamily::Fabric,
+            version: "0.16".into(),
+        }),
+        1,
+        &Channel::new(|_| Ok(())),
+    )
+    .await
+    .unwrap();
+    let repo = super::super::repository::GameRepository::new("test", root.clone());
+    let instance = repo.game_instances().pop().unwrap();
+    let metadata = instance.resolved_metadata().unwrap();
+    assert_eq!(metadata["mainClass"], profile["mainClass"]);
+    assert_eq!(
+        instance.plugins_version.get("fabric").map(String::as_str),
+        Some("0.16")
+    );
+    assert_eq!(
+        metadata["arguments"]["game"],
+        json!(["--fabric", "--fixture", "preserved"])
+    );
+    assert_eq!(metadata["arguments"]["jvm"], json!(["-Dfabric=true"]));
+    assert_eq!(
+        metadata["libraries"][0]["name"],
+        "net.fabricmc:fabric-loader:0.16"
+    );
+    assert_eq!(
+        fs::read(root.join("libraries/net/fabricmc/fabric-loader/0.16/fabric-loader-0.16.jar"))
+            .unwrap(),
+        body
+    );
+    assert_eq!(instance.version, "1.test");
+    assert!(
+        instance
+            .jar_path
+            .ends_with("Fabric Custom/Fabric Custom.jar")
+    );
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let executable = root.join("fake-java");
+        fs::write(
+            &executable,
+            "#!/bin/sh\nprintf '%s\\n' \"$@\" > captured-args\n",
+        )
+        .unwrap();
+        fs::set_permissions(&executable, fs::Permissions::from_mode(0o755)).unwrap();
+        let runtime = serde_json::from_value(json!({
+            "directory_path":root, "is_user_imported":false, "version":"21", "slug_version":21,
+            "is_64_bit":true, "architecture":"Arm64", "compability":"Perfect", "is_jdk":true,
+            "java_exe":executable, "implementor":"fixture"
+        }))
+        .unwrap();
+        let state = crate::setup::AppState {
+            active_account: Some(Arc::new(super::super::auth::Account::Offline {
+                username: "test".into(),
+                uuid: "uuid".into(),
+            })),
+            active_game_instance: Some(Arc::new(instance)),
+            ..Default::default()
+        };
+        let option =
+            super::super::launcher::LaunchOption::from_state(&state, Arc::new(runtime)).unwrap();
+        assert!(option.launch_checked().unwrap().wait().unwrap().success());
+        let args = fs::read_to_string(root.join("versions/Fabric Custom/captured-args")).unwrap();
+        let lines: Vec<_> = args.lines().collect();
+        assert!(lines.contains(&"net.fabricmc.loader.impl.launch.knot.KnotClient"));
+        assert!(lines.contains(&"-Dfabric=true"));
+        let classpath = lines.windows(2).find(|pair| pair[0] == "-cp").unwrap()[1];
+        assert!(
+            std::env::split_paths(classpath).any(
+                |path| path.ends_with("net/fabricmc/fabric-loader/0.16/fabric-loader-0.16.jar")
+            )
+        );
+    }
+    drop(mirror);
+    files.insert(
+        "/maven/net/fabricmc/fabric-loader/0.16/fabric-loader-0.16.jar".into(),
+        b"corrupt".to_vec(),
+    );
+    let bad = MockMirror::new(files, false);
+    fs::remove_file(root.join("libraries/net/fabricmc/fabric-loader/0.16/fabric-loader-0.16.jar"))
+        .unwrap();
+    assert!(
+        install_version(
+            &bad.client(),
+            &root,
+            "1.test",
+            "Broken Fabric",
+            Some(&FabricInstall {
+                family: super::super::api_client::FabricFamily::Fabric,
+                version: "0.16".into()
+            }),
+            2,
+            &Channel::new(|_| Ok(()))
+        )
+        .await
+        .is_err()
+    );
+    assert!(!root.join("versions/Broken Fabric").exists());
+    assert!(
+        root.join("versions/Fabric Custom/Fabric Custom.json")
+            .is_file()
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn fabric_merge_preserves_legacy_arguments() {
+    let mut metadata = json!({"libraries":[], "minecraftArguments":"--title 'Legacy Title'"});
+    let profile = json!({"mainClass":"FabricMain", "libraries":[], "arguments":{"game":["--fabric"], "jvm":[]}});
+    merge_fabric_profile(&mut metadata, &profile).unwrap();
+    assert_eq!(
+        metadata["arguments"]["game"],
+        json!(["--fabric", "--title", "Legacy Title"])
+    );
+}
+
+#[tokio::test]
+async fn fabric_profile_rejects_wrong_game_or_loader() {
+    let profile = json!({"inheritsFrom":"other", "mainClass":"FabricMain",
+        "libraries":[{"name":"net.fabricmc:fabric-loader:0.16"}]});
+    let mirror = MockMirror::new(
+        HashMap::from([(
+            "/fabric/1.test/0.16/profile/json".into(),
+            serde_json::to_vec(&profile).unwrap(),
+        )]),
+        false,
+    );
+    assert!(
+        mirror
+            .client()
+            .get_fabric_profile(
+                "1.test",
+                "0.16",
+                super::super::api_client::FabricFamily::Fabric
+            )
+            .await
+            .is_err()
+    );
+    assert!(
+        mirror
+            .client()
+            .get_fabric_profile(
+                "../bad",
+                "0.16",
+                super::super::api_client::FabricFamily::Fabric
+            )
+            .await
+            .is_err()
+    );
+}
+
+#[tokio::test]
+async fn legacy_fabric_list_and_install_use_legacy_intermediary() {
+    use super::super::api_client::FabricFamily;
+    let mut files = fixture_files(false);
+    let hash = format!("{:x}", sha1::Sha1::digest(b"library"));
+    let library = |name: &str| json!({"name":name,"url":"https://libraries.minecraft.net/","sha1":hash,"size":7});
+    let native = fixture_archive(&[("native.bin", b"native")]);
+    let native_path = "/maven/example/platform/1/platform-1-natives-test.jar";
+    files.insert(native_path.into(), native.clone());
+    files.insert(
+        format!("{native_path}.sha1"),
+        format!("{:x}", sha1::Sha1::digest(&native)).into_bytes(),
+    );
+    let profile = json!({"inheritsFrom":"1.test", "mainClass":"LegacyMain", "libraries":[
+        library("net.legacyfabric:intermediary:1.test"), library("net.fabricmc:fabric-loader:0.16"),
+        {"name":"example:platform:1", "url":"https://libraries.minecraft.net/", "natives":{(RuleContext::current().os):"natives-test"}}
+    ]});
+    files.insert(
+        "/legacy-fabric/1.test".into(),
+        serde_json::to_vec(&json!([{"loader":{"version":"0.16","stable":true}}])).unwrap(),
+    );
+    files.insert(
+        "/legacy-fabric/1.test/0.16/profile/json".into(),
+        serde_json::to_vec(&profile).unwrap(),
+    );
+    for path in [
+        "/maven/net/legacyfabric/intermediary/1.test/intermediary-1.test.jar",
+        "/maven/net/fabricmc/fabric-loader/0.16/fabric-loader-0.16.jar",
+    ] {
+        files.insert(path.into(), b"library".to_vec());
+    }
+    let mirror = MockMirror::new(files, false);
+    let client = mirror.client();
+    let list = client
+        .get_fabric_versions("1.test", FabricFamily::Legacyfabric)
+        .await
+        .unwrap();
+    assert_eq!(list[0].version, "0.16");
+    let root = std::env::temp_dir().join(format!("pcl-legacy-fabric-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&root).unwrap();
+    let choice = FabricInstall {
+        family: FabricFamily::Legacyfabric,
+        version: "0.16".into(),
+    };
+    install_version(
+        &client,
+        &root,
+        "1.test",
+        "Legacy",
+        Some(&choice),
+        1,
+        &Channel::new(|_| Ok(())),
+    )
+    .await
+    .unwrap();
+    let repo = super::super::repository::GameRepository::new("test", root.clone());
+    let instance = repo.game_instances().pop().unwrap();
+    let metadata = instance.resolved_metadata().unwrap();
+    assert_eq!(metadata["mainClass"], "LegacyMain");
+    assert_eq!(
+        instance
+            .plugins_version
+            .get("legacyfabric")
+            .map(String::as_str),
+        Some("0.16")
+    );
+    assert!(!instance.plugins_version.contains_key("fabric"));
+    assert_eq!(
+        metadata["arguments"]["game"],
+        json!(["--fixture", "preserved"])
+    );
+    assert_eq!(
+        metadata["libraries"][0]["name"],
+        "net.legacyfabric:intermediary:1.test"
+    );
+    assert!(
+        root.join("libraries/net/legacyfabric/intermediary/1.test/intermediary-1.test.jar")
+            .is_file()
+    );
+    assert_eq!(
+        fs::read(root.join("versions/Legacy/natives/native.bin")).unwrap(),
+        b"native"
+    );
+    assert_eq!(mirror.count("/fabric/1.test/0.16/profile/json"), 0);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test]
 async fn full_install_retries_publishes_custom_name_and_reuses_verified_cache() {
     let mirror = MockMirror::new(fixture_files(false), true);
     let client = mirror.client();
@@ -262,9 +952,17 @@ async fn full_install_retries_publishes_custom_name_and_reuses_verified_cache() 
         events.lock().unwrap().push(format!("{event:?}"));
         Ok(())
     });
-    install_version(&client, &root, "1.test", "Custom Vanilla", 7, &channel)
-        .await
-        .unwrap();
+    install_version(
+        &client,
+        &root,
+        "1.test",
+        "Custom Vanilla",
+        None,
+        7,
+        &channel,
+    )
+    .await
+    .unwrap();
     let path = root.join("versions/Custom Vanilla");
     let value: serde_json::Value =
         serde_json::from_slice(&fs::read(path.join("Custom Vanilla.json")).unwrap()).unwrap();
@@ -289,12 +987,45 @@ async fn full_install_retries_publishes_custom_name_and_reuses_verified_cache() 
     let instances = repo.game_instances();
     assert_eq!(instances.len(), 1, "the same repository sees new installs");
     assert_eq!(instances[0].version, "1.test");
+    let details = instances[0].read_version_json().unwrap();
+    let downloader = Downloader::with_bases(client.api_bases_async().await);
+    prepare_legacy_assets(&details, &root, &root, &downloader)
+        .await
+        .unwrap();
+    assert_eq!(
+        fs::read(root.join("resources/sounds/a.ogg")).unwrap(),
+        b"sound"
+    );
+    let mut external_details = details.clone();
+    external_details.asset_index.download.sha1.clear();
+    external_details.asset_index.download.url.clear();
+    prepare_legacy_assets(&external_details, &root, &root, &downloader)
+        .await
+        .unwrap();
+    fs::write(root.join("resources/sounds/a.ogg"), b"user data").unwrap();
+    assert!(
+        prepare_legacy_assets(&details, &root, &root, &downloader)
+            .await
+            .is_err()
+    );
+    assert_eq!(
+        fs::read(root.join("resources/sounds/a.ogg")).unwrap(),
+        b"user data"
+    );
     assert_eq!(mirror.count("/client.jar"), 2, "503 is retried");
     assert_eq!(mirror.count("/forbidden.jar"), 0);
     assert!(
-        install_version(&client, &root, "1.test", "Custom Vanilla", 8, &channel)
-            .await
-            .is_err()
+        install_version(
+            &client,
+            &root,
+            "1.test",
+            "Custom Vanilla",
+            None,
+            8,
+            &channel
+        )
+        .await
+        .is_err()
     );
     assert!(
         path.join("Custom Vanilla.json").is_file(),
@@ -305,6 +1036,7 @@ async fn full_install_retries_publishes_custom_name_and_reuses_verified_cache() 
         &root,
         "1.test",
         "Second",
+        None,
         9,
         &Channel::new(|_| Err(tauri::Error::Io(std::io::Error::other("UI closed")))),
     )
@@ -330,6 +1062,7 @@ async fn failed_install_never_publishes_an_instance_and_preserves_existing_data(
         &root,
         "1.test",
         "Broken",
+        None,
         0,
         &Channel::new(|_| Ok(())),
     )
@@ -350,7 +1083,8 @@ fn native_extraction_refuses_zip_slip() {
         extract_natives(
             &[NativeArchive {
                 path,
-                exclude: vec![]
+                exclude: vec![],
+                lwjgl_core: false,
             }],
             &root.join("natives")
         )
@@ -410,6 +1144,7 @@ async fn tampered_version_json_fails_before_downloading_files() {
             &root,
             "1.test",
             "Broken",
+            None,
             0,
             &Channel::new(|_| Ok(()))
         )

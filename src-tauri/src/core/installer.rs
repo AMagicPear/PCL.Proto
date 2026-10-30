@@ -4,7 +4,7 @@ use super::{
     downloader::{DownloadConfig, Downloader, StageProgress, TaskItemReport, TaskStatus},
     minecraft::{DownloadInfo, RuleContext, VersionDetails, library_path, valid_sha1},
 };
-use crate::util::file::{safe_join, validate_file_name};
+use crate::util::file::{check_sha1, safe_join, validate_file_name};
 use anyhow::{Context, ensure};
 use futures_util::{StreamExt, TryStreamExt};
 use serde::Deserialize;
@@ -73,6 +73,7 @@ struct AssetObject {
 struct NativeArchive {
     path: PathBuf,
     exclude: Vec<String>,
+    lwjgl_core: bool,
 }
 
 struct InstallPlan {
@@ -124,18 +125,40 @@ impl InstallPlan {
         repo: &Path,
         context: &RuleContext,
     ) -> anyhow::Result<()> {
+        let mut native_keys = std::collections::HashSet::new();
         for library in &details.libraries {
             if !library.rule_allow(context)? {
                 continue;
             }
-            if let Some(info) = &library.downloads.artifact {
+            if let Some(info) = library
+                .downloads
+                .as_ref()
+                .and_then(|downloads| downloads.artifact.as_ref())
+            {
                 self.add(2, info, library_path(repo, info)?)?;
+            }
+            if library.natives.contains_key(&context.os)
+                && !native_keys.insert(library.classpath_key()?)
+            {
+                continue;
+            }
+            if library.downloads.is_none() && library.url.is_some() {
+                continue;
             }
             if let Some(info) = library.native_download(context)? {
                 let path = library_path(repo, info)?;
                 self.add(2, info, path.clone())?;
                 self.natives.push(NativeArchive {
                     path,
+                    lwjgl_core: matches!(
+                        library
+                            .name
+                            .split(':')
+                            .take(2)
+                            .collect::<Vec<_>>()
+                            .as_slice(),
+                        ["org.lwjgl", "lwjgl"] | ["org.lwjgl.lwjgl", "lwjgl-platform"]
+                    ),
                     exclude: library
                         .extract
                         .as_ref()
@@ -232,6 +255,183 @@ async fn download_plan(
     Ok(())
 }
 
+async fn add_maven_libraries(
+    plan: &mut InstallPlan,
+    details: &VersionDetails,
+    repo: &Path,
+    instance: &Path,
+    context: &RuleContext,
+    downloader: &Downloader,
+) -> anyhow::Result<()> {
+    use super::downloader::resources::DOWNLOAD_RESOURCES;
+    let mut seen = std::collections::HashSet::new();
+    for library in &details.libraries {
+        if !library.rule_allow(context)?
+            || (!library.natives.is_empty() && !library.natives.contains_key(&context.os))
+            || !seen.insert(library.classpath_key()?)
+        {
+            continue;
+        }
+        if library.downloads.is_some() || library.hint.as_deref() == Some("local") {
+            continue;
+        }
+        let Some(base) = library.url.as_deref() else {
+            continue;
+        };
+        let native = if library.natives.is_empty() {
+            None
+        } else {
+            let Some(classifier) = library.natives.get(&context.os) else {
+                continue;
+            };
+            Some(classifier.replace("${arch}", if context.arch == "x86" { "32" } else { "64" }))
+        };
+        let mut coordinate = library.clone();
+        if let Some(classifier) = &native {
+            let (name, extension) = coordinate
+                .name
+                .split_once('@')
+                .unwrap_or((&coordinate.name, "jar"));
+            ensure!(
+                name.split(':').count() == 3,
+                "Invalid native Maven coordinate"
+            );
+            coordinate.name = format!("{name}:{classifier}@{extension}");
+            coordinate.natives.clear();
+        }
+        let path = coordinate
+            .classpath_path(repo, instance)?
+            .context("Missing Maven library path")?;
+        let relative = path.strip_prefix(repo.join("libraries"))?;
+        let mut url = reqwest::Url::parse(base).context("Invalid Maven repository URL")?;
+        ensure!(
+            url.scheme() == "https"
+                && url.host_str().is_some()
+                && url.username().is_empty()
+                && url.password().is_none()
+                && url.query().is_none()
+                && url.fragment().is_none(),
+            "Invalid Maven repository URL"
+        );
+        if !url.path().ends_with('/') {
+            let path = format!("{}/", url.path());
+            url.set_path(&path);
+        }
+        {
+            let mut segments = url
+                .path_segments_mut()
+                .map_err(|_| anyhow::anyhow!("Invalid Maven repository URL"))?;
+            segments.pop_if_empty();
+            for component in relative.components() {
+                segments.push(
+                    component
+                        .as_os_str()
+                        .to_str()
+                        .context("Invalid Maven path")?,
+                );
+            }
+        }
+        let mut checksum_url = url.clone();
+        checksum_url.set_path(&format!("{}.sha1", url.path()));
+        let resources = &*DOWNLOAD_RESOURCES;
+        let sha1 = if let Some(sha1) = library.sha1.as_ref().filter(|_| native.is_none()) {
+            sha1.clone()
+        } else {
+            let _lease = resources.acquire().await;
+            let response = maven_metadata_request(downloader, checksum_url.as_str()).await?;
+            let mut stream = response.bytes_stream();
+            let mut bytes = Vec::new();
+            while let Some(chunk) = stream.next().await {
+                let chunk = chunk?;
+                ensure!(
+                    bytes.len() + chunk.len() <= 1024,
+                    "Maven checksum response is too large"
+                );
+                resources.record_bytes(chunk.len());
+                resources.throttle(chunk.len()).await;
+                bytes.extend_from_slice(&chunk);
+            }
+            String::from_utf8(bytes)?
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .to_owned()
+        };
+        ensure!(
+            valid_sha1(&sha1),
+            "Invalid Maven checksum for {}",
+            library.name
+        );
+        let size = if let Some(size) = library.size.filter(|_| native.is_none()) {
+            size
+        } else {
+            let _lease = resources.acquire().await;
+            let response = maven_metadata_request(downloader, url.as_str()).await?;
+            response
+                .content_length()
+                .context("Maven library has no content length")?
+        };
+        ensure!(
+            size > 0 && size <= 256 * 1024 * 1024,
+            "Invalid Maven library size"
+        );
+        plan.add(
+            2,
+            &DownloadInfo {
+                sha1,
+                size,
+                url: url.to_string(),
+                path: None,
+            },
+            path.clone(),
+        )?;
+        if native.is_some() {
+            plan.natives.push(NativeArchive {
+                path,
+                lwjgl_core: matches!(
+                    library
+                        .name
+                        .split(':')
+                        .take(2)
+                        .collect::<Vec<_>>()
+                        .as_slice(),
+                    ["org.lwjgl", "lwjgl"] | ["org.lwjgl.lwjgl", "lwjgl-platform"]
+                ),
+                exclude: library
+                    .extract
+                    .as_ref()
+                    .map(|rules| rules.exclude.clone())
+                    .unwrap_or_default(),
+            });
+        }
+    }
+    Ok(())
+}
+
+async fn maven_metadata_request(
+    downloader: &Downloader,
+    url: &str,
+) -> anyhow::Result<reqwest::Response> {
+    use super::downloader::{resources::DOWNLOAD_RESOURCES, send_request};
+    let mut last_error = None;
+    for source in downloader.source_urls(url) {
+        match send_request(
+            DOWNLOAD_RESOURCES.settings().http_mode,
+            false,
+            &source,
+            None,
+            None,
+        )
+        .await
+        .and_then(reqwest::Response::error_for_status)
+        {
+            Ok(response) => return Ok(response),
+            Err(error) => last_error = Some(error),
+        }
+    }
+    Err(last_error.context("No Maven source available")?.into())
+}
+
 fn extract_natives(archives: &[NativeArchive], destination: &Path) -> anyhow::Result<()> {
     fs::create_dir_all(destination)?;
     for native in archives {
@@ -262,6 +462,188 @@ fn extract_natives(archives: &[NativeArchive], destination: &Path) -> anyhow::Re
     Ok(())
 }
 
+fn native_binary_matches(bytes: &[u8], os: &str, arch: &str) -> anyhow::Result<bool> {
+    use goblin::{Object, elf::header, mach, pe};
+    let expected_mach = match arch {
+        "x86" => mach::constants::cputype::CPU_TYPE_X86,
+        "x86_64" => mach::constants::cputype::CPU_TYPE_X86_64,
+        "aarch64" => mach::constants::cputype::CPU_TYPE_ARM64,
+        _ => anyhow::bail!("Unknown Java architecture: {arch}"),
+    };
+    Ok(match (os, Object::parse(bytes)?) {
+        ("osx", Object::Mach(mach::Mach::Binary(binary))) => binary.header.cputype == expected_mach,
+        ("osx", Object::Mach(mach::Mach::Fat(binary))) => {
+            binary.arches()?.iter().any(|a| a.cputype == expected_mach)
+        }
+        ("linux", Object::Elf(binary)) => {
+            binary.header.e_machine
+                == match arch {
+                    "x86" => header::EM_386,
+                    "x86_64" => header::EM_X86_64,
+                    _ => header::EM_AARCH64,
+                }
+        }
+        ("windows", Object::PE(binary)) => {
+            binary.header.coff_header.machine
+                == match arch {
+                    "x86" => pe::header::COFF_MACHINE_X86,
+                    "x86_64" => pe::header::COFF_MACHINE_X86_64,
+                    _ => pe::header::COFF_MACHINE_ARM64,
+                }
+        }
+        _ => false,
+    })
+}
+
+fn validate_lwjgl_natives(archives: &[NativeArchive], context: &RuleContext) -> anyhow::Result<()> {
+    use std::io::Read;
+    // shortcut: only legacy LWJGL core is checked; extend to loader-specific native contracts when supported.
+    for native in archives.iter().filter(|native| native.lwjgl_core) {
+        let mut archive = zip::ZipArchive::new(fs::File::open(&native.path)?)?;
+        let mut matched = false;
+        for index in 0..archive.len() {
+            let mut entry = archive.by_index(index)?;
+            let name = entry
+                .name()
+                .rsplit('/')
+                .next()
+                .unwrap_or("")
+                .to_ascii_lowercase();
+            if entry.is_dir()
+                || entry.name().starts_with("META-INF/")
+                || native
+                    .exclude
+                    .iter()
+                    .any(|exclude| entry.name().starts_with(exclude))
+                || !name.contains("lwjgl")
+                || ![".dll", ".so", ".dylib", ".jnilib"]
+                    .iter()
+                    .any(|suffix| name.ends_with(suffix))
+            {
+                continue;
+            }
+            ensure!(
+                entry.size() <= 64 * 1024 * 1024,
+                "LWJGL native is too large: {name}"
+            );
+            let mut bytes = Vec::new();
+            entry.read_to_end(&mut bytes)?;
+            if native_binary_matches(&bytes, &context.os, &context.arch).with_context(|| {
+                format!("Invalid LWJGL native {name} in {}", native.path.display())
+            })? {
+                matched = true;
+            }
+        }
+        ensure!(
+            matched,
+            "LWJGL native archive {} does not support Java architecture {} on {}; select a compatible Java or install compatible natives",
+            native.path.display(),
+            context.arch,
+            context.os
+        );
+    }
+    Ok(())
+}
+
+pub struct LaunchNatives(PathBuf);
+
+impl LaunchNatives {
+    pub fn path(&self) -> &Path {
+        &self.0
+    }
+}
+
+impl Drop for LaunchNatives {
+    fn drop(&mut self) {
+        if let Err(error) = fs::remove_dir_all(&self.0) {
+            log::warn!("Cannot remove launch natives {}: {error}", self.0.display());
+        }
+    }
+}
+
+pub async fn prepare_launch_libraries(
+    details: &VersionDetails,
+    repo: &Path,
+    instance: &Path,
+    context: &RuleContext,
+    downloader: &Downloader,
+) -> anyhow::Result<LaunchNatives> {
+    let mut plan = InstallPlan::new();
+    plan.libraries(details, repo, context)?;
+    add_maven_libraries(&mut plan, details, repo, instance, context, downloader).await?;
+    futures_util::stream::iter(std::mem::take(&mut plan.files))
+        .map(|file| {
+            let downloader = downloader.clone();
+            async move {
+                downloader
+                    .download(&file.info, &file.out_path)
+                    .await
+                    .with_context(|| format!("Cannot prepare {}", file.out_path.display()))
+            }
+        })
+        .buffer_unordered(64)
+        .try_collect::<Vec<_>>()
+        .await?;
+    let path = std::env::temp_dir().join(format!("pcl-natives-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&path)?;
+    let natives = LaunchNatives(path);
+    let context = RuleContext {
+        os: context.os.clone(),
+        arch: context.arch.clone(),
+        version: context.version.clone(),
+        features: context.features.clone(),
+    };
+    tokio::task::spawn_blocking(move || {
+        validate_lwjgl_natives(&plan.natives, &context)?;
+        extract_natives(&plan.natives, natives.path())?;
+        Ok::<_, anyhow::Error>(natives)
+    })
+    .await?
+}
+
+pub async fn prepare_legacy_assets(
+    details: &VersionDetails,
+    repo: &Path,
+    game_directory: &Path,
+    downloader: &Downloader,
+) -> anyhow::Result<()> {
+    validate_file_name(&details.asset_index.id)?;
+    let index_path = repo
+        .join("assets/indexes")
+        .join(format!("{}.json", details.asset_index.id));
+    if details.asset_index.download.validate().is_ok() {
+        downloader
+            .download(&details.asset_index.download, &index_path)
+            .await?;
+    } else {
+        ensure!(
+            index_path.is_file(),
+            "Asset index has no valid download metadata and is missing: {}",
+            index_path.display()
+        );
+    }
+    let index: AssetIndex = serde_json::from_slice(&tokio::fs::read(index_path).await?)
+        .context("Invalid asset index")?;
+    if !index.map_to_resources && !index.virtual_assets {
+        return Ok(());
+    }
+    let mut plan = InstallPlan::new();
+    plan.assets(&index, repo, "https://resources.download.minecraft.net")?;
+    futures_util::stream::iter(plan.files)
+        .map(|file| async move { downloader.download(&file.info, &file.out_path).await })
+        .buffer_unordered(16)
+        .try_collect::<Vec<_>>()
+        .await?;
+    let repo = repo.to_owned();
+    let game_directory = game_directory.to_owned();
+    let index_id = details.asset_index.id.clone();
+    tokio::task::spawn_blocking(move || {
+        materialize_assets(&index, &repo, &game_directory, &index_id)
+    })
+    .await??;
+    Ok(())
+}
+
 fn materialize_assets(
     index: &AssetIndex,
     repo: &Path,
@@ -276,15 +658,124 @@ fn materialize_assets(
         roots.push(instance.join("resources"));
     }
     for root in roots {
+        fs::create_dir_all(&root)?;
+        ensure!(
+            !fs::symlink_metadata(&root)?.file_type().is_symlink(),
+            "Asset root is a symlink: {}",
+            root.display()
+        );
         for (name, object) in &index.objects {
+            ensure!(valid_sha1(&object.hash), "Invalid asset hash for {name}");
             let hash = object.hash.to_ascii_lowercase();
             let source = repo.join("assets/objects").join(&hash[..2]).join(&hash);
             let target = safe_join(&root, name)?;
-            fs::create_dir_all(target.parent().context("Missing asset parent")?)?;
-            fs::copy(source, target)?;
+            let parent = target.parent().context("Missing asset parent")?;
+            let mut directory = root.clone();
+            for component in parent.strip_prefix(&root)?.components() {
+                directory.push(component);
+                match fs::create_dir(&directory) {
+                    Ok(()) => {}
+                    Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+                    Err(error) => return Err(error.into()),
+                }
+                ensure!(
+                    fs::symlink_metadata(&directory)?.file_type().is_dir(),
+                    "Invalid asset directory: {}",
+                    directory.display()
+                );
+            }
+            match fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&target)
+            {
+                Ok(mut output) => {
+                    let result = (|| -> anyhow::Result<()> {
+                        let mut input = fs::File::open(&source)?;
+                        std::io::copy(&mut input, &mut output)?;
+                        Ok(())
+                    })();
+                    if result.is_err() {
+                        drop(output);
+                        let _ = fs::remove_file(&target);
+                    }
+                    result?;
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                    let metadata = fs::symlink_metadata(&target)?;
+                    ensure!(
+                        metadata.file_type().is_file()
+                            && metadata.len() == object.size
+                            && check_sha1(&target, &hash)?,
+                        "Asset conflicts with existing file: {}",
+                        target.display()
+                    );
+                }
+                Err(error) => return Err(error.into()),
+            }
         }
     }
     Ok(())
+}
+
+fn merge_fabric_profile(
+    metadata: &mut serde_json::Value,
+    profile: &serde_json::Value,
+) -> anyhow::Result<()> {
+    let loader_libraries = profile["libraries"]
+        .as_array()
+        .context("Invalid Fabric libraries")?;
+    let vanilla_libraries = metadata["libraries"]
+        .as_array()
+        .context("Invalid Minecraft libraries")?;
+    let mut libraries = loader_libraries.clone();
+    libraries.extend(vanilla_libraries.iter().cloned());
+    let mut arguments = metadata
+        .get("arguments")
+        .cloned()
+        .unwrap_or_else(|| serde_json::json!({}));
+    ensure!(arguments.is_object(), "Invalid Minecraft arguments");
+    for key in ["jvm", "game"] {
+        let loader = profile.pointer(&format!("/arguments/{key}"));
+        let vanilla = arguments.get(key);
+        let mut merged = match loader {
+            Some(value) => value
+                .as_array()
+                .context("Invalid Fabric arguments")?
+                .clone(),
+            None => Vec::new(),
+        };
+        if let Some(value) = vanilla {
+            merged.extend(
+                value
+                    .as_array()
+                    .context("Invalid Minecraft arguments")?
+                    .iter()
+                    .cloned(),
+            );
+        } else if key == "game" && !merged.is_empty() {
+            if let Some(legacy) = metadata.get("minecraftArguments") {
+                let legacy = legacy.as_str().context("Invalid legacy game arguments")?;
+                merged.extend(
+                    shlex::split(legacy)
+                        .context("Invalid legacy game arguments")?
+                        .into_iter()
+                        .map(serde_json::Value::String),
+                );
+            }
+        }
+        arguments[key] = merged.into();
+    }
+    metadata["libraries"] = libraries.into();
+    metadata["arguments"] = arguments;
+    metadata["mainClass"] = profile["mainClass"].clone();
+    Ok(())
+}
+
+#[derive(serde::Deserialize)]
+pub struct FabricInstall {
+    family: super::api_client::FabricFamily,
+    version: String,
 }
 
 async fn install_version(
@@ -292,6 +783,7 @@ async fn install_version(
     repo: &Path,
     version_id: &str,
     name: &str,
+    fabric: Option<&FabricInstall>,
     task_id: i32,
     on_event: &Channel<TaskItemReport>,
 ) -> anyhow::Result<()> {
@@ -315,6 +807,12 @@ async fn install_version(
         speed: None,
     });
     let mut metadata = client.get_version_metadata(version_id).await?;
+    if let Some(loader) = fabric {
+        let profile = client
+            .get_fabric_profile(version_id, &loader.version, loader.family)
+            .await?;
+        merge_fabric_profile(&mut metadata, &profile)?;
+    }
     let details: VersionDetails =
         serde_json::from_value(metadata.clone()).context("Invalid vanilla version metadata")?;
     validate_file_name(&details.asset_index.id)?;
@@ -336,6 +834,15 @@ async fn install_version(
         directory.path.join(format!("{name}.jar")),
     )?;
     plan.libraries(&details, &repo, &RuleContext::current())?;
+    add_maven_libraries(
+        &mut plan,
+        &details,
+        &repo,
+        &directory.path,
+        &RuleContext::current(),
+        &downloader,
+    )
+    .await?;
     plan.assets(&index, &repo, "https://resources.download.minecraft.net")?;
     let _ = on_event.send(TaskItemReport {
         task_id,
@@ -376,22 +883,61 @@ pub async fn download_minecraft_version(
     version_id: String,
     task_id: i32,
     instance_name: String,
-    download_settings: Option<super::downloader::resources::DownloadSettings>,
-) -> Result<(), String> {
-    if let Some(settings) = download_settings {
-        super::downloader::resources::DOWNLOAD_RESOURCES.configure(settings)?;
-    }
+    fabric: Option<FabricInstall>,
+) -> Result<InstallResult, String> {
     let repo = state.lock().await.active_repo_path.clone();
     install_version(
         &client,
         &repo,
         &version_id,
         &instance_name,
+        fabric.as_ref(),
         task_id,
         &on_event,
     )
     .await
-    .map_err(|error| format!("{error:#}"))
+    .map_err(|error| format!("{error:#}"))?;
+    let should_select = state
+        .lock()
+        .await
+        .download_settings
+        .as_ref()
+        .and_then(|settings| settings.auto_select_instance)
+        .unwrap_or(false);
+    if !should_select {
+        return Ok(InstallResult {
+            selected: false,
+            selection_error: None,
+        });
+    }
+    let selection = tauri::async_runtime::spawn_blocking(move || {
+        let repository = super::repository::GameRepository::new("", repo.clone());
+        let instance = super::game::GameInstance::from_version_folder(
+            &repo.join("versions").join(instance_name),
+            &repository,
+        )
+        .map_err(|error| format!("{error:?}"))?;
+        crate::setup::ConfigManager::instance().select_installed_instance(&repo, instance)
+    })
+    .await
+    .map_err(|error| error.to_string())
+    .and_then(|result| result);
+    Ok(match selection {
+        Ok(selected) => InstallResult {
+            selected,
+            selection_error: None,
+        },
+        Err(error) => InstallResult {
+            selected: false,
+            selection_error: Some(error),
+        },
+    })
+}
+
+#[derive(serde::Serialize)]
+pub struct InstallResult {
+    selected: bool,
+    selection_error: Option<String>,
 }
 
 #[cfg(test)]

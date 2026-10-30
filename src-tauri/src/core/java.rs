@@ -354,16 +354,17 @@ pub async fn refresh(force: bool) -> Result<Vec<JavaRuntime>, String> {
     })
     .await
     .map_err(|e| e.to_string())?;
-    {
-        let mut state = config.app_state.lock().await;
-        state.java_runtimes = merge_runtimes(scanned, &known, &state.java_runtimes);
-        if state.pcl_setup_info.selected_java == selected && actual_selected.is_some() {
-            state.pcl_setup_info.selected_java = actual_selected;
-        }
-    }
-    tauri::async_runtime::spawn_blocking(move || config.save().map_err(|e| format!("{e:?}")))
-        .await
-        .map_err(|e| e.to_string())??;
+    let runtimes = tauri::async_runtime::spawn_blocking(move || {
+        config.update(|state| {
+            state.java_runtimes = merge_runtimes(scanned, &known, &state.java_runtimes);
+            if state.pcl_setup_info.selected_java == selected && actual_selected.is_some() {
+                state.pcl_setup_info.selected_java = actual_selected;
+            }
+            Ok(state.java_runtimes.clone())
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())??;
     *scan = Some(Instant::now());
-    Ok(config.app_state.lock().await.java_runtimes.clone())
+    Ok(runtimes)
 }

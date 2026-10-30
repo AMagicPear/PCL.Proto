@@ -4,34 +4,77 @@ import { usePageSettings } from '@/composables/usePageSettings'
 import PCard from '@/components/widget/PCard.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
-import { downloadSettings } from '@/api/downloadSettings'
-import { invoke, isTauri } from '@tauri-apps/api/core'
-import { onScopeDispose, watch } from 'vue'
+import {
+  downloadSettingKeys,
+  downloadSettings,
+  downloadSettingValues,
+  readDownloadSettings,
+  saveDownloadSettings,
+  downloadSaveError,
+} from '@/api/downloadSettings'
+import { isTauri } from '@tauri-apps/api/core'
+import { onScopeDispose, ref, watch } from 'vue'
 import sideTip from '@/composables/sideTip'
-const { values } = usePageSettings('PageSetupGameManage', {
-  ComboDownloadHttpMode: '0',
-})
+const desktop = isTauri()
+const { values } = usePageSettings(
+  'PageSetupGameManage',
+  {
+    ComboDownloadHttpMode: '0',
+  },
+  desktop ? downloadSettingKeys : [],
+)
+const ready = ref(false)
+const loadError = ref('')
+let hydrating = false
 let timer: ReturnType<typeof setTimeout> | undefined
+function applyDownloadSettings() {
+  timer = undefined
+  void saveDownloadSettings(downloadSettings(values)).catch((error) => {
+    console.error('Cannot apply download settings', error)
+    sideTip.show(String(error), 'warn')
+  })
+}
+function loadDownloadSettings() {
+  void readDownloadSettings()
+    .then((settings) => {
+      hydrating = true
+      Object.assign(values, downloadSettingValues(settings))
+      hydrating = false
+      ready.value = true
+      loadError.value = ''
+    })
+    .catch((error) => {
+      loadError.value = String(error)
+    })
+}
+if (desktop) loadDownloadSettings()
 watch(
   () => downloadSettings(values),
-  (settings) => {
-    if (!isTauri()) return
+  () => {
+    if (!ready.value || hydrating) return
     clearTimeout(timer)
-    timer = setTimeout(() => {
-      void invoke('set_download_settings', { settings }).catch((error) => {
-        console.error('Cannot apply download settings', error)
-        sideTip.show(String(error), 'warn')
-      })
-    }, 150)
+    timer = setTimeout(applyDownloadSettings, 150)
   },
-  { immediate: true },
+  { flush: 'sync' },
 )
-onScopeDispose(() => clearTimeout(timer))
+onScopeDispose(() => {
+  if (timer) {
+    clearTimeout(timer)
+    applyDownloadSettings()
+  }
+})
 
 const text = pclText
 </script>
 <template>
   <div class="pcl-page">
+    <p class="settings-unavailable">{{ text('Proto.Settings.Unavailable') }}</p>
+    <p v-if="loadError || downloadSaveError" role="alert">
+      {{ loadError || downloadSaveError }}
+      <button @click="ready ? applyDownloadSettings() : loadDownloadSettings()">
+        {{ text('Launch.Homepage.LoadFailed.Retry') }}
+      </button>
+    </p>
     <div>
       <div data-control="PanBack">
         <div
@@ -60,6 +103,7 @@ const text = pclText
                 >
                 <PComboBox
                   data-control="ComboDownloadSource"
+                  :disabled="!ready"
                   style="grid-row: 1 / span 1; grid-column: 2 / span 2"
                   :options="[
                     { key: '0', text: text('Setup.GameManage.Source.UseMirror') },
@@ -81,6 +125,7 @@ const text = pclText
                 >
                 <PComboBox
                   data-control="ComboDownloadVersion"
+                  :disabled="!ready"
                   style="grid-row: 3 / span 1; grid-column: 2 / span 2"
                   :options="[
                     { key: '0', text: text('Setup.GameManage.Source.Version.Mirror') },
@@ -102,6 +147,7 @@ const text = pclText
                 >
                 <PComboBox
                   data-control="ComboDownloadHttpMode"
+                  :disabled="!ready"
                   style="grid-row: 5 / span 1; grid-column: 2 / span 1"
                   :options="[
                     {
@@ -135,6 +181,7 @@ const text = pclText
                 >
                 <input
                   data-control="SliderDownloadThread"
+                  :disabled="!ready"
                   style="grid-row: 7 / span 1; grid-column: 2 / span 1"
                   :title="text('Setup.GameManage.Download.Threads.ToolTip')"
                   type="range"
@@ -155,6 +202,7 @@ const text = pclText
                 >
                 <input
                   data-control="SliderDownloadFileConnection"
+                  :disabled="!ready"
                   style="grid-row: 8 / span 1; grid-column: 2 / span 1"
                   :title="text('Setup.GameManage.Download.FileConnections.ToolTip')"
                   type="range"
@@ -175,6 +223,7 @@ const text = pclText
                 >
                 <input
                   data-control="SliderDownloadSpeed"
+                  :disabled="!ready"
                   style="grid-row: 9 / span 1; grid-column: 2 / span 1"
                   :title="text('Setup.GameManage.Download.SpeedLimit.ToolTip')"
                   type="range"
@@ -219,6 +268,7 @@ const text = pclText
                   "
                 >
                   <PCheckBox
+                    :disabled="!desktop || !ready"
                     data-control="CheckDownloadAutoSelectVersion"
                     style="grid-row: 1 / span 1; grid-column: 1 / span 1"
                     id="PageSetupGameManage-CheckDownloadAutoSelectVersion"
@@ -226,6 +276,7 @@ const text = pclText
                     v-model="values.CheckDownloadAutoSelectVersion"
                   />
                   <PCheckBox
+                    disabled
                     data-control="CheckFixAuthlib"
                     style="margin: 0px 0px 0px 0px; grid-row: 1 / span 1; grid-column: 2 / span 1"
                     :title="text('Setup.GameManage.Download.FixAuthlib.ToolTip')"
@@ -258,6 +309,7 @@ const text = pclText
                   >{{ text('Setup.GameManage.Community.Source') }}</span
                 >
                 <PComboBox
+                  disabled
                   data-control="ComboDownloadMod"
                   style="grid-row: 1 / span 1; grid-column: 2 / span 2"
                   :options="[
@@ -283,6 +335,7 @@ const text = pclText
                   >{{ text('Setup.GameManage.Community.FilenameFormat') }}</span
                 >
                 <PComboBox
+                  disabled
                   data-control="ComboDownloadTranslateV2"
                   style="grid-row: 3 / span 1; grid-column: 2 / span 2"
                   :title="text('Setup.GameManage.Community.FilenameFormat.ToolTip')"
@@ -308,6 +361,7 @@ const text = pclText
                   >{{ text('Setup.GameManage.Community.ModManageStyle') }}</span
                 >
                 <PComboBox
+                  disabled
                   data-control="ComboModLocalNameStyle"
                   style="grid-row: 5 / span 1; grid-column: 2 / span 2"
                   :title="text('Setup.GameManage.Community.ModManageStyle.ToolTip')"
@@ -335,6 +389,7 @@ const text = pclText
                   >{{ text('Setup.GameManage.Community.QuickDownload') }}</span
                 >
                 <PComboBox
+                  disabled
                   data-control="ComboDownloadQuickBehavior"
                   style="grid-row: 7 / span 1; grid-column: 2 / span 2"
                   :title="text('Setup.GameManage.Community.QuickDownload.ToolTip')"
@@ -361,6 +416,7 @@ const text = pclText
                 "
               >
                 <PCheckBox
+                  disabled
                   data-control="CheckDownloadIgnoreQuilt"
                   style="
                     height: 22px;
@@ -374,6 +430,7 @@ const text = pclText
                   v-model="values.CheckDownloadIgnoreQuilt"
                 />
                 <PCheckBox
+                  disabled
                   data-control="CheckDownloadAutoInstallDependencies"
                   style="
                     height: 22px;
@@ -413,6 +470,7 @@ const text = pclText
                 >{{ text('Setup.GameManage.Accessibility.GameUpdateNotice') }}</span
               >
               <PCheckBox
+                disabled
                 data-control="CheckUpdateRelease"
                 style="grid-row: 1 / span 1; grid-column: 2 / span 1"
                 :title="text('Setup.GameManage.Accessibility.ReleaseNotice.ToolTip')"
@@ -421,6 +479,7 @@ const text = pclText
                 v-model="values.CheckUpdateRelease"
               />
               <PCheckBox
+                disabled
                 data-control="CheckUpdateSnapshot"
                 style="height: 22px; grid-row: 1 / span 1; grid-column: 3 / span 1"
                 :title="text('Setup.GameManage.Accessibility.SnapshotNotice.ToolTip')"
@@ -440,6 +499,7 @@ const text = pclText
                 >{{ text('Setup.GameManage.Accessibility.GameLanguage') }}</span
               >
               <PCheckBox
+                disabled
                 data-control="CheckHelpLauncherLanguage"
                 style="grid-row: 3 / span 1; grid-column: 2 / span 5"
                 id="PageSetupGameManage-CheckHelpLauncherLanguage"
@@ -447,6 +507,7 @@ const text = pclText
                 v-model="values.CheckHelpLauncherLanguage"
               />
               <PCheckBox
+                disabled
                 data-control="CheckDownloadClipboard"
                 style="height: 22px; grid-row: 5 / span 1; grid-column: 1 / span 3"
                 :title="text('Setup.GameManage.Accessibility.ReadClipboard.ToolTip')"

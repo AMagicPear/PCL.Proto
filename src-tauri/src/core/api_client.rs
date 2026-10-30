@@ -28,6 +28,7 @@ pub struct ApiBases {
     pub resources_base: &'static str,
     pub forge_base: &'static str,
     pub fabric_base: &'static str,
+    pub legacy_fabric_base: &'static str,
     pub modrinth_base: &'static str,
 }
 
@@ -39,6 +40,7 @@ impl ApiBases {
                 resources_base: "https://resources.download.minecraft.net",
                 forge_base: "https://maven.minecraftforge.net/net/minecraftforge/forge",
                 fabric_base: "https://meta.fabricmc.net/v2/versions/loader",
+                legacy_fabric_base: "https://meta.legacyfabric.net/v2/versions/loader",
                 modrinth_base: "https://api.modrinth.com/v2",
             },
             ApiProvider::BMCLApi => ApiBases {
@@ -46,6 +48,7 @@ impl ApiBases {
                 resources_base: "https://bmclapi2.bangbang93.com/assets",
                 forge_base: "https://bmclapi2.bangbang93.com/forge",
                 fabric_base: "https://bmclapi2.bangbang93.com/fabric-meta/v2/versions/loader",
+                legacy_fabric_base: "https://meta.legacyfabric.net/v2/versions/loader",
                 modrinth_base: "https://api.modrinth.com/v2",
             },
         }
@@ -164,6 +167,13 @@ pub enum McApiError {
 
 /// Result type for Minecraft API operations.
 pub type McApiResult<T> = Result<T, McApiError>;
+
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FabricFamily {
+    Fabric,
+    Legacyfabric,
+}
 
 pub mod game {
     pub use crate::core::minecraft::*;
@@ -480,10 +490,26 @@ impl MinecraftApiClient {
         }
     }
 
-    pub async fn get_fabric_versions(&self, version_id: &str) -> McApiResult<Vec<McPluginReport>> {
-        let fabric_base = self.api_bases.read().await.fabric_base;
-        let meta_url = format!("{fabric_base}/{version_id}");
-        let fabric_versions: serde_json::Value = self.get(&meta_url, true).await?;
+    pub async fn get_fabric_versions(
+        &self,
+        version_id: &str,
+        family: FabricFamily,
+    ) -> McApiResult<Vec<McPluginReport>> {
+        crate::util::file::validate_file_name(version_id)
+            .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
+        let bases = self.api_bases.read().await;
+        let base = match family {
+            FabricFamily::Fabric => bases.fabric_base,
+            FabricFamily::Legacyfabric => bases.legacy_fabric_base,
+        };
+        let mut url = reqwest::Url::parse(base)
+            .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
+        url.path_segments_mut()
+            .map_err(|_| McApiError::InvalidMetadata("Invalid Fabric metadata URL".into()))?
+            .pop_if_empty()
+            .push(version_id);
+        drop(bases);
+        let fabric_versions: serde_json::Value = self.get(url.as_str(), true).await?;
         let loaders = fabric_versions
             .as_array()
             .ok_or_else(|| serde_json::Error::custom("fabric list failed to parse"))?
@@ -500,6 +526,83 @@ impl MinecraftApiClient {
             })
             .collect();
         Ok(loaders)
+    }
+
+    pub async fn get_fabric_profile(
+        &self,
+        version_id: &str,
+        loader: &str,
+        family: FabricFamily,
+    ) -> McApiResult<serde_json::Value> {
+        use super::downloader::resources::{DOWNLOAD_RESOURCES, SourcePreference};
+        for value in [version_id, loader] {
+            crate::util::file::validate_file_name(value)
+                .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
+        }
+        let bases = self.api_bases.read().await;
+        let configured = match family {
+            FabricFamily::Fabric => bases.fabric_base,
+            FabricFamily::Legacyfabric => bases.legacy_fabric_base,
+        };
+        drop(bases);
+        let official = "https://meta.fabricmc.net/v2/versions/loader";
+        let mirror = "https://bmclapi2.bangbang93.com/fabric-meta/v2/versions/loader";
+        let sources = if configured == official || configured == mirror {
+            match DOWNLOAD_RESOURCES.settings().file_source {
+                SourcePreference::Official => vec![official, mirror],
+                _ => vec![mirror, official],
+            }
+        } else {
+            vec![configured]
+        };
+        let mut last_error = None;
+        for base in sources {
+            let mut url = reqwest::Url::parse(base)
+                .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
+            url.path_segments_mut()
+                .map_err(|_| McApiError::InvalidMetadata("Invalid Fabric metadata URL".into()))?
+                .pop_if_empty()
+                .extend([version_id, loader, "profile", "json"]);
+            match self
+                .fetch_checked(url.as_str(), |bytes| {
+                    let profile: serde_json::Value = serde_json::from_slice(bytes)?;
+                    let expected = format!("net.fabricmc:fabric-loader:{loader}");
+                    if profile["inheritsFrom"].as_str() != Some(version_id)
+                        || profile["mainClass"].as_str().is_none_or(str::is_empty)
+                        || !profile["libraries"].as_array().is_some_and(|libraries| {
+                            libraries
+                                .iter()
+                                .any(|lib| lib["name"].as_str() == Some(expected.as_str()))
+                        })
+                    {
+                        return Err(McApiError::InvalidMetadata("Invalid Fabric profile".into()));
+                    }
+                    if matches!(family, FabricFamily::Legacyfabric)
+                        && !profile["libraries"].as_array().is_some_and(|libraries| {
+                            libraries.iter().any(|lib| {
+                                lib["name"].as_str()
+                                    == Some(
+                                        format!("net.legacyfabric:intermediary:{version_id}")
+                                            .as_str(),
+                                    )
+                            })
+                        })
+                    {
+                        return Err(McApiError::InvalidMetadata(
+                            "Invalid Legacy Fabric intermediary".into(),
+                        ));
+                    }
+                    Ok(profile)
+                })
+                .await
+            {
+                Ok(profile) => return Ok(profile),
+                Err(error) => last_error = Some(error),
+            }
+        }
+        Err(last_error.unwrap_or_else(|| {
+            McApiError::InvalidMetadata("No Fabric metadata source available".into())
+        }))
     }
 
     pub async fn fetch_with_modrinth<T: DeserializeOwned + Serialize>(

@@ -41,6 +41,37 @@ pub struct VersionDetails {
     pub asset_index: AssetIndexInfo,
     pub main_class: String,
     pub logging: Option<Logging>,
+    #[serde(default)]
+    pub arguments: Option<VersionArguments>,
+    #[serde(default)]
+    pub minecraft_arguments: Option<String>,
+    #[serde(default)]
+    pub release_time: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct VersionArguments {
+    #[serde(default)]
+    pub game: Vec<Argument>,
+    #[serde(default)]
+    pub jvm: Vec<Argument>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Argument {
+    Plain(String),
+    Conditional {
+        rules: Vec<Rule>,
+        value: ArgumentValue,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ArgumentValue {
+    One(String),
+    Many(Vec<String>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,8 +82,11 @@ pub struct VersionDownloads {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadInfo {
+    #[serde(default)]
     pub sha1: String,
+    #[serde(default)]
     pub size: u64,
+    #[serde(default)]
     pub url: String,
     pub path: Option<String>,
 }
@@ -133,6 +167,21 @@ impl RuleContext {
             features: BTreeMap::new(),
         }
     }
+
+    pub fn for_java(architecture: &super::platform::Architecture) -> anyhow::Result<Self> {
+        use super::platform::Architecture;
+        let arch = match architecture {
+            Architecture::X86 => "x86",
+            Architecture::X64 => "x86_64",
+            Architecture::Arm64 => "aarch64",
+            Architecture::FatFile | Architecture::Unknown => {
+                bail!("Cannot determine the running Java architecture")
+            }
+        };
+        let mut context = Self::current();
+        context.arch = arch.into();
+        Ok(context)
+    }
 }
 
 fn pattern_matches(pattern: &Option<String>, value: &str) -> anyhow::Result<bool> {
@@ -176,11 +225,20 @@ pub fn rules_allow(rules: Option<&[Rule]>, context: &RuleContext) -> anyhow::Res
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LibraryItem {
     pub name: String,
-    pub downloads: LibraryDownloads,
+    #[serde(default)]
+    pub url: Option<String>,
+    #[serde(default)]
+    pub sha1: Option<String>,
+    #[serde(default)]
+    pub size: Option<u64>,
+    #[serde(default)]
+    pub downloads: Option<LibraryDownloads>,
     pub rules: Option<Vec<Rule>>,
     #[serde(default)]
     pub natives: BTreeMap<String, String>,
     pub extract: Option<ExtractRules>,
+    #[serde(default)]
+    pub hint: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -189,7 +247,7 @@ pub struct ExtractRules {
     pub exclude: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct LibraryDownloads {
     pub artifact: Option<DownloadInfo>,
     #[serde(default)]
@@ -197,6 +255,82 @@ pub struct LibraryDownloads {
 }
 
 impl LibraryItem {
+    pub fn classpath_path(
+        &self,
+        repo: &std::path::Path,
+        instance: &std::path::Path,
+    ) -> anyhow::Result<Option<std::path::PathBuf>> {
+        if let Some(artifact) = self
+            .downloads
+            .as_ref()
+            .and_then(|downloads| downloads.artifact.as_ref())
+            && artifact.path.is_some()
+        {
+            return Ok(Some(library_path(repo, artifact)?));
+        }
+        if self
+            .downloads
+            .as_ref()
+            .is_some_and(|downloads| downloads.artifact.is_none())
+            || !self.natives.is_empty() && self.downloads.is_none()
+        {
+            return Ok(None);
+        }
+        let (coordinate, extension) = self.name.split_once('@').unwrap_or((&self.name, "jar"));
+        let parts: Vec<_> = coordinate.split(':').collect();
+        ensure!(
+            matches!(parts.len(), 3 | 4),
+            "Invalid library coordinate: {}",
+            self.name
+        );
+        for part in parts.iter().chain(std::iter::once(&extension)) {
+            crate::util::file::validate_file_name(part)?;
+        }
+        if self.hint.as_deref() == Some("local") {
+            let file = format!("{}-{}.{}", parts[1], parts[2..].join("-"), extension);
+            return Ok(Some(instance.join("libraries").join(file)));
+        }
+        let group = parts[0].split('.').collect::<Vec<_>>();
+        for part in &group {
+            crate::util::file::validate_file_name(part)?;
+        }
+        let classifier = parts
+            .get(3)
+            .map(|value| format!("-{value}"))
+            .unwrap_or_default();
+        let path = format!(
+            "{}/{}/{}/{}-{}{}.{}",
+            group.join("/"),
+            parts[1],
+            parts[2],
+            parts[1],
+            parts[2],
+            classifier,
+            extension
+        );
+        Ok(Some(crate::util::file::safe_join(
+            &repo.join("libraries"),
+            &path,
+        )?))
+    }
+
+    pub fn classpath_key(&self) -> anyhow::Result<String> {
+        let (coordinate, extension) = self.name.split_once('@').unwrap_or((&self.name, "jar"));
+        let parts: Vec<_> = coordinate.split(':').collect();
+        ensure!(
+            matches!(parts.len(), 3 | 4),
+            "Invalid library coordinate: {}",
+            self.name
+        );
+        Ok(format!(
+            "{}:{}:{}@{}",
+            parts[0],
+            parts[1],
+            parts.get(3).copied().unwrap_or(""),
+            extension
+        ))
+    }
+
     pub fn rule_allow(&self, context: &RuleContext) -> anyhow::Result<bool> {
         rules_allow(self.rules.as_deref(), context)
     }
@@ -207,7 +341,11 @@ impl LibraryItem {
         };
         let classifier =
             classifier.replace("${arch}", if context.arch == "x86" { "32" } else { "64" });
-        match self.downloads.classifiers.get(&classifier) {
+        match self
+            .downloads
+            .as_ref()
+            .and_then(|downloads| downloads.classifiers.get(&classifier))
+        {
             Some(info) => Ok(Some(info)),
             None => bail!("Missing native classifier {classifier} in {}", self.name),
         }
@@ -241,6 +379,20 @@ mod tests {
     }
 
     #[test]
+    fn java_rule_context_uses_probed_architecture() {
+        use super::super::platform::Architecture;
+        for (arch, expected) in [
+            (Architecture::X86, "x86"),
+            (Architecture::X64, "x86_64"),
+            (Architecture::Arm64, "aarch64"),
+        ] {
+            assert_eq!(RuleContext::for_java(&arch).unwrap().arch, expected);
+        }
+        assert!(RuleContext::for_java(&Architecture::Unknown).is_err());
+        assert!(RuleContext::for_java(&Architecture::FatFile).is_err());
+    }
+
+    #[test]
     fn ordered_rules_handle_unconditional_os_arch_version_and_features() {
         let parse = |value| serde_json::from_value::<Vec<Rule>>(value).unwrap();
         let rules = parse(json!([
@@ -264,7 +416,7 @@ mod tests {
             "name":"org.lwjgl:lwjgl:2", "natives":{"osx":"natives-osx-${arch}"},
             "downloads":{"classifiers":{"natives-osx-64":{"sha1":"a".repeat(40),"size":1,"url":"https://example.org/native.jar"}}}
         })).unwrap();
-        assert!(library.downloads.artifact.is_none());
+        assert!(library.downloads.as_ref().unwrap().artifact.is_none());
         assert!(library.native_download(&context()).unwrap().is_some());
         let downloads: VersionDownloads = serde_json::from_value(json!({"client":{"sha1":"a".repeat(40),"size":1,"url":"https://example.org/client.jar"}})).unwrap();
         assert!(downloads.server.is_none());

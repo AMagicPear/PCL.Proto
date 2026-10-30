@@ -1,7 +1,7 @@
 //! Version constraints ported from CE ModLaunch.McLaunchJava, using normalized versions.
 use super::JavaVersion;
 use crate::core::game::GameInstance;
-use anyhow::{Context, ensure};
+use anyhow::ensure;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::BTreeSet, io::Read};
@@ -54,7 +54,7 @@ impl JavaRequirements {
         }
     }
     pub fn for_instance(instance: &GameInstance) -> anyhow::Result<Self> {
-        let mut metadata = read_metadata(instance, &instance.id, &mut BTreeSet::new())?;
+        let mut metadata = instance.resolved_metadata()?;
         // Vanilla client JAR version.json also carries java_version/java_component in recent releases.
         if let Ok(file) = std::fs::File::open(&instance.jar_path)
             && let Ok(mut jar) = zip::ZipArchive::new(file)
@@ -239,55 +239,4 @@ impl JavaRequirements {
                 .map(str::to_owned),
         }
     }
-}
-
-fn read_metadata(
-    instance: &GameInstance,
-    id: &str,
-    visited: &mut BTreeSet<String>,
-) -> anyhow::Result<Value> {
-    crate::util::file::validate_file_name(id)?;
-    ensure!(
-        visited.len() < 32 && visited.insert(id.to_owned()),
-        "Cyclic version inheritance"
-    );
-    let path = if id == instance.id {
-        instance.json_path.clone()
-    } else {
-        instance
-            .global_dir
-            .join("versions")
-            .join(id)
-            .join(format!("{id}.json"))
-    };
-    let mut child: Value = serde_json::from_reader(
-        std::fs::File::open(&path).with_context(|| format!("Cannot read {}", path.display()))?,
-    )?;
-    if let Some(parent_id) = child["inheritsFrom"].as_str() {
-        let mut parent = read_metadata(instance, parent_id, visited)?;
-        for key in [
-            "javaVersion",
-            "compatibleJavaMajors",
-            "releaseTime",
-            "java_version",
-            "java_component",
-        ] {
-            if child[key].is_null() {
-                child[key] = parent[key].take();
-            }
-        }
-        if child["clientVersion"].is_null() {
-            child["clientVersion"] = parent["clientVersion"]
-                .as_str()
-                .or_else(|| parent["id"].as_str())
-                .map(|s| Value::String(s.to_owned()))
-                .unwrap_or(Value::Null);
-        }
-        if let Some(libraries) = parent["libraries"].as_array() {
-            let mut combined = libraries.clone();
-            combined.extend(child["libraries"].as_array().into_iter().flatten().cloned());
-            child["libraries"] = Value::Array(combined);
-        }
-    }
-    Ok(child)
 }

@@ -1,3 +1,6 @@
+import { invoke } from '@tauri-apps/api/core'
+import { ref } from 'vue'
+
 export interface DownloadSettings {
   max_connections: number
   file_connections: number
@@ -5,6 +8,67 @@ export interface DownloadSettings {
   http_mode: number
   file_source: number
   version_source: number
+  auto_select_instance: boolean | null
+}
+
+export const downloadSettingKeys = [
+  'ComboDownloadSource',
+  'ComboDownloadVersion',
+  'ComboDownloadHttpMode',
+  'SliderDownloadThread',
+  'SliderDownloadFileConnection',
+  'SliderDownloadSpeed',
+  'CheckDownloadAutoSelectVersion',
+]
+
+let pending: Promise<unknown> = Promise.resolve()
+let draft: DownloadSettings | null = null
+export const downloadSaveError = ref('')
+export async function initializeDownloadSettings() {
+  return invoke<DownloadSettings>('initialize_download_settings', { legacy: downloadSettings() })
+}
+export function readDownloadSettings() {
+  return pending.then(async () => {
+    const settings = draft || (await invoke<DownloadSettings | null>('get_download_settings'))
+    if (!settings) throw new Error('Download settings are not initialized')
+    return settings
+  })
+}
+export function saveDownloadSettings(settings: DownloadSettings) {
+  draft = settings
+  downloadSaveError.value = ''
+  const result = pending
+    .then(() => invoke<DownloadSettings>('set_download_settings', { settings }))
+    .then((saved) => {
+      if (draft === settings) draft = null
+      return saved
+    })
+    .catch((error) => {
+      if (draft === settings) downloadSaveError.value = String(error)
+      throw error
+    })
+  pending = result.catch(() => {})
+  return result
+}
+
+export function downloadSettingValues(settings: DownloadSettings) {
+  const speed = Array.from({ length: 43 }, (_, index) => ({
+    index,
+    value: downloadSettings({ SliderDownloadSpeed: index }).speed_limit,
+  })).reduce((best, item) =>
+    Math.abs(item.value - settings.speed_limit) < Math.abs(best.value - settings.speed_limit)
+      ? item
+      : best,
+  )
+  return {
+    ComboDownloadSource: String(settings.file_source),
+    ComboDownloadVersion: String(settings.version_source),
+    ComboDownloadHttpMode: String(settings.http_mode),
+    SliderDownloadThread: settings.max_connections - 1,
+    SliderDownloadFileConnection: settings.file_connections - 1,
+    SliderDownloadSpeed: speed.index,
+    CheckDownloadAutoSelectVersion: settings.auto_select_instance ?? true,
+  }
 }
 
 export interface DownloadStats {
@@ -16,8 +80,9 @@ export interface DownloadStats {
 
 export function downloadSettings(values?: Record<string, unknown>): DownloadSettings {
   if (!values) {
+    const saved = localStorage.getItem('pcl-ui:PageSetupGameManage:global')
     try {
-      values = JSON.parse(localStorage.getItem('pcl-ui:PageSetupGameManage:global') || '{}')
+      values = JSON.parse(saved || '{}')
     } catch {
       // Invalid persisted preferences use the same defaults as the settings page.
     }
@@ -45,5 +110,7 @@ export function downloadSettings(values?: Record<string, unknown>): DownloadSett
     http_mode: integer('ComboDownloadHttpMode', 0, 2),
     file_source: integer('ComboDownloadSource', 1, 2),
     version_source: integer('ComboDownloadVersion', 1, 2),
+    auto_select_instance: typeof settings.CheckDownloadAutoSelectVersion === 'boolean'
+      ? settings.CheckDownloadAutoSelectVersion : true,
   }
 }

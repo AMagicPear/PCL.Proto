@@ -101,7 +101,7 @@ watch(
     const current = ++request
     if (!id) return
     await Promise.all(
-      ['Forge', 'Fabric'].map(async (name) => {
+      ['Forge', 'Fabric', 'LegacyFabric'].map(async (name) => {
         plugins[name] = { loading: true, versions: [], error: '' }
         try {
           if (!isTauri()) throw new Error(pclText('Proto.Desktop.Loaders'))
@@ -140,14 +140,16 @@ async function install() {
     sideTip.show(pclText('Proto.Desktop.Download'), 'warn')
     return
   }
-  if (Object.values(selected).some(Boolean)) {
+  if (Object.entries(selected).some(([name, value]) => !['Fabric', 'LegacyFabric'].includes(name) && !!value)) {
     sideTip.show(pclText('Proto.NotImplemented.LoaderInstall'), 'warn')
     return
   }
   installing.value = true
   try {
     void useTaskManager()
-      .startDownloadMCVersion(versionId.value, instanceName.value.trim())
+      .startDownloadMCVersion(versionId.value, instanceName.value.trim(), selected.Fabric
+        ? { family: 'fabric', version: selected.Fabric }
+        : selected.LegacyFabric ? { family: 'legacyfabric', version: selected.LegacyFabric } : undefined)
       .catch((err) => sideTip.show(pclText('Proto.Error.Download', [String(err)]), 'warn'))
     await router.push('/downloading')
   } catch (err) {
@@ -284,7 +286,7 @@ watch(versionId, (id) => {
           </template>
           <p v-else class="pcl-empty">
             {{
-              ['Forge', 'Fabric'].includes(loader)
+              ['Forge', 'Fabric', 'LegacyFabric'].includes(loader)
                 ? pclText('Download.Install.State.NoAvailableVersion')
                 : pclText('Proto.NotImplemented.Loader')
             }}

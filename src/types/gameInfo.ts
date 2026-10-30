@@ -13,6 +13,9 @@ export type pluginType =
   | 'forge'
   | 'neoforge'
   | 'fabric'
+  | 'legacyfabric'
+  | 'liteloader'
+  | 'cleanroom'
   | 'fabric-api'
   | 'quilt'
   | 'laby-mod'
@@ -36,6 +39,9 @@ export const showIconPath: Record<showIconType, string> = {
   gold: picGold,
   neoforge: '',
   fabric: picFabric,
+  legacyfabric: picFabric,
+  liteloader: '',
+  cleanroom: '',
   'fabric-api': picFabric,
   quilt: '',
   'laby-mod': '',
@@ -49,6 +55,9 @@ export const pluginShowText: Record<pluginType, string> = {
   forge: 'Forge',
   neoforge: 'NeoForge',
   fabric: 'Fabric',
+  legacyfabric: 'Legacy Fabric',
+  liteloader: 'LiteLoader',
+  cleanroom: 'Cleanroom',
   'fabric-api': 'Fabric API',
   quilt: 'Quilt',
   'laby-mod': 'LabyMod',
@@ -60,6 +69,9 @@ export const isIconPixelated: Record<pluginType, boolean> = {
   forge: false,
   neoforge: false,
   fabric: true,
+  legacyfabric: true,
+  liteloader: true,
+  cleanroom: true,
   'fabric-api': true,
   quilt: true,
   'laby-mod': true,

@@ -35,6 +35,7 @@ pub struct DownloadSettings {
     pub http_mode: HttpMode,
     pub file_source: SourcePreference,
     pub version_source: SourcePreference,
+    pub auto_select_instance: Option<bool>,
 }
 impl Default for DownloadSettings {
     fn default() -> Self {
@@ -45,6 +46,7 @@ impl Default for DownloadSettings {
             http_mode: HttpMode::Auto,
             file_source: SourcePreference::Auto,
             version_source: SourcePreference::Auto,
+            auto_select_instance: None,
         }
     }
 }
@@ -206,8 +208,33 @@ pub fn get_download_stats() -> DownloadStats {
     DOWNLOAD_RESOURCES.stats()
 }
 #[tauri::command]
-pub fn set_download_settings(settings: DownloadSettings) -> Result<(), String> {
-    DOWNLOAD_RESOURCES.configure(settings)
+pub async fn set_download_settings(settings: DownloadSettings) -> Result<DownloadSettings, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::setup::ConfigManager::instance().update_download_settings(settings, false)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn initialize_download_settings(
+    legacy: DownloadSettings,
+) -> Result<DownloadSettings, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::setup::ConfigManager::instance().update_download_settings(legacy, true)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_download_settings() -> Option<DownloadSettings> {
+    crate::setup::ConfigManager::instance()
+        .app_state
+        .lock()
+        .await
+        .download_settings
+        .clone()
 }
 
 #[cfg(test)]

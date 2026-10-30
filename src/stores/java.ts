@@ -18,34 +18,12 @@ export const useJavaStore = defineStore('java', () => {
   const instanceIs64Bit = ref<Record<string, boolean>>({})
   const instances = ref<Record<string, InstanceJavaSettings>>({})
   let request = 0
-  async function load(directory?: string, refresh = false, legacyId?: string) {
+  async function load(directory?: string, refresh = false) {
     const current = ++request
     let list = await (refresh ? refreshJavaList() : getJavaList())
     if (!list.length && !refresh) list = await refreshJavaList()
     if (current !== request) return
-    let settings = await getJavaSettings(directory)
-    if (current !== request) return
-    if (directory && legacyId && !settings.has_instance_settings) {
-      let legacy: Record<string, unknown> = {}
-      try {
-        legacy =
-          JSON.parse(localStorage.getItem(`pcl-ui:PageInstanceSetup:${legacyId}`) || '{}') || {}
-      } catch {
-        /* Ignore malformed legacy UI preferences. */
-      }
-      const path = legacy.ComboArgumentJava
-      if (typeof path === 'string' || typeof legacy.CheckAdvanceJava === 'boolean') {
-        const migrated: InstanceJavaSettings = {
-          preference:
-            typeof path === 'string' && path !== '0' && path !== ''
-              ? { kind: 'exist', java_exe: path }
-              : { kind: 'auto' },
-          ignore_compatibility: legacy.CheckAdvanceJava === true,
-        }
-        await setInstanceJavaSettings(directory, migrated)
-        settings = await getJavaSettings(directory)
-      }
-    }
+    const settings = await getJavaSettings(directory)
     if (current !== request) return
     runtimes.value = list
     globalJava.value = settings.global_java

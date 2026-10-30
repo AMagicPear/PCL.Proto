@@ -1,9 +1,10 @@
 import { pclText } from '@/api/pclLocale'
-import { downloadSettings } from '@/api/downloadSettings'
 import { FloatButtonType, useFloatButton } from '@/composables/useFloatButton'
 import { Channel, invoke } from '@tauri-apps/api/core'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { useSelectedInstance } from '@/stores/gameLaunch'
+import sideTip from '@/composables/sideTip'
 
 export enum TaskStatus {
   Pending = 0,
@@ -142,12 +143,11 @@ export const useTaskManager = defineStore('task-manager', () => {
       // Only the command result commits the overall task to a terminal state.
     }
     try {
-      const result = await invoke<string | void>(command, {
+      const result = await invoke<string | { selected: boolean; selection_error: string | null } | void>(command, {
         ...args,
         on_event: onEvent,
         version_id: versionId,
         task_id: id,
-        download_settings: downloadSettings(),
       })
       task.status = TaskStatus.Completed
       task.progress = 1
@@ -157,6 +157,12 @@ export const useTaskManager = defineStore('task-manager', () => {
         item.remaining = 0
         item.speed = 0
       })
+      if (kind === 'install' && result && typeof result === 'object') {
+        if (result.selection_error) sideTip.show(pclText('Proto.Install.SelectionFailed', [result.selection_error]), 'warn')
+        if (result.selected) void useSelectedInstance().fetch().catch((error) =>
+          sideTip.show(pclText('Proto.Install.SelectionFailed', [String(error)]), 'warn'),
+        )
+      }
       return result
     } catch (error) {
       task.status = TaskStatus.Failed
@@ -172,11 +178,11 @@ export const useTaskManager = defineStore('task-manager', () => {
     }
   }
 
-  function startDownloadMCVersion(versionId: string, instanceName: string) {
+  function startDownloadMCVersion(versionId: string, instanceName: string, fabric?: { family: 'fabric' | 'legacyfabric'; version: string }) {
     return runDownload(
       versionId,
       'download_minecraft_version',
-      { instance_name: instanceName },
+      { instance_name: instanceName, fabric: fabric || null },
       'install',
     )
   }

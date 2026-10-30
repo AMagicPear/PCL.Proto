@@ -97,6 +97,13 @@ static CLIENTS: LazyLock<DownloadClients> = LazyLock::new(|| {
 });
 
 impl Downloader {
+    pub(super) fn source_urls(&self, url: &str) -> Vec<String> {
+        self.bases.download_urls(
+            url,
+            self.resources.settings().file_source,
+            self.resources.official_fast.load(Ordering::Relaxed),
+        )
+    }
     pub fn with_bases(bases: super::api_client::ApiBases) -> Self {
         Self {
             bases,
@@ -155,12 +162,9 @@ impl Downloader {
         let parent = path
             .parent()
             .ok_or_else(|| McApiError::InvalidMetadata("Missing destination parent".into()))?;
-        tokio::fs::create_dir_all(parent).await?;
-        let urls = self.bases.download_urls(
-            &info.url,
-            self.resources.settings().file_source,
-            self.resources.official_fast.load(Ordering::Relaxed),
-        );
+        // Complete directory creation before a cancelled task can remove its staging tree.
+        std::fs::create_dir_all(parent)?;
+        let urls = self.source_urls(&info.url);
         let mut disabled = vec![false; urls.len()];
         let mut last_error = None;
         for attempt in 0..3 {

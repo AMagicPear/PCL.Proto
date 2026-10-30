@@ -64,5 +64,8 @@ export function downloadGameJava(
 ) {
   const progress = new Channel<JavaInstallProgress>()
   progress.onmessage = onProgress
-  return invoke<IJavaRuntimeInfo>('download_game_java', { instanceDirectory, progress })
+  return invoke<IJavaRuntimeInfo>('download_game_java', {
+    instanceDirectory,
+    progress,
+  })
 }

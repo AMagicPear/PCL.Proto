@@ -15,7 +15,7 @@ type Settings<T> = {
 export function usePageSettings<
   Page extends string,
   Defaults extends Record<string, SettingValue> = Record<never, never>,
->(page: Page, defaults: Defaults = {} as Defaults) {
+>(page: Page, defaults: Defaults = {} as Defaults, excludedKeys: string[] = []) {
   const pageDefaults = (sourceDefaults as Record<string, Record<string, SettingValue>>)[page] || {}
   const initialDefaults = {
     ...Object.fromEntries(
@@ -29,10 +29,15 @@ export function usePageSettings<
     ...defaults,
   }
   const instance = page.startsWith('PageInstance') ? useSelectedInstance() : null
-  const storageKey = computed(
-    () => `pcl-ui:${page}:${instance ? instance.instance_info?.id || 'none' : 'global'}`,
+  const storageKey = computed(() =>
+    instance && !instance.instance_info?.directory
+      ? null
+      : instance
+        ? `pcl-instance-ui:${page}:${encodeURIComponent(instance.instance_info!.directory)}`
+        : `pcl-ui:${page}:global`,
   )
   function loadValues() {
+    if (!storageKey.value) return {}
     try {
       const parsed: unknown = JSON.parse(localStorage.getItem(storageKey.value) || '{}')
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
@@ -40,6 +45,7 @@ export function usePageSettings<
           Object.entries(parsed).filter(
             ([key, value]) =>
               !/password|token|secret|cdk/i.test(key) &&
+              !excludedKeys.includes(key) &&
               !['ComboArgumentJava', 'CheckAdvanceJava'].includes(key) &&
               ['string', 'number', 'boolean'].includes(typeof value) &&
               (!(key in initialDefaults) || typeof value === typeof initialDefaults[String(key)]),
@@ -53,14 +59,16 @@ export function usePageSettings<
   const values = reactive({ ...initialDefaults, ...loadValues() }) as Settings<
     PageDefaults<Page> & Defaults
   >
+  let loading = false
   watch(
     values,
     () => {
+      if (loading || !storageKey.value) return
       try {
         const legacy = JSON.parse(localStorage.getItem(storageKey.value) || '{}')
         const javaLegacy = Object.fromEntries(
           Object.entries(legacy || {}).filter(([key]) =>
-            ['ComboArgumentJava', 'CheckAdvanceJava'].includes(key),
+            ['ComboArgumentJava', 'CheckAdvanceJava', ...excludedKeys].includes(key),
           ),
         )
         localStorage.setItem(
@@ -68,7 +76,9 @@ export function usePageSettings<
           JSON.stringify({
             ...javaLegacy,
             ...Object.fromEntries(
-              Object.entries(values).filter(([key]) => !/password|token|secret|cdk/i.test(key)),
+              Object.entries(values).filter(
+                ([key]) => !excludedKeys.includes(key) && !/password|token|secret|cdk/i.test(key),
+              ),
             ),
           }),
         )
@@ -76,12 +86,17 @@ export function usePageSettings<
         sideTip.show(pclText('Proto.Storage.SettingsFailed'), 'warn')
       }
     },
-    { deep: true },
+    { deep: true, flush: 'sync' },
   )
   watch(storageKey, () => {
-    Object.keys(values).forEach((key) => delete values[key])
-    Object.assign(values, initialDefaults, loadValues())
-  })
+    loading = true
+    try {
+      Object.keys(values).forEach((key) => delete values[key])
+      Object.assign(values, initialDefaults, loadValues())
+    } finally {
+      loading = false
+    }
+  }, { flush: 'sync' })
   function reset(key?: keyof typeof values) {
     if (key) {
       Object.assign(values, { [key]: initialDefaults[String(key)] })

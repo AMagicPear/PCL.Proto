@@ -8,14 +8,17 @@ import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
+import { logSlider, logSaveError, saveLogSettings, updateLogSlider } from '@/api/logSettings'
 const { values } = usePageSettings('PageSetupLauncherMisc', {
   ComboSystemActivity: '0',
-})
+}, ['SliderMaxLog'])
 
 const text = pclText
 </script>
 <template>
   <div class="pcl-page">
+    <p class="settings-unavailable">{{ text('Proto.Settings.Unavailable') }}</p>
+    <p v-if="logSaveError" role="alert">{{ logSaveError }} <button @click="saveLogSettings">{{ text('Launch.Homepage.LoadFailed.Retry') }}</button></p>
     <div>
       <div data-control="PanBack">
         <div
@@ -42,7 +45,7 @@ const text = pclText
                 class="pcl-text"
                 >{{ text('Setup.Misc.System.Announcement') }}</span
               >
-              <PComboBox
+              <PComboBox disabled
                 data-control="ComboSystemActivity"
                 style="grid-row: 1 / span 1; grid-column: 2 / span 1"
                 :options="[
@@ -67,7 +70,7 @@ const text = pclText
                 class="pcl-text"
                 >{{ text('Setup.Misc.System.MaxFps') }}</span
               >
-              <input
+              <input disabled
                 data-control="SliderAniFPS"
                 style="grid-row: 3 / span 1; grid-column: 2 / span 1"
                 :title="text('Setup.Misc.System.MaxFps.ToolTip')"
@@ -94,7 +97,8 @@ const text = pclText
                 type="range"
                 min="0"
                 max="29"
-                v-model.number="values['SliderMaxLog']"
+                :value="logSlider"
+                @input="updateLogSlider(Number(($event.target as HTMLInputElement).value))"
               />
               <div
                 style="
@@ -105,14 +109,14 @@ const text = pclText
                   grid-template-rows: 20px;
                 "
               >
-                <PCheckBox
+                <PCheckBox disabled
                   data-control="CheckSystemDisableHardwareAcceleration"
                   style="grid-row: 1 / span 1; grid-column: 1 / span 1"
                   id="PageSetupLauncherMisc-CheckSystemDisableHardwareAcceleration"
                   :label="text('Setup.Misc.System.DisableHardwareAcceleration')"
                   v-model="values.CheckSystemDisableHardwareAcceleration"
                 />
-                <PCheckBox
+                <PCheckBox disabled
                   data-control="CheckSystemTelemetry"
                   style="grid-row: 1 / span 1; grid-column: 2 / span 1"
                   :title="text('Setup.Misc.System.Telemetry.ToolTip')"
@@ -179,7 +183,7 @@ const text = pclText
                 grid-template-rows: 28px 4px 28px 4px auto;
               "
             >
-              <PCheckBox
+              <PCheckBox disabled
                 data-control="CheckNetDohEnable"
                 style="grid-row: 1 / span 1; grid-column: 1 / span 2"
                 :title="text('Setup.Misc.Network.DoH.ToolTip')"
@@ -213,7 +217,7 @@ const text = pclText
                   data-control="RadioHttpProxyType0"
                   style="height: 22px; grid-row: 1 / span 1; grid-column: 1 / span 1"
                   class="pcl-radio"
-                  ><input type="radio" v-model="values['SystemHttpProxyType']" value="0" />{{
+                  ><input disabled type="radio" v-model="values['SystemHttpProxyType']" value="0" />{{
                     text('Setup.Misc.Network.Proxy.None')
                   }}</label
                 >
@@ -221,7 +225,7 @@ const text = pclText
                   data-control="RadioHttpProxyType1"
                   style="height: 22px; grid-row: 1 / span 1; grid-column: 2 / span 1"
                   class="pcl-radio"
-                  ><input type="radio" v-model="values['SystemHttpProxyType']" value="1" />{{
+                  ><input disabled type="radio" v-model="values['SystemHttpProxyType']" value="1" />{{
                     text('Setup.Misc.Network.Proxy.System')
                   }}</label
                 >
@@ -229,7 +233,7 @@ const text = pclText
                   data-control="RadioHttpProxyType2"
                   style="height: 22px; grid-row: 1 / span 1; grid-column: 3 / span 1"
                   class="pcl-radio"
-                  ><input type="radio" v-model="values['SystemHttpProxyType']" value="2" />{{
+                  ><input disabled type="radio" v-model="values['SystemHttpProxyType']" value="2" />{{
                     text('Setup.Misc.Network.Proxy.Custom')
                   }}</label
                 >
@@ -247,7 +251,7 @@ const text = pclText
                 <PHint style="grid-row: 1 / span 1; grid-column: 1 / span 5" severity="warning">{{
                   text('Setup.Misc.Network.Proxy.UntrustedWarning')
                 }}</PHint>
-                <PTextBox
+                <PTextBox disabled
                   data-control="TextSystemHttpProxy"
                   style="grid-row: 3 / span 1; grid-column: 1 / span 5"
                   :title="text('Setup.Misc.Network.Proxy.InvalidWarning')"
@@ -265,7 +269,7 @@ const text = pclText
                   class="pcl-text"
                   >{{ text('Setup.Misc.Network.Proxy.Username') }}</span
                 >
-                <PTextBox
+                <PTextBox disabled
                   data-control="TextSystemHttpProxyCustomUsername"
                   style="margin: 0px 5px 0px 0px; grid-row: 5 / span 1; grid-column: 2 / span 1"
                   :placeholder="text('Setup.Misc.Network.Proxy.Optional')"
@@ -282,7 +286,7 @@ const text = pclText
                   class="pcl-text"
                   >{{ text('Setup.Misc.Network.Proxy.Password') }}</span
                 >
-                <PTextBox
+                <PTextBox disabled
                   type="password"
                   data-control="TextSystemHttpProxyCustomPassword"
                   style="margin: 0px 5px 0px 0px; grid-row: 5 / span 1; grid-column: 4 / span 1"
@@ -325,7 +329,7 @@ const text = pclText
                   class="pcl-text"
                   >{{ text('Setup.Misc.Debug.AnimationSpeed') }}</span
                 >
-                <input
+                <input disabled
                   data-control="SliderDebugAnim"
                   style="grid-row: 1 / span 1; grid-column: 2 / span 1"
                   type="range"
@@ -340,7 +344,7 @@ const text = pclText
                   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
                 "
               >
-                <PCheckBox
+                <PCheckBox disabled
                   data-control="CheckDebugSkipCopy"
                   style="height: 22px; grid-row: 1 / span 1; grid-column: 1 / span 1"
                   :title="text('Setup.Misc.Debug.SkipCopy.ToolTip')"
@@ -348,7 +352,7 @@ const text = pclText
                   :label="text('Setup.Misc.Debug.SkipCopy')"
                   v-model="values.CheckDebugSkipCopy"
                 />
-                <PCheckBox
+                <PCheckBox disabled
                   data-control="CheckDebugMode"
                   style="height: 22px; grid-row: 1 / span 1; grid-column: 2 / span 1"
                   :title="text('Setup.Misc.Debug.Mode.ToolTip')"
@@ -356,7 +360,7 @@ const text = pclText
                   :label="text('Setup.Misc.Debug.Mode')"
                   v-model="values.CheckDebugMode"
                 />
-                <PCheckBox
+                <PCheckBox disabled
                   data-control="CheckDebugDelay"
                   style="height: 22px; grid-row: 1 / span 1; grid-column: 3 / span 1"
                   :title="text('Setup.Misc.Debug.Delay.ToolTip')"

@@ -47,7 +47,9 @@ pub async fn fetch_skin_from_url(
     uuid: &str,
 ) -> Result<String, String> {
     let skin_cache_dir = app.path().app_cache_dir().unwrap().join("skins");
-    tokio::fs::create_dir_all(&skin_cache_dir).await.map_err(|err| err.to_string())?;
+    tokio::fs::create_dir_all(&skin_cache_dir)
+        .await
+        .map_err(|err| err.to_string())?;
     let skin_bytes = api_client
         .get_bytes(url)
         .await
@@ -65,8 +67,13 @@ pub async fn fetch_skin_from_url(
 
 #[tauri::command]
 pub async fn fetch_skin_from_uuid_cached(app: AppHandle, uuid: &str) -> Result<String, String> {
-    let skin_cache_path = app.path().resolve(format!("skins/{uuid}.png"), BaseDirectory::AppCache).map_err(|err| err.to_string())?;
-    let skin_bytes = tokio::fs::read(&skin_cache_path).await.map_err(|err| err.to_string())?;
+    let skin_cache_path = app
+        .path()
+        .resolve(format!("skins/{uuid}.png"), BaseDirectory::AppCache)
+        .map_err(|err| err.to_string())?;
+    let skin_bytes = tokio::fs::read(&skin_cache_path)
+        .await
+        .map_err(|err| err.to_string())?;
     let base64_string = general_purpose::STANDARD.encode(&skin_bytes);
     Ok(format!("data:image/png;base64,{}", base64_string))
 }

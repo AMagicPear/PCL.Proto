@@ -123,7 +123,7 @@ pub async fn install(
     tokio::fs::create_dir_all(&runtime_dir).await?;
     let unique = uuid::Uuid::new_v4();
     let staging = runtime_dir.join(format!(".install-{unique}"));
-    tokio::fs::create_dir(&staging).await?;
+    std::fs::create_dir(&staging)?;
     let mut directory = InstallDirectory {
         path: staging.clone(),
         committed: false,
@@ -140,7 +140,7 @@ pub async fn install(
     for (name, file) in &manifest.files {
         let path = safe_join(&staging, name)?;
         match file {
-            RuntimeFile::Directory => tokio::fs::create_dir_all(path).await?,
+            RuntimeFile::Directory => std::fs::create_dir_all(path)?,
             RuntimeFile::File {
                 downloads: data,
                 executable,
@@ -201,7 +201,7 @@ pub async fn install(
                 "Java link escapes installation directory"
             );
             if let Some(parent) = path.parent() {
-                tokio::fs::create_dir_all(parent).await?;
+                std::fs::create_dir_all(parent)?;
             }
             #[cfg(unix)]
             std::os::unix::fs::symlink(target, &path)?;
@@ -231,7 +231,7 @@ pub async fn install(
         .context("Java executable missing from runtime manifest")?;
     let relative = PathBuf::from(executable);
     let destination = runtime_dir.join(format!("{component}-{platform}-{unique}"));
-    tokio::fs::rename(&staging, &destination).await?;
+    std::fs::rename(&staging, &destination)?;
     directory.path = destination.clone();
     let path = destination.join(relative);
     let mut runtime = tokio::task::spawn_blocking(move || JavaRuntime::probe(&path)).await??;

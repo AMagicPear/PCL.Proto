@@ -1,23 +1,75 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { invoke, isTauri } from '@tauri-apps/api/core'
 import PCard from '@/components/widget/PCard.vue'
 import PButton from '@/components/widget/PButton.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
+import PComboBox from '@/components/widget/PComboBox.vue'
 import { pclText } from '@/api/pclLocale'
-import { usePageSettings } from '@/composables/usePageSettings'
+import { logSlider, logSaveError, saveLogSettings, updateLogSlider } from '@/api/logSettings'
 import sideTip from '@/composables/sideTip'
 import { maxLogLines } from '@/util/logLines'
 const props = withDefaults(defineProps<{ log?: string; stack?: string }>(), { log: '', stack: '' })
 const text = pclText
-const { values } = usePageSettings('PageLogRight', {})
 const cleared = ref(false)
 const autoScroll = ref(true)
 const logElement = ref<HTMLElement>()
-const maxLines = computed(() => maxLogLines(Number(values.SliderMaxLog)))
+interface GameSession {
+  id: string
+  instance_directory: string
+  pid: number
+  running: boolean
+  exit_code: number | null
+  error: string | null
+  lines: string[]
+}
+const sessions = ref<GameSession[]>([])
+const selectedId = ref('')
+const selected = computed(() => sessions.value.find((session) => session.id === selectedId.value))
+const options = computed(() => sessions.value.map((session) => ({
+  key: session.id,
+  text: `${session.instance_directory.split(/[\\/]/).pop()} (${session.pid}) - ${session.running ? text('Proto.Session.Running') : session.error || text('Proto.Session.Exited', [session.exit_code ?? '?'])}`,
+})))
+let timer: ReturnType<typeof setTimeout> | undefined
+let request = 0
+let mounted = false
+async function refresh() {
+  const current = ++request
+  try {
+    const result = await invoke<GameSession[]>('get_game_sessions', { id: selectedId.value || null })
+    if (!mounted || current !== request) return
+    sessions.value = result
+    if (!result.some((session) => session.id === selectedId.value)) selectedId.value = result[0]?.id || ''
+  } catch (error) {
+    if (mounted && current === request) console.warn('Cannot read game sessions', error)
+  }
+}
+onMounted(() => {
+  mounted = true
+  async function poll() {
+    await refresh()
+    if (mounted) timer = setTimeout(poll, 500)
+  }
+  if (isTauri()) void poll()
+})
+onUnmounted(() => { mounted = false; request++; clearTimeout(timer) })
+const maxLines = computed(() => maxLogLines(logSlider.value))
+const rawLog = computed(() => selected.value ? selected.value.lines.join('\n') : cleared.value ? '' : props.log)
 const content = computed(() =>
-  cleared.value ? '' : props.log.split('\n').slice(-maxLines.value).join('\n'),
+  rawLog.value.split('\n').slice(-maxLines.value).join('\n'),
 )
+async function clearLog() {
+  if (!selected.value) { cleared.value = true; return }
+  try { await invoke('clear_game_session_log', { id: selected.value.id }); await refresh() }
+  catch (error) { sideTip.show(text('Proto.Session.Error', [String(error)]), 'warn') }
+}
+async function stopGame() {
+  if (!selected.value?.running) return
+  try { await invoke('stop_game_session', { id: selected.value.id }); await refresh() }
+  catch (error) { sideTip.show(text('Proto.Session.Error', [String(error)]), 'warn'); await refresh() }
+}
+watch(selectedId, () => { if (mounted) void refresh() })
 watch(
   [content, autoScroll],
   () => {
@@ -41,6 +93,7 @@ function exportText(value: string, filename: string) {
 </script>
 <template>
   <article class="subview pcl-page log-page">
+    <PComboBox v-if="sessions.length" v-model="selectedId" :options="options" :title="text('Proto.Session.Select')" />
     <PCard hide-title class="log-content">
       <pre ref="logElement">{{ content || pclText('Proto.Empty.Log') }}</pre>
     </PCard>
@@ -51,19 +104,20 @@ function exportText(value: string, filename: string) {
           v-model="autoScroll"
           :label="text('LogPage.Action.Scroll')"
         />
-        <PButton inline @click="() => exportText(log, 'PCL.Proto.log')"
+        <PButton inline @click="() => exportText(rawLog, 'PCL.Proto.log')"
           ><PSvgIcon name="lucide/save" />{{ text('LogPage.Action.Export') }}</PButton
         >
-        <PButton inline @click="() => (cleared = true)"
+        <PButton inline @click="clearLog"
           ><PSvgIcon name="lucide/trash-2" />{{ text('LogPage.Action.Clear') }}</PButton
         >
-        <PButton inline @click="() => sideTip.show(pclText('Proto.NotImplemented.Processes'))"
+        <PButton inline :disabled="!selected?.running" @click="stopGame"
           ><PSvgIcon name="lucide/x" />{{ text('LogPage.Action.KillProcess') }}</PButton
         >
         <PButton inline :disabled="!stack" @click="() => exportText(stack, 'PCL.Proto-stack.log')"
           ><PSvgIcon name="lucide/package" />{{ text('LogPage.Action.ExportStack') }}</PButton
         >
       </div>
+      <p v-if="logSaveError" role="alert">{{ logSaveError }} <button @click="saveLogSettings">{{ text('Launch.Homepage.LoadFailed.Retry') }}</button></p>
       <div class="log-limit">
         <label for="SliderMaxLog">{{ text('LogPage.MaxLines.Title') }}</label
         ><input
@@ -71,13 +125,15 @@ function exportText(value: string, filename: string) {
           type="range"
           min="0"
           max="29"
-          v-model.number="values.SliderMaxLog"
+          :value="logSlider"
+          @input="updateLogSlider(Number(($event.target as HTMLInputElement).value))"
           :title="text('LogPage.MaxLines.ToolTip')"
         /><output>{{
           Number.isFinite(maxLines) ? maxLines : text('LogPage.MaxLines.Unlimited')
         }}</output>
       </div></PCard
     >
+    <small>{{ text('Proto.Session.BufferLimit') }}</small>
   </article>
 </template>
 <style scoped>

@@ -9,7 +9,7 @@ import sideTip from '@/composables/sideTip'
 import { useSelectedInstance } from '@/stores/gameLaunch'
 import { useRepositoriesStore } from '@/stores/repositories'
 import type GameInstance from '@/types/gameInstance'
-import { showIconPath } from '@/types/gameInfo'
+import { pluginShowText, showIconPath, type pluginType } from '@/types/gameInfo'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -23,10 +23,11 @@ const text = pclText
 const instances = ref<GameInstance[]>([])
 const loading = ref(false)
 const error = ref('')
+const selecting = ref(false)
 const query = ref('')
 const filtered = computed(() =>
   instances.value.filter((item) =>
-    `${item.name} ${item.version} ${Object.keys(item.pluginsVersion || {}).join(' ')}`
+    `${item.name} ${item.version} ${Object.entries(item.pluginsVersion || {}).map(([key, version]) => `${pluginShowText[key as pluginType] || key} ${key} ${version}`).join(' ')}`
       .toLowerCase()
       .includes(query.value.toLowerCase()),
   ),
@@ -53,16 +54,20 @@ async function load() {
   }
 }
 async function select(instance: GameInstance) {
+  if (selecting.value) return
+  selecting.value = true
   try {
-    await invoke('select_instance', {
+    const saved = await invoke<GameInstance>('select_instance', {
       repository_index: Number(route.params.repository || 0),
-      instance_id: instance.id,
+      instance_name: instance.name,
     })
-    selected.$patch({ instance_info: instance })
+    selected.setInstance(saved)
     sideTip.show(pclText('Proto.Instance.Selected', [instance.name]), 'success')
     await router.push('/home')
   } catch (err) {
     sideTip.show(pclText('Proto.Error.SelectInstance', [String(err)]), 'warn')
+  } finally {
+    selecting.value = false
   }
 }
 watch(
@@ -105,7 +110,7 @@ watch(
       ><div class="instance-list">
         <PListItem
           v-for="item in filtered"
-          :key="item.id"
+          :key="item.directory"
           :title="item.name"
           :subtitle="item.version"
           :icon="showIconPath.grass"

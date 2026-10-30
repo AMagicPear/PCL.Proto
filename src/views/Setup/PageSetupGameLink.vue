@@ -14,6 +14,7 @@ const text = pclText
 </script>
 <template>
   <div class="pcl-page">
+    <p class="settings-unavailable">{{ text('Proto.Settings.Unavailable') }}</p>
     <div>
       <div data-control="PanBack">
         <div
@@ -43,7 +44,7 @@ const text = pclText
                   class="pcl-text"
                   >{{ text('Setup.GameLink.Username') }}</span
                 >
-                <PTextBox
+                <PTextBox disabled
                   data-control="TextLinkUsername"
                   style="grid-row: 1 / span 1; grid-column: 3 / span 2"
                   :title="text('Setup.GameLink.Username.ToolTip')"
@@ -60,7 +61,7 @@ const text = pclText
                   class="pcl-text"
                   >{{ text('Setup.GameLink.Protocol.Preference') }}</span
                 >
-                <PComboBox
+                <PComboBox disabled
                   data-control="ComboPreferProtocol"
                   style="grid-row: 3 / span 1; grid-column: 3 / span 1"
                   :options="[
@@ -77,7 +78,7 @@ const text = pclText
                   ]"
                   v-model="values.ComboPreferProtocol"
                 />
-                <PCheckBox
+                <PCheckBox disabled
                   data-control="CheckLatencyFirstMode"
                   style="grid-row: 5 / span 1; grid-column: 1 / span 3"
                   :title="text('Setup.GameLink.LatencyFirstMode.ToolTip')"
@@ -85,7 +86,7 @@ const text = pclText
                   :label="text('Setup.GameLink.LatencyFirstMode')"
                   v-model="values.CheckLatencyFirstMode"
                 />
-                <PCheckBox
+                <PCheckBox disabled
                   data-control="CheckTryPunchSym"
                   style="grid-row: 6 / span 1; grid-column: 1 / span 3"
                   :title="text('Setup.GameLink.PortGuessNat.ToolTip')"
@@ -93,7 +94,7 @@ const text = pclText
                   :label="text('Setup.GameLink.PortGuessNat')"
                   v-model="values.CheckTryPunchSym"
                 />
-                <PCheckBox
+                <PCheckBox disabled
                   data-control="CheckEnableIPv6"
                   style="grid-row: 7 / span 1; grid-column: 1 / span 3"
                   :title="text('Setup.GameLink.EnableIPv6.ToolTip')"
@@ -101,7 +102,7 @@ const text = pclText
                   :label="text('Setup.GameLink.EnableIPv6')"
                   v-model="values.CheckEnableIPv6"
                 />
-                <PCheckBox
+                <PCheckBox disabled
                   data-control="CheckEnableCliOutput"
                   style="grid-row: 8 / span 1; grid-column: 1 / span 3"
                   :title="text('Setup.GameLink.CliDebugOutput.ToolTip')"

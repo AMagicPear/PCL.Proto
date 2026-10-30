@@ -3,7 +3,7 @@ use crate::{
     core::{
         api_client::{self, plugins::McPluginReport},
         auth::Account,
-        game::GameInstance,
+        game::{GameInstance, InstanceFolder},
         java::{
             self, JavaRuntime,
             selection::{InstanceJavaSettings, JavaLaunchInfo, JavaPreference, current_instance},
@@ -20,7 +20,323 @@ use tauri_plugin_dialog::DialogExt;
 use tokio::sync::Mutex;
 
 #[tauri::command]
-pub async fn launch_game(instance_directory: std::path::PathBuf) -> Result<(), String> {
+pub async fn get_launch_arguments(
+    instance_directory: Option<std::path::PathBuf>,
+) -> Result<crate::core::launch_arguments::LaunchArguments, String> {
+    let state = ConfigManager::instance().app_state.lock().await;
+    if let Some(path) = instance_directory {
+        current_instance(&state, &path).map_err(|error| error.to_string())?;
+        Ok(state
+            .instance_launch_arguments
+            .get(&path)
+            .cloned()
+            .unwrap_or_default())
+    } else {
+        Ok(state
+            .launch_arguments
+            .clone()
+            .unwrap_or_else(crate::core::launch_arguments::LaunchArguments::global_default))
+    }
+}
+
+#[tauri::command]
+pub async fn set_launch_arguments(
+    instance_directory: Option<std::path::PathBuf>,
+    settings: crate::core::launch_arguments::LaunchArguments,
+) -> Result<crate::core::launch_arguments::LaunchArguments, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update(|state| {
+            crate::core::launch_arguments::update(state, instance_directory.as_deref(), settings)
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_isolation_default() -> crate::core::isolation::IsolationDefault {
+    ConfigManager::instance()
+        .app_state
+        .lock()
+        .await
+        .isolation_default
+}
+
+#[tauri::command]
+pub async fn set_isolation_default(
+    value: crate::core::isolation::IsolationDefault,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update(|state| crate::core::isolation::set_default(state, value))
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_instance_isolation(
+    instance_directory: std::path::PathBuf,
+) -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().ensure_instance_isolation(&instance_directory)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn set_instance_isolation(
+    instance_directory: std::path::PathBuf,
+    value: bool,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update(|state| {
+            current_instance(state, &instance_directory).map_err(|error| error.to_string())?;
+            state.instance_isolation.insert(instance_directory, value);
+            Ok(())
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_memory_settings(
+    instance_directory: Option<std::path::PathBuf>,
+) -> Result<crate::core::memory::MemorySnapshot, String> {
+    use crate::core::memory::{MemoryCustom, MemorySettings, MemorySnapshot};
+    let state = ConfigManager::instance().app_state.lock().await;
+    match instance_directory {
+        Some(directory) => {
+            current_instance(&state, &directory).map_err(|error| error.to_string())?;
+            let settings = state.instance_memory_settings.get(&directory).cloned();
+            let custom = state
+                .instance_memory_custom
+                .get(&directory)
+                .cloned()
+                .unwrap_or_else(|| MemoryCustom::from_settings(settings.as_ref()));
+            Ok(MemorySnapshot { settings, custom })
+        }
+        None => {
+            let settings = Some(
+                state
+                    .memory_settings
+                    .clone()
+                    .unwrap_or(MemorySettings::Custom {
+                        maximum_mib: u32::try_from(state.pcl_setup_info.max_memory)
+                            .map_err(|error| error.to_string())?,
+                        initial_mib: None,
+                    }),
+            );
+            let custom = state
+                .memory_custom
+                .clone()
+                .unwrap_or_else(|| MemoryCustom::from_settings(settings.as_ref()));
+            Ok(MemorySnapshot { settings, custom })
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn set_memory_settings(
+    instance_directory: Option<std::path::PathBuf>,
+    settings: Option<crate::core::memory::MemorySettings>,
+    custom: Option<crate::core::memory::MemoryCustom>,
+    migrate_only: bool,
+) -> Result<crate::core::memory::MemorySnapshot, String> {
+    use crate::core::memory::{MemoryCustom, MemorySnapshot};
+    if let Some(settings) = &settings {
+        settings.validate()?;
+    }
+    if let Some(custom) = &custom {
+        custom.validate()?;
+    }
+    if let (
+        Some(crate::core::memory::MemorySettings::Custom {
+            maximum_mib,
+            initial_mib,
+        }),
+        Some(custom),
+    ) = (&settings, &custom)
+    {
+        if *maximum_mib != custom.maximum_mib
+            || *initial_mib
+                != custom
+                    .initial_mib
+                    .map(|value| value.min(custom.maximum_mib))
+        {
+            return Err("Custom memory values do not match the active settings".into());
+        }
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update(|state| {
+            if let Some(directory) = instance_directory {
+                current_instance(state, &directory).map_err(|error| error.to_string())?;
+                if migrate_only && let Some(saved) = state.instance_memory_settings.get(&directory)
+                {
+                    return Ok(MemorySnapshot {
+                        settings: Some(saved.clone()),
+                        custom: state
+                            .instance_memory_custom
+                            .get(&directory)
+                            .cloned()
+                            .unwrap_or_else(|| MemoryCustom::from_settings(Some(saved))),
+                    });
+                }
+                if let Some(settings) = settings.clone() {
+                    state
+                        .instance_memory_settings
+                        .insert(directory.clone(), settings);
+                } else {
+                    state.instance_memory_settings.remove(&directory);
+                }
+                let custom =
+                    custom.unwrap_or_else(|| MemoryCustom::from_settings(settings.as_ref()));
+                state
+                    .instance_memory_custom
+                    .insert(directory.clone(), custom.clone());
+                state.edited_memory_instances.insert(directory);
+                Ok(MemorySnapshot { settings, custom })
+            } else {
+                let value = settings
+                    .clone()
+                    .ok_or("Global memory settings cannot inherit")?;
+                if migrate_only && let Some(saved) = &state.memory_settings {
+                    let saved = saved.clone();
+                    if state.memory_custom.is_none() {
+                        state.memory_custom = match &saved {
+                            crate::core::memory::MemorySettings::Custom { .. } => {
+                                Some(MemoryCustom::from_settings(Some(&saved)))
+                            }
+                            _ => custom,
+                        };
+                    }
+                    let custom = state
+                        .memory_custom
+                        .clone()
+                        .unwrap_or_else(|| MemoryCustom::from_settings(Some(&saved)));
+                    return Ok(MemorySnapshot {
+                        settings: Some(saved),
+                        custom,
+                    });
+                }
+                state.memory_settings = Some(value.clone());
+                let custom = custom.unwrap_or_else(|| MemoryCustom::from_settings(Some(&value)));
+                state.memory_custom = Some(custom.clone());
+                Ok(MemorySnapshot {
+                    settings: Some(value),
+                    custom,
+                })
+            }
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn migrate_instance_memory_settings(
+    legacy: std::collections::HashMap<String, crate::core::memory::MemorySnapshot>,
+) -> Result<Vec<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().migrate_instance_memory_settings(legacy)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[derive(serde::Serialize)]
+pub struct MemoryPreview {
+    total_bytes: u64,
+    available_bytes: u64,
+    allocation_mib: Option<usize>,
+}
+
+#[tauri::command]
+pub async fn preview_memory_settings(
+    instance_directory: Option<std::path::PathBuf>,
+    settings: Option<crate::core::memory::MemorySettings>,
+    is_64_bit: Option<bool>,
+) -> Result<MemoryPreview, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        use crate::core::memory::{self, MemorySettings};
+        let config = ConfigManager::instance();
+        let path = {
+            let state = config.app_state.blocking_lock();
+            instance_directory.clone().or_else(|| {
+                state
+                    .active_game_instance
+                    .as_ref()
+                    .map(|instance| instance.directory.clone())
+            })
+        };
+        if let Some(path) = &path {
+            config.ensure_instance_isolation(path)?;
+        }
+        let (instance, effective) = {
+            let state = config.app_state.blocking_lock();
+            let instance = if let Some(path) = &instance_directory {
+                Some(
+                    current_instance(&state, path)
+                        .map_err(|error| error.to_string())?
+                        .clone(),
+                )
+            } else {
+                state.active_game_instance.as_deref().cloned()
+            };
+            let effective = settings
+                .or_else(|| state.memory_settings.clone())
+                .unwrap_or(MemorySettings::Custom {
+                    maximum_mib: u32::try_from(state.pcl_setup_info.max_memory)
+                        .map_err(|error| error.to_string())?,
+                    initial_mib: None,
+                });
+            let game_directory = instance
+                .as_ref()
+                .map(|instance| crate::core::isolation::directory(&state, instance).to_owned());
+            (
+                instance.map(|instance| (instance, game_directory.unwrap())),
+                effective,
+            )
+        };
+        effective.validate()?;
+        let mut system = sysinfo::System::new();
+        system.refresh_memory();
+        let total = system.total_memory();
+        if total == 0 {
+            return Err("Physical memory is unavailable".into());
+        }
+        let available = system.available_memory().min(total);
+        let allocation = match is_64_bit {
+            None => None,
+            Some(is_64_bit) => {
+                let value = if let Some((instance, game_directory)) = &instance {
+                    memory::resolve(&effective, available, instance, game_directory, is_64_bit)?.0
+                } else {
+                    let max = match effective {
+                        MemorySettings::Auto => memory::automatic(available, false, false, 0)?,
+                        MemorySettings::Custom { maximum_mib, .. } => maximum_mib as usize,
+                    };
+                    if is_64_bit { max } else { max.min(1024) }
+                };
+                Some(value)
+            }
+        };
+        Ok(MemoryPreview {
+            total_bytes: total,
+            available_bytes: available,
+            allocation_mib: allocation,
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn launch_game(
+    window: tauri::WebviewWindow,
+    instance_directory: std::path::PathBuf,
+) -> Result<(), String> {
     let info = java::selection::prepare(instance_directory.clone()).await?;
     let runtime = info.runtime.ok_or_else(|| {
         format!(
@@ -28,24 +344,45 @@ pub async fn launch_game(instance_directory: std::path::PathBuf) -> Result<(), S
             info.requirements.description()
         )
     })?;
-    tauri::async_runtime::spawn_blocking(move || {
+    let expected = instance_directory.clone();
+    let mut option = tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().ensure_instance_isolation(&instance_directory)?;
         let state = ConfigManager::instance().app_state.blocking_lock();
         current_instance(&state, &instance_directory).map_err(|e| e.to_string())?;
         let option =
             LaunchOption::from_state(&state, Arc::new(runtime)).map_err(|e| e.to_string())?;
-        drop(state);
-        option.launch_checked().map_err(|e| e.to_string())?;
-        Ok(())
+        Ok::<_, String>(option)
     })
     .await
-    .map_err(|e| e.to_string())?
-}
-
-async fn save_java_config() -> Result<(), String> {
-    tauri::async_runtime::spawn_blocking(|| {
-        ConfigManager::instance()
-            .save()
-            .map_err(|e| format!("{e:?}"))
+    .map_err(|e| e.to_string())??;
+    if option.uses_launcher_size() {
+        let size = window.inner_size().map_err(|error| error.to_string())?;
+        if size.width == 0 || size.height == 0 {
+            return Err("Launcher window size is unavailable".into());
+        }
+        option = option.with_window_size(size.width as usize, size.height as usize);
+    }
+    let config = ConfigManager::instance();
+    let downloader =
+        crate::core::downloader::Downloader::with_bases(config.api_client.api_bases_async().await);
+    let natives = option
+        .prepare_natives(&downloader)
+        .await
+        .map_err(|e| format!("{e:#}"))?;
+    option
+        .prepare_legacy_assets(&downloader)
+        .await
+        .map_err(|e| format!("{e:#}"))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = config.app_state.blocking_lock();
+        current_instance(&state, &expected).map_err(|e| e.to_string())?;
+        let visibility = state.launcher_visibility;
+        let child = option.launch_checked().map_err(|e| e.to_string())?;
+        drop(state);
+        crate::core::launch_session::track(child, expected, option.access_token(), move || {
+            drop(natives)
+        }, move |id, event| crate::core::visibility::handle(&window, id, visibility, event));
+        Ok(())
     })
     .await
     .map_err(|e| e.to_string())?
@@ -66,21 +403,24 @@ pub async fn add_java(app: AppHandle) -> Result<Option<JavaRuntime>, String> {
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())?;
     runtime.is_user_imported = true;
-    {
-        let mut state = ConfigManager::instance().app_state.lock().await;
-        if let Some(existing) = state
-            .java_runtimes
-            .iter_mut()
-            .find(|j| j.java_exe == runtime.java_exe)
-        {
-            existing.is_user_imported = true;
-            runtime = existing.clone();
-        } else {
-            state.java_runtimes.push(runtime.clone());
-            java::sort_list(&mut state.java_runtimes);
-        }
-    }
-    save_java_config().await?;
+    let runtime = tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update(|state| {
+            if let Some(existing) = state
+                .java_runtimes
+                .iter_mut()
+                .find(|j| j.java_exe == runtime.java_exe)
+            {
+                existing.is_user_imported = true;
+                runtime = existing.clone();
+            } else {
+                state.java_runtimes.push(runtime.clone());
+                java::sort_list(&mut state.java_runtimes);
+            }
+            Ok(runtime)
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())??;
     Ok(Some(runtime))
 }
 
@@ -154,42 +494,47 @@ pub async fn set_global_java(java_exe: Option<std::path::PathBuf>) -> Result<(),
             .await
             .map_err(|e| e.to_string())?
             .map_err(|e| e.to_string())?;
-        let state = ConfigManager::instance().app_state.lock().await;
-        let saved = state
-            .java_runtimes
-            .iter()
-            .find(|j| j.java_exe == actual.java_exe)
-            .ok_or("Java is unavailable; refresh the list")?;
-        if !saved.is_enabled {
-            return Err("Enable this Java before selecting it".into());
-        }
         Some(actual.java_exe)
     } else {
         None
     };
-    ConfigManager::instance()
-        .app_state
-        .lock()
-        .await
-        .pcl_setup_info
-        .selected_java = selected;
-    save_java_config().await
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update(|state| {
+            if let Some(path) = &selected {
+                let saved = state
+                    .java_runtimes
+                    .iter()
+                    .find(|j| &j.java_exe == path)
+                    .ok_or("Java is unavailable; refresh the list")?;
+                if !saved.is_enabled {
+                    return Err("Enable this Java before selecting it".into());
+                }
+            }
+            state.pcl_setup_info.selected_java = selected;
+            Ok(())
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 #[tauri::command]
 pub async fn set_java_enabled(java_exe: std::path::PathBuf, enabled: bool) -> Result<(), String> {
-    {
-        let mut state = ConfigManager::instance().app_state.lock().await;
-        if !enabled && state.pcl_setup_info.selected_java.as_ref() == Some(&java_exe) {
-            return Err("Deselect this Java as the global default before disabling it".into());
-        }
-        let runtime = state
-            .java_runtimes
-            .iter_mut()
-            .find(|j| j.java_exe == java_exe)
-            .ok_or("Java is unavailable; refresh the list")?;
-        runtime.is_enabled = enabled;
-    }
-    save_java_config().await
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update(|state| {
+            if !enabled && state.pcl_setup_info.selected_java.as_ref() == Some(&java_exe) {
+                return Err("Deselect this Java as the global default before disabling it".into());
+            }
+            let runtime = state
+                .java_runtimes
+                .iter_mut()
+                .find(|j| j.java_exe == java_exe)
+                .ok_or("Java is unavailable; refresh the list")?;
+            runtime.is_enabled = enabled;
+            Ok(())
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 #[tauri::command]
 pub async fn set_instance_java_settings(
@@ -203,12 +548,37 @@ pub async fn set_instance_java_settings(
     .await
     .map_err(|e| e.to_string())?
     .map_err(|e| e.to_string())?;
-    {
-        let mut state = ConfigManager::instance().app_state.lock().await;
-        current_instance(&state, &instance_directory).map_err(|e| e.to_string())?;
-        state.java_preferences.insert(instance_directory, settings);
-    }
-    save_java_config().await
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update(|state| {
+            current_instance(&state, &instance_directory).map_err(|e| e.to_string())?;
+            state.java_preferences.insert(instance_directory, settings);
+            Ok(())
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn resolve_legacy_instance_ids(
+    ids: std::collections::HashSet<String>,
+) -> Result<std::collections::HashMap<String, std::path::PathBuf>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().resolve_legacy_instance_ids(ids)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn migrate_instance_java_settings(
+    legacy: std::collections::HashMap<String, InstanceJavaSettings>,
+) -> Result<Vec<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().migrate_instance_java_settings(legacy)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 #[tauri::command]
 pub async fn select_relative_java(app: AppHandle) -> Result<Option<JavaPreference>, String> {
@@ -245,21 +615,45 @@ pub async fn select_relative_java(app: AppHandle) -> Result<Option<JavaPreferenc
 pub async fn open_java_folder(java_exe: std::path::PathBuf) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         let runtime = JavaRuntime::probe(&java_exe).map_err(|e| e.to_string())?;
-        let mut command = std::process::Command::new(if cfg!(windows) {
-            "explorer"
-        } else if cfg!(target_os = "macos") {
-            "open"
-        } else {
-            "xdg-open"
-        });
-        command
-            .arg(runtime.directory_path)
-            .spawn()
-            .map_err(|e| e.to_string())?;
-        Ok(())
+        open_directory(&runtime.directory_path)
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+fn open_directory(path: &std::path::Path) -> Result<(), String> {
+    let mut command = std::process::Command::new(if cfg!(windows) {
+        "explorer"
+    } else if cfg!(target_os = "macos") {
+        "open"
+    } else {
+        "xdg-open"
+    });
+    command
+        .arg(path)
+        .spawn()
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn open_instance_folder(
+    instance_directory: std::path::PathBuf,
+    kind: InstanceFolder,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().ensure_instance_isolation(&instance_directory)?;
+        let state = ConfigManager::instance().app_state.blocking_lock();
+        let instance =
+            current_instance(&state, &instance_directory).map_err(|error| error.to_string())?;
+        let game_directory = crate::core::isolation::directory(&state, instance);
+        let directory =
+            crate::core::game::prepare_shortcut_directory(instance, game_directory, kind)
+                .map_err(|error| error.to_string())?;
+        open_directory(&directory)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 #[tauri::command]
 pub async fn prepare_game_java(
@@ -295,12 +689,15 @@ pub async fn download_game_java(
         .and_then(|r| r.map_err(|e| e.to_string()));
     *JAVA_INSTALL.lock().await = None;
     let runtime = result?;
-    {
-        let mut state = config.app_state.lock().await;
-        state.java_runtimes.push(runtime.clone());
-        java::sort_list(&mut state.java_runtimes);
-    }
-    save_java_config().await?;
+    let runtime = tauri::async_runtime::spawn_blocking(move || {
+        config.update(|state| {
+            state.java_runtimes.push(runtime.clone());
+            java::sort_list(&mut state.java_runtimes);
+            Ok(runtime)
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())??;
     Ok(runtime)
 }
 #[tauri::command]
@@ -317,43 +714,20 @@ pub fn get_repositories(state: State<'_, Arc<Mutex<AppState>>>) -> Vec<GameRepos
 }
 
 #[tauri::command(rename_all = "snake_case")]
-pub async fn select_repository(
-    state: State<'_, Arc<Mutex<AppState>>>,
-    repository_index: usize,
-) -> Result<(), String> {
-    let mut state = state.lock().await;
-    let path = state
-        .repositories
-        .get(repository_index)
-        .ok_or("Minecraft folder index is out of range")?
-        .path
-        .clone();
-    state.active_repo_path = path;
-    Ok(())
+pub async fn select_repository(repository_index: usize) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().select_repository(repository_index)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command(rename_all = "snake_case")]
 pub fn add_new_repository(
-    state: State<'_, Arc<Mutex<AppState>>>,
     new_repo_path: &str,
     new_repo_name: &str,
 ) -> Result<Vec<GameRepository>, String> {
-    let mut guard = state.blocking_lock();
-    if guard.repositories.iter().any(|repo_old| {
-        repo_old.name == new_repo_name || repo_old.path.as_os_str() == new_repo_path
-    }) {
-        return Err("repo info conflits with current!".into());
-    }
-    guard
-        .repositories
-        .push(GameRepository::new(new_repo_name, new_repo_path.into()));
-    log::info!(
-        "added new repo, name: {}, path: {}, repos count now: {}",
-        new_repo_name,
-        new_repo_path,
-        guard.repositories.len()
-    );
-    Ok(guard.repositories.clone())
+    ConfigManager::instance().add_repository(new_repo_name, std::path::Path::new(new_repo_path))
 }
 
 /// async commands that contain references as inputs must return a Result
@@ -386,18 +760,29 @@ pub async fn get_instances_in_repository(
 }
 
 #[tauri::command(rename_all = "snake_case")]
-pub fn get_active_instance(state: State<'_, Arc<Mutex<AppState>>>) -> Option<GameInstance> {
-    let guard = state.blocking_lock();
-    let active_instance = guard.active_game_instance.clone();
-    active_instance.as_deref().cloned()
+pub async fn get_active_instance(
+    state: State<'_, Arc<Mutex<AppState>>>,
+) -> Result<Option<GameInstance>, String> {
+    let Some(active_instance) = state.lock().await.active_game_instance.clone() else {
+        return Ok(None);
+    };
+    tauri::async_runtime::spawn_blocking(move || {
+        active_instance
+            .refresh()
+            .unwrap_or_else(|_| (*active_instance).clone())
+    })
+    .await
+    .map(Some)
+    .map_err(|error| error.to_string())
 }
 
 #[tauri::command(rename_all = "snake_case")]
 pub async fn select_instance(
     state: State<'_, Arc<Mutex<AppState>>>,
     repository_index: usize,
-    instance_id: String,
-) -> Result<(), String> {
+    instance_name: String,
+) -> Result<GameInstance, String> {
+    crate::util::file::validate_file_name(&instance_name).map_err(|error| error.to_string())?;
     let repo = state
         .lock()
         .await
@@ -405,27 +790,28 @@ pub async fn select_instance(
         .get(repository_index)
         .cloned()
         .ok_or("Minecraft folder index is out of range")?;
-    let instances = tauri::async_runtime::spawn_blocking(move || repo.game_instances())
-        .await
-        .map_err(|error| error.to_string())?;
-    let instance = instances
-        .into_iter()
-        .find(|instance| instance.id == instance_id)
-        .ok_or("Minecraft instance was not found")?;
-    let mut guard = state.lock().await;
-    guard.active_repo_path = instance.global_dir.clone();
-    guard.active_game_instance = Some(Arc::new(instance));
-    Ok(())
+    let repo_path = repo.path.clone();
+    let instance =
+        tauri::async_runtime::spawn_blocking(move || repo.game_instance_named(&instance_name))
+            .await
+            .map_err(|error| error.to_string())?
+            .ok_or("Minecraft instance was not found")?;
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().select_instance(
+            repository_index,
+            &repo_path,
+            instance.clone(),
+        )?;
+        Ok(instance)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
 pub async fn get_version_manifest(
     client: State<'_, &api_client::MinecraftApiClient>,
-    download_settings: Option<crate::core::downloader::resources::DownloadSettings>,
 ) -> Result<api_client::game::VersionManifest, String> {
-    if let Some(settings) = download_settings {
-        crate::core::downloader::resources::DOWNLOAD_RESOURCES.configure(settings)?;
-    }
     match client
         .get_with_endpoint::<api_client::game::VersionManifest>(
             api_client::game::VERSION_MANIFEST_ENDPOINT,
@@ -461,7 +847,16 @@ pub async fn get_plugin_versions(
 ) -> Result<Vec<McPluginReport>, String> {
     let verisons = match plugin_type {
         mcmod::PluginType::Forge => api_client.get_forge_versions(mc_version).await,
-        mcmod::PluginType::Fabric => api_client.get_fabric_versions(mc_version).await,
+        mcmod::PluginType::Fabric => {
+            api_client
+                .get_fabric_versions(mc_version, api_client::FabricFamily::Fabric)
+                .await
+        }
+        mcmod::PluginType::LegacyFabric => {
+            api_client
+                .get_fabric_versions(mc_version, api_client::FabricFamily::Legacyfabric)
+                .await
+        }
         _ => Err(api_client::McApiError::PluginMismatch(plugin_type)),
     };
     verisons.map_err(|err| err.to_string())

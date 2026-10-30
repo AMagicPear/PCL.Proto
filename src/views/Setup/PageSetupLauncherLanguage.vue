@@ -30,6 +30,7 @@ function openWebsite(url: string) {
 </script>
 <template>
   <div class="pcl-page">
+    <p class="settings-unavailable">{{ text('Proto.Settings.Unavailable') }}</p>
     <div>
       <div data-control="PanBack">
         <div
@@ -74,7 +75,7 @@ function openWebsite(url: string) {
                   class="pcl-text"
                   >{{ text('Setup.Language.FormatCulture') }}</span
                 >
-                <PComboBox
+                <PComboBox disabled
                   data-control="ComboUiFormatCulture"
                   style="grid-row: 3 / span 1; grid-column: 2 / span 2"
                   :options="[
