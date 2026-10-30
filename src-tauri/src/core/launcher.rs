@@ -659,6 +659,12 @@ mod tests {
                 .windows(2)
                 .any(|pair| pair == ["--gameDir", root.to_str().unwrap()])
         );
+        let mut auto_state = state.clone();
+        auto_state.memory_settings = Some(crate::core::memory::MemorySettings::Auto);
+        let auto = LaunchOption::from_state(&auto_state, option.java_runtime.clone()).unwrap();
+        assert!(auto.launch_checked().unwrap().wait().unwrap().success());
+        let auto_output = fs::read_to_string(root.join("captured")).unwrap();
+        assert!(auto_output.lines().any(|arg| arg == format!("-Xmx{}m", auto.max_memory)));
         let mut custom_state = state.clone();
         custom_state.memory_settings = Some(crate::core::memory::MemorySettings::Custom {
             maximum_mib: 3072,

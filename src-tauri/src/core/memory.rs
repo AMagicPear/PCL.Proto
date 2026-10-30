@@ -179,6 +179,15 @@ pub fn resolve(
 mod tests {
     use super::*;
     #[test]
+    fn system_memory_is_available_for_auto_allocation() {
+        let mut system = sysinfo::System::new();
+        system.refresh_memory();
+        assert!(system.total_memory() > 0);
+        let available = system.available_memory().min(system.total_memory());
+        assert!(available > 0, "System reported no available physical memory");
+        assert!(automatic(available, true, false, 0).is_ok());
+    }
+    #[test]
     fn ce_automatic_allocation_stages_and_validation() {
         const GIB: u64 = 1_073_741_824;
         assert_eq!(automatic(GIB, false, false, 0).unwrap(), 1024);

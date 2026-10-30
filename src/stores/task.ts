@@ -174,7 +174,8 @@ export const useTaskManager = defineStore('task-manager', () => {
       throw error
     } finally {
       task.speed = 0
-      if (!activeTaskCount.value) floatButton.floatButtonState.visible = false
+      if (!activeTaskCount.value && floatButton.floatButtonState.type === FloatButtonType.TaskManage)
+        floatButton.floatButtonState.visible = false
     }
   }
 

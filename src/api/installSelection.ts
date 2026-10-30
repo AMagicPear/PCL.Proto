@@ -1,5 +1,11 @@
 const mainLoaders = ['Forge', 'Cleanroom', 'NeoForge', 'Fabric', 'LegacyFabric', 'LabyMod']
 
+export function fabricInstanceName(version: string, selected: Record<string, string>) {
+  return version + (selected.Fabric
+    ? `-Fabric_${selected.Fabric.replace('+build', '')}`
+    : selected.LegacyFabric ? `-LegacyFabric_${selected.LegacyFabric}` : '')
+}
+
 // Mirrors PageDownloadInstall.SelectModLoader, including loader-specific add-ons.
 export function selectLoader(selected: Record<string, string>, loader: string, version: string) {
   if (mainLoaders.includes(loader)) {

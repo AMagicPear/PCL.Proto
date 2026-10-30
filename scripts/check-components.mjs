@@ -756,7 +756,7 @@ try {
   }
   const { useTaskManager, TaskStatus } = await server.ssrLoadModule('/src/stores/task.ts')
   const manager = useTaskManager()
-  const { useFloatButton } = await server.ssrLoadModule('/src/composables/useFloatButton.ts')
+  const { useFloatButton, FloatButtonType } = await server.ssrLoadModule('/src/composables/useFloatButton.ts')
   const button = useFloatButton().floatButtonState
   const clientDownload = manager.exportMinecraftVersion('1.21.1', '/exports', false)
   const serverDownload = manager.exportMinecraftVersion('1.21.1', '/exports', true)
@@ -876,6 +876,12 @@ try {
   calls[10].resolve({ id: 'older' })
   await firstFetch
   assert.equal(selectedStore.instance_info.id, 'newest')
+  const backgroundInstall = manager.startDownloadMCVersion('1.20.1', 'background')
+  button.type = FloatButtonType.DownloadGame
+  button.visible = true
+  calls[12].resolve()
+  await backgroundInstall
+  assert.equal(button.visible, true, 'finishing a background task preserves the install button')
   console.log(
     'Version actions, IPC isolation, download progress, publication failures and concurrent tasks passed.',
   )

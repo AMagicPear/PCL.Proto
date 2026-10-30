@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import PCard from '@/components/widget/PCard.vue'
@@ -18,8 +18,9 @@ import sideTip from '@/composables/sideTip'
 import { useSelectedInstance } from '@/stores/gameLaunch'
 import { showIconPath } from '@/types/gameInfo'
 import type { McPluginReport } from '@/types/mcPlugin'
-import { installWarnings, loaderVisible, selectLoader } from '@/api/installSelection'
+import { fabricInstanceName, installWarnings, loaderVisible, selectLoader } from '@/api/installSelection'
 import { saveMinecraftVersion } from '@/api/versionActions'
+import { FloatButtonType, useFloatButton } from '@/composables/useFloatButton'
 
 const props = defineProps<{ manual?: boolean; modify?: boolean }>()
 const route = useRoute()
@@ -29,15 +30,23 @@ const versions = shallowRef<IVersionShow>()
 const loading = ref(false)
 const error = ref('')
 const installing = ref(false)
+const { floatButtonState, setFloatButton } = useFloatButton()
 const instance = useSelectedInstance()
 const versionId = computed(() =>
   props.modify ? instance.instance_info?.version || '' : String(route.query.version_id || ''),
 )
 const instanceName = ref(versionId.value)
+const instanceNameEdited = ref(false)
 const plugins = reactive<
   Record<string, { loading: boolean; versions: McPluginReport[]; error: string }>
 >({})
 const selected = reactive<Record<string, string>>({})
+const loaderRevision = reactive<Record<string, number>>({})
+function chooseLoader(loader: string, version: string) {
+  selectLoader(selected, loader, version)
+  loaderRevision[loader] = (loaderRevision[loader] || 0) + 1
+  if (!instanceNameEdited.value) instanceName.value = fabricInstanceName(versionId.value, selected)
+}
 const warnings = computed(() => installWarnings(selected, versionId.value))
 const loaders = [
   'Forge',
@@ -93,32 +102,30 @@ function choose(id: string, type: string) {
   void router.push({ path: '/download/game/inner', query: { version_id: id, version_type: type } })
 }
 let request = 0
+async function loadLoader(name: string, id: string, current: number) {
+  plugins[name] = { loading: true, versions: [], error: '' }
+  try {
+    if (!isTauri()) throw new Error(pclText('Proto.Desktop.Loaders'))
+    const list = await invoke<McPluginReport[]>('get_plugin_versions', {
+      plugin_type: name.toLowerCase(),
+      mc_version: id,
+    })
+    if (current === request) plugins[name] = { loading: false, versions: list, error: '' }
+  } catch (err) {
+    if (current === request)
+      plugins[name] = { loading: false, versions: [], error: pclText('Proto.Error.Versions', [String(err)]) }
+  }
+}
 watch(
   versionId,
   async (id) => {
     instanceName.value = id
+    instanceNameEdited.value = false
     Object.keys(selected).forEach((key) => delete selected[key])
     const current = ++request
     if (!id) return
     await Promise.all(
-      ['Forge', 'Fabric', 'LegacyFabric'].map(async (name) => {
-        plugins[name] = { loading: true, versions: [], error: '' }
-        try {
-          if (!isTauri()) throw new Error(pclText('Proto.Desktop.Loaders'))
-          const list = await invoke<McPluginReport[]>('get_plugin_versions', {
-            plugin_type: name.toLowerCase(),
-            mc_version: id,
-          })
-          if (current === request) plugins[name] = { loading: false, versions: list, error: '' }
-        } catch (err) {
-          if (current === request)
-            plugins[name] = {
-              loading: false,
-              versions: [],
-              error: pclText('Proto.Error.Versions', [String(err)]),
-            }
-        }
-      }),
+      ['Forge', 'Fabric', 'LegacyFabric'].map((name) => loadLoader(name, id, current)),
     )
   },
   { immediate: true },
@@ -151,7 +158,7 @@ async function install() {
         ? { family: 'fabric', version: selected.Fabric }
         : selected.LegacyFabric ? { family: 'legacyfabric', version: selected.LegacyFabric } : undefined)
       .catch((err) => sideTip.show(pclText('Proto.Error.Download', [String(err)]), 'warn'))
-    await router.push('/downloading')
+    await router.push('/download/game')
   } catch (err) {
     sideTip.show(pclText('Proto.Error.Download', [String(err)]), 'warn')
   } finally {
@@ -160,6 +167,24 @@ async function install() {
 }
 onMounted(() => {
   if (!versionId.value) void load()
+  watch(versionId, (id) => {
+    if (id && !props.modify && !props.manual) {
+      floatButtonState.action = install
+      setFloatButton(FloatButtonType.DownloadGame)
+      floatButtonState.visible = true
+    } else if (floatButtonState.action === install) {
+      floatButtonState.action = undefined
+      setFloatButton(FloatButtonType.TaskManage)
+      floatButtonState.visible = useTaskManager().activeTaskCount > 0
+    }
+  }, { immediate: true })
+})
+onUnmounted(() => {
+  if (floatButtonState.action === install) {
+    floatButtonState.action = undefined
+    setFloatButton(FloatButtonType.TaskManage)
+    floatButtonState.visible = useTaskManager().activeTaskCount > 0
+  }
 })
 watch(versionId, (id) => {
   if (!id && !versions.value) void load()
@@ -231,8 +256,8 @@ watch(versionId, (id) => {
           >
             <PSvgIcon name="lucide/arrow-left" :size="16" />
           </button>
-          <img :src="showIconPath.grass" alt="" />
-          <PTextBox v-model="instanceName" :aria-label="pclText('Proto.Label.InstanceName')" />
+          <img :src="selected.Fabric || selected.LegacyFabric ? showIconPath.fabric : showIconPath.grass" alt="" />
+          <PTextBox :model-value="instanceName" @update:model-value="(value) => { instanceName = value || ''; instanceNameEdited = true }" :aria-label="pclText('Proto.Label.InstanceName')" />
           <span v-if="modify">{{ text('Instance.Install.Action.ModifyLabel') }}</span>
         </div>
         <div v-if="warnings.length" class="install-warnings">
@@ -246,7 +271,7 @@ watch(versionId, (id) => {
       </PCard>
       <PCard
         v-for="loader in visibleLoaders"
-        :key="`${versionId}-${loader}`"
+        :key="`${versionId}-${loader}-${loaderRevision[loader] || 0}`"
         :title="text(`Common.Installation.${loader}`)"
         default-fold-status="fold"
       >
@@ -262,12 +287,12 @@ watch(versionId, (id) => {
           <PLoading v-if="plugins[loader]?.loading" :card="false" />
           <PHint v-else-if="plugins[loader]?.error" severity="error">{{
             plugins[loader]?.error
-          }}</PHint>
+          }} <PButton inline @click="loadLoader(loader, versionId, request)">{{ text('Launch.Homepage.LoadFailed.Retry') }}</PButton></PHint>
           <template v-else-if="plugins[loader]?.versions.length">
             <PButton
               v-if="selected[loader]"
               inline
-              @click="() => selectLoader(selected, loader, '')"
+              @click="() => chooseLoader(loader, '')"
               >{{ pclText('Proto.Action.ClearSelection') }}</PButton
             >
             <PVirtualList
@@ -280,7 +305,7 @@ watch(versionId, (id) => {
                 :title="version.version"
                 :subtitle="version.stable ? text('Download.Version.Type.Stable') : undefined"
                 clickable
-                @click="() => selectLoader(selected, loader, version.version)"
+                @click="() => chooseLoader(loader, version.version)"
               />
             </PVirtualList>
           </template>
@@ -293,7 +318,7 @@ watch(versionId, (id) => {
           </p>
         </div>
       </PCard>
-      <PButton type="tint" class="install-start" :disabled="installing" @click="install"
+      <PButton v-if="modify" type="tint" class="install-start" :disabled="installing" @click="install"
         ><PSvgIcon name="lucide/download" />{{
           text(modify ? 'Instance.Install.Action.StartModify' : 'Download.Install.StartDownload')
         }}</PButton

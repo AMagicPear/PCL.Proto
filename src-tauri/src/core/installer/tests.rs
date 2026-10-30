@@ -414,7 +414,7 @@ async fn official_fabric_install(
             option.launch_checked()?.wait()?.success(),
             "Fake Java failed"
         );
-        let args = fs::read_to_string(root.join("captured-args"))?;
+        let args = fs::read_to_string(root.join("versions/Fabric Test/captured-args"))?;
         ensure!(
             args.lines()
                 .any(|arg| arg == "net.fabricmc.loader.impl.launch.knot.KnotClient"),

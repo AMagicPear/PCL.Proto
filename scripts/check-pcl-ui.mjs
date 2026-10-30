@@ -15,6 +15,7 @@ import {
   installWarnings,
   loaderVisible,
   selectLoader,
+  fabricInstanceName,
   versionDrop,
 } from '../src/api/installSelection.ts'
 import { maxLogLines } from '../src/util/logLines.ts'
@@ -271,6 +272,8 @@ for (const [version, drop] of [
   assert.equal(versionDrop(version), drop)
 const selected = { Forge: '47', OptiFine: 'HD', LiteLoader: '1.12' }
 selectLoader(selected, 'Fabric', '0.16')
+assert.equal(fabricInstanceName('1.20.1', selected), '1.20.1-Fabric_0.16')
+assert.equal(fabricInstanceName('1.20.1', { Fabric: '0.4.0+build.123' }), '1.20.1-Fabric_0.4.0.123')
 assert.equal(selected.Forge, undefined)
 assert.equal(selected.OptiFine, 'HD')
 assert.equal(selected.LiteLoader, '1.12')
@@ -280,6 +283,7 @@ selectLoader(selected, 'FabricApi', '0.99')
 selectLoader(selected, 'OptiFabric', '1.0')
 assert.deepEqual(installWarnings(selected, '1.21.1'), ['ModOptiFine'])
 selectLoader(selected, 'LegacyFabric', '0.16')
+assert.equal(fabricInstanceName('1.12.2', selected), '1.12.2-LegacyFabric_0.16')
 assert.equal(selected.FabricApi, undefined)
 assert.equal(selected.OptiFabric, undefined)
 assert.deepEqual(installWarnings(selected, '1.12.2'), ['LegacyFabricApi', 'LegacyOptiFabric'])

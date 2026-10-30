@@ -13,6 +13,7 @@ export interface FloatButtonState {
   icon?: Component
   title?: string
   type: FloatButtonType
+  action?: () => void
 }
 
 const floatButtonState = shallowReactive<FloatButtonState>({

@@ -93,6 +93,10 @@ impl ApiBases {
         ) {
             return vec![self.download_url(url)];
         }
+        // Fabric metadata has its own source fallback and is not Mojang metadata.
+        if url.starts_with("https://bmclapi2.bangbang93.com/fabric-meta/") {
+            return vec![url.into()];
+        }
         let canonical = if let Some(path) = url.strip_prefix("https://bmclapi2.bangbang93.com/") {
             if let Some(tail) = path.strip_prefix("assets/") {
                 format!("https://resources.download.minecraft.net/{tail}")
@@ -502,14 +506,32 @@ impl MinecraftApiClient {
             FabricFamily::Fabric => bases.fabric_base,
             FabricFamily::Legacyfabric => bases.legacy_fabric_base,
         };
-        let mut url = reqwest::Url::parse(base)
-            .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
-        url.path_segments_mut()
-            .map_err(|_| McApiError::InvalidMetadata("Invalid Fabric metadata URL".into()))?
-            .pop_if_empty()
-            .push(version_id);
         drop(bases);
-        let fabric_versions: serde_json::Value = self.get(url.as_str(), true).await?;
+        let official = "https://meta.fabricmc.net/v2/versions/loader";
+        let mirror = "https://bmclapi2.bangbang93.com/fabric-meta/v2/versions/loader";
+        let sources = if base == official || base == mirror {
+            if matches!(super::downloader::resources::DOWNLOAD_RESOURCES.settings().version_source, super::downloader::resources::SourcePreference::Official) {
+                vec![official, mirror]
+            } else {
+                vec![mirror, official]
+            }
+        } else { vec![base] };
+        let mut last_error = None;
+        let mut fabric_versions = None;
+        for source in sources {
+            let mut url = reqwest::Url::parse(source)
+                .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
+            url.path_segments_mut()
+                .map_err(|_| McApiError::InvalidMetadata("Invalid Fabric metadata URL".into()))?
+                .pop_if_empty()
+                .push(version_id);
+            match self.get::<serde_json::Value>(url.as_str(), true).await {
+                Ok(value) if value.is_array() => { fabric_versions = Some(value); break; }
+                Ok(_) => last_error = Some(McApiError::InvalidMetadata("Invalid Fabric version list".into())),
+                Err(error) => last_error = Some(error),
+            }
+        }
+        let fabric_versions = fabric_versions.ok_or_else(|| last_error.unwrap_or_else(|| McApiError::InvalidMetadata("No Fabric metadata source available".into())))?;
         let loaders = fabric_versions
             .as_array()
             .ok_or_else(|| serde_json::Error::custom("fabric list failed to parse"))?
@@ -669,6 +691,7 @@ mod tests {
         for url in [
             "https://example.org/file",
             "https://libraries.minecraft.net.evil.test/file",
+            "https://bmclapi2.bangbang93.com/fabric-meta/v2/versions/loader/1.20.1/0.16.14/profile/json",
         ] {
             assert_eq!(
                 bases.download_urls(url, SourcePreference::Mirror, false),

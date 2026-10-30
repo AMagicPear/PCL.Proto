@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { FloatButtonType, type FloatButtonState } from '@/composables/useFloatButton'
-import { ref, watchEffect } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps<FloatButtonState>()
@@ -8,24 +8,30 @@ const backVisible = ref(false) // the animation circle
 const buttonWidth = ref(36)
 const router = useRouter()
 
-watchEffect(() => {
-  if (props.type === FloatButtonType.TaskManage) {
+let pulseTimer: ReturnType<typeof setTimeout> | undefined
+watch(() => props.type, (type) => {
+  clearTimeout(pulseTimer)
+  backVisible.value = false
+  if (type === FloatButtonType.TaskManage) {
     backVisible.value = true
-    setTimeout(() => {
+    pulseTimer = setTimeout(() => {
       backVisible.value = false
     }, 1000)
   }
-  buttonWidth.value = props.type === FloatButtonType.DownloadGame ? 120 : 36
-})
+  buttonWidth.value = type === FloatButtonType.DownloadGame ? 120 : 36
+}, { immediate: true })
+onUnmounted(() => clearTimeout(pulseTimer))
 </script>
 
 <template>
   <Transition>
     <button
       class="float-button"
+      :class="{ 'task-button': type === FloatButtonType.TaskManage }"
       :title="title"
-      @click="router.push(type === FloatButtonType.TaskManage ? '/downloading' : '/download/game')"
+      @click="type === FloatButtonType.TaskManage ? router.push('/downloading') : action?.()"
       v-if="visible"
+      :aria-label="title || text"
     >
       <component :is="icon" />
       <span v-if="text">{{ text }}</span>
@@ -80,6 +86,10 @@ watchEffect(() => {
   align-items: center;
   gap: 8px;
   justify-content: space-around;
+  &.task-button {
+    padding: 0;
+    justify-content: center;
+  }
   > .back {
     position: absolute;
     height: 40vi;
