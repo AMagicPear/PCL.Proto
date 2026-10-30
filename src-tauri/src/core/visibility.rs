@@ -78,7 +78,7 @@ impl Controller {
                 }
                 _ => {}
             },
-            SessionEvent::Finished { safe_exit } if self.active.remove(id) => {
+            SessionEvent::Finished { safe_exit, .. } if self.active.remove(id) => {
                 self.failed |= !safe_exit;
                 if self.active.is_empty() {
                     if let Some(exit) = self.hidden_exit.take() {
@@ -151,14 +151,20 @@ mod tests {
             &window,
             "a",
             mode,
-            SessionEvent::Finished { safe_exit: true },
+            SessionEvent::Finished {
+                safe_exit: true,
+                failure: None,
+            },
         );
         assert_eq!(*window.actions.borrow(), ["hide"]);
         controller.event(
             &window,
             "b",
             VisibilityMode::Keep,
-            SessionEvent::Finished { safe_exit: false },
+            SessionEvent::Finished {
+                safe_exit: false,
+                failure: None,
+            },
         );
         assert_eq!(*window.actions.borrow(), ["hide", "show"]);
         controller.event(&window, "c", mode, SessionEvent::Spawned);
@@ -167,7 +173,10 @@ mod tests {
             &window,
             "c",
             mode,
-            SessionEvent::Finished { safe_exit: true },
+            SessionEvent::Finished {
+                safe_exit: true,
+                failure: None,
+            },
         );
         assert_eq!(*window.actions.borrow(), ["hide", "show", "hide", "exit"]);
     }
@@ -193,7 +202,10 @@ mod tests {
             &window,
             "a",
             VisibilityMode::HideAndExit,
-            SessionEvent::Finished { safe_exit: true },
+            SessionEvent::Finished {
+                safe_exit: true,
+                failure: None,
+            },
         );
         assert_eq!(*window.actions.borrow(), ["hide"]);
         window.fail_hide.set(false);
@@ -225,13 +237,19 @@ mod tests {
             &window,
             "a",
             VisibilityMode::HideAndExit,
-            SessionEvent::Finished { safe_exit: true },
+            SessionEvent::Finished {
+                safe_exit: true,
+                failure: None,
+            },
         );
         controller.event(
             &window,
             "b",
             VisibilityMode::HideAndReopen,
-            SessionEvent::Finished { safe_exit: true },
+            SessionEvent::Finished {
+                safe_exit: true,
+                failure: None,
+            },
         );
         assert_eq!(*window.actions.borrow(), ["hide", "hide", "show"]);
     }

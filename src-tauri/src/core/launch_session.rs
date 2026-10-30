@@ -15,6 +15,11 @@ const MAX_LINES: usize = 1000;
 const MAX_LINE_BYTES: usize = 8192;
 const MAX_LOG_BYTES: usize = 1024 * 1024;
 const MAX_FINISHED: usize = 8;
+const LOADER_SOLUTION_MARKERS: [&str; 3] = [
+    "A potential solution has been determined, this may resolve your problem:",
+    "A potential solution has been determined:",
+    "确定了一种可能的解决方法，这样做可能会解决你的问题：",
+];
 
 #[derive(Clone, serde::Serialize)]
 pub struct GameSession {
@@ -37,11 +42,62 @@ enum SessionPhase {
     Failed,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct LaunchFailure {
+    pub exit_code: Option<i32>,
+    pub details: Option<String>,
+    pub solution: Option<String>,
+}
+
+fn loader_failure(lines: &VecDeque<String>, exit_code: Option<i32>) -> LaunchFailure {
+    let output = lines
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .join("\n");
+    let details = output
+        .find("Incompatible mods found!")
+        .and_then(|start| output[start..].split_once(": ").map(|(_, detail)| detail))
+        .and_then(|detail| detail.split("\n\tat ").next())
+        .map(|detail| {
+            LOADER_SOLUTION_MARKERS
+                .iter()
+                .find_map(|marker| detail.split_once(marker).map(|(value, _)| value))
+                .unwrap_or(detail)
+                .trim()
+        })
+        .filter(|detail| !detail.is_empty())
+        .map(ToOwned::to_owned);
+    let solution = LOADER_SOLUTION_MARKERS
+        .iter()
+        .find_map(|marker| output.split_once(marker).map(|(_, value)| value))
+        .map(|value| {
+            value
+                .lines()
+                .map(str::trim)
+                .skip_while(|line| line.is_empty())
+                .take_while(|line| line.starts_with('-'))
+                .map(|line| line.trim_start_matches('-').trim())
+                .filter(|line| !line.is_empty())
+                .collect::<Vec<_>>()
+                .join("\n")
+        })
+        .filter(|solution| !solution.is_empty());
+    LaunchFailure {
+        exit_code,
+        details,
+        solution,
+    }
+}
+
+#[derive(Clone, Debug)]
 pub enum SessionEvent {
     Spawned,
     Ready,
-    Finished { safe_exit: bool },
+    Finished {
+        safe_exit: bool,
+        failure: Option<LaunchFailure>,
+    },
 }
 
 #[derive(Clone, Copy)]
@@ -274,20 +330,32 @@ pub fn track(
             }
         }
         cleanup();
-        let safe_exit = matches!(result, Ok(Some(0)))
+        let exit_code = result.as_ref().ok().copied().flatten();
+        let safe_exit = matches!(exit_code, Some(0))
             && ready
             && !crashed
             && !stopped
             && !output_incomplete
             && readers_done == reader_count;
+        let failure = (!ready && !stopped && !safe_exit).then(|| {
+            let sessions = SESSIONS.lock().unwrap();
+            let lines = sessions
+                .iter()
+                .find(|entry| entry.snapshot.id == id)
+                .map(|entry| &entry.snapshot.lines)
+                .cloned()
+                .unwrap_or_default();
+            loader_failure(&lines, exit_code)
+        });
         let mut sessions = SESSIONS.lock().unwrap();
         if let Some(entry) = sessions.iter_mut().find(|entry| entry.snapshot.id == id) {
             entry.snapshot.running = false;
-            entry.snapshot.phase = if matches!(result, Ok(Some(0))) && !crashed && !stopped {
-                SessionPhase::Exited
-            } else {
-                SessionPhase::Failed
-            };
+            entry.snapshot.phase =
+                if matches!(exit_code, Some(0)) && !crashed && !stopped && failure.is_none() {
+                    SessionPhase::Exited
+                } else {
+                    SessionPhase::Failed
+                };
             match result {
                 Ok(code) => entry.snapshot.exit_code = code,
                 Err(error) => entry.snapshot.error = Some(error),
@@ -304,7 +372,7 @@ pub fn track(
             }
         }
         drop(sessions);
-        on_event(&id, SessionEvent::Finished { safe_exit });
+        on_event(&id, SessionEvent::Finished { safe_exit, failure });
     });
     id
 }
@@ -480,8 +548,47 @@ mod tests {
         ));
         assert!(matches!(
             receiver.recv_timeout(Duration::from_secs(5)).unwrap(),
-            SessionEvent::Finished { safe_exit: true }
+            SessionEvent::Finished {
+                safe_exit: true,
+                failure: None
+            }
         ));
+        wait_for(&id, |session| !session.running);
+    }
+
+    #[test]
+    fn reports_loader_solution_when_game_exits_before_ready() {
+        let (sender, receiver) = mpsc::channel();
+        let id = track(
+            child(
+                "printf '有不兼容的模组！ (Incompatible mods found!)\\nnet.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!\\n确定了一种可能的解决方法，这样做可能会解决你的问题：\\n - 安装 fabric-api，任意版本。\\n更多信息：\\n - 模组需要 fabric-api。\\n\\tat net.fabricmc.loader.impl.FabricLoaderImpl.load(FabricLoaderImpl.java:207)\\n' >&2; exit 1",
+            ),
+            PathBuf::from("/test/fabric"),
+            None,
+            || {},
+            move |_, event| {
+                sender.send(event).unwrap();
+            },
+        );
+        assert!(matches!(
+            receiver.recv_timeout(Duration::from_secs(5)).unwrap(),
+            SessionEvent::Spawned
+        ));
+        let SessionEvent::Finished { failure, .. } =
+            receiver.recv_timeout(Duration::from_secs(5)).unwrap()
+        else {
+            panic!("expected failed game session");
+        };
+        let failure = failure.expect("expected an early-exit failure");
+        assert_eq!(failure.exit_code, Some(1));
+        assert_eq!(
+            failure.details.as_deref(),
+            Some("Some of your mods are incompatible with the game or each other!")
+        );
+        assert_eq!(
+            failure.solution.as_deref(),
+            Some("安装 fabric-api，任意版本。")
+        );
         wait_for(&id, |session| !session.running);
     }
 }

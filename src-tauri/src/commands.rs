@@ -182,6 +182,7 @@ pub struct LaunchProgress {
     stage: String,
     progress: f64,
     downloading: bool,
+    failure: Option<crate::core::launch_session::LaunchFailure>,
 }
 
 impl LaunchProgress {
@@ -190,6 +191,16 @@ impl LaunchProgress {
             stage: stage.into(),
             progress,
             downloading,
+            failure: None,
+        }
+    }
+
+    fn failed(failure: crate::core::launch_session::LaunchFailure) -> Self {
+        Self {
+            stage: "Minecraft.Launch.Stage.WaitWindow".into(),
+            progress: 0.92,
+            downloading: false,
+            failure: Some(failure),
         }
     }
 }
@@ -643,7 +654,13 @@ async fn launch_game_inner(
                             ));
                             finish_launch_session(id);
                         }
-                        crate::core::launch_session::SessionEvent::Finished { .. } => {
+                        crate::core::launch_session::SessionEvent::Finished {
+                            ref failure, ..
+                        } => {
+                            if let Some(failure) = failure {
+                                let _ =
+                                    session_progress.send(LaunchProgress::failed(failure.clone()));
+                            }
                             finish_launch_session(id);
                         }
                     }
@@ -1214,6 +1231,7 @@ mod tests {
         assert_eq!(value["stage"], "Minecraft.Launch.Stage.GetJava");
         assert_eq!(value["progress"], 0.08);
         assert_eq!(value["downloading"], false);
+        assert!(value["failure"].is_null());
     }
 
     #[test]
