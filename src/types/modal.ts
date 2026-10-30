@@ -12,7 +12,7 @@ export interface ModalResult {
   input?: string
 }
 
-export enum ModalWidthVirant {
+export enum ModalWidthVariant {
   Slim = 400,
   Fat = 560,
 }
@@ -21,7 +21,7 @@ export interface ModalOptions {
   plainText?: boolean
   content?: string
   title?: string
-  width?: ModalWidthVirant
+  width?: ModalWidthVariant
   buttons?: ModalButtonOption[]
   showInput?: boolean
   defaultInputText?: string

@@ -11,7 +11,15 @@ export type Launching = {
   downloading: boolean
 }
 
-export type LaunchProgress = Pick<Launching, 'progress' | 'stage' | 'downloading'>
+export type LaunchFailure = {
+  exit_code: number | null
+  details: string | null
+  solution: string | null
+}
+
+export type LaunchProgress = Pick<Launching, 'progress' | 'stage' | 'downloading'> & {
+  failure?: LaunchFailure | null
+}
 
 function formatSpeed(speed: number) {
   if (speed < 1024) return `${speed.toFixed(0)} B/s`
@@ -70,7 +78,12 @@ export const useLaunchState = defineStore('launch-state', () => {
 
   function update(id: number, update: LaunchProgress) {
     if (isCancelled(id) || !launching.value) return false
-    launching.value = { ...launching.value, ...update }
+    launching.value = {
+      ...launching.value,
+      progress: update.progress,
+      stage: update.stage,
+      downloading: update.downloading,
+    }
     if (launching.value.downloading) ensureSpeed(id)
     else clearSpeed()
     return true

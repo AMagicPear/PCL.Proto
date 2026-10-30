@@ -57,7 +57,9 @@ const handleButtonClick = async (btn: ModalButtonOption) => {
 }
 
 .modal-container {
-  width: v-bind("(options.width ?? '400') + 'px'");
+  width: v-bind("options.width ? options.width + 'px' : 'max-content'");
+  min-width: 400px;
+  max-width: min(560px, calc(100% - 32px));
   margin: auto;
   padding: 22px;
   background-color: var(--color-background);
@@ -73,6 +75,7 @@ const handleButtonClick = async (btn: ModalButtonOption) => {
 
 .modal-body {
   margin: 20px 4px;
+  overflow-wrap: anywhere;
 }
 
 .modal-divider {

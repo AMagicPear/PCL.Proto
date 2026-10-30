@@ -15,7 +15,8 @@ import { useModal } from '@/composables/useModal'
 import { computed, ref } from 'vue'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
-import { useLaunchState, type LaunchProgress } from '@/stores/launchState'
+import { ModalWidthVariant } from '@/types/modal'
+import { useLaunchState, type LaunchFailure, type LaunchProgress } from '@/stores/launchState'
 import { storeToRefs } from 'pinia'
 
 defineProps<{ loadingInstances?: boolean }>()
@@ -80,6 +81,31 @@ async function cancelLaunch() {
     sideTip.show(text('Proto.Error.Launch', [String(error)]), 'warn')
   }
   returnToHome(attempt)
+}
+function formatLaunchFailure(failure: LaunchFailure) {
+  const [reason, suggestion] = failure.solution
+    ? [
+        text('Crash.Reason.FabricSolution.WithDetail', [failure.solution]),
+        text('Crash.Suggestion.FollowLoaderInstructions'),
+      ]
+    : failure.details
+      ? [
+          text('Crash.Reason.IncompatibleMods.WithDetail', [failure.details]),
+          text('Crash.Suggestion.FollowLoaderInstructions'),
+        ]
+      : [text('Crash.Reason.Unknown.Auto'), text('Crash.Suggestion.ExportReport')]
+  return text('Crash.Presentation.WithSuggestion', [reason, suggestion])
+}
+function showLaunchFailure(attempt: number, failure: LaunchFailure) {
+  if (launchState.isCancelled(attempt) || !launchState.isCurrent(attempt)) return
+  returnToHome(attempt)
+  void modal.open({
+    title: text('Crash.Dialog.Title.Auto'),
+    content: formatLaunchFailure(failure),
+    plainText: true,
+    width: ModalWidthVariant.Fat,
+    buttons: [{ content: text('Common.Action.Confirm'), operation: () => modal.close() }],
+  })
 }
 async function launch() {
   if (preparing.value) return
@@ -156,6 +182,10 @@ async function launch() {
     const progress = new Channel<LaunchProgress>()
     progress.onmessage = (message) => {
       if (!launchState.update(attempt!, message)) return
+      if (message.failure) {
+        showLaunchFailure(attempt!, message.failure)
+        return
+      }
       if (message.progress === 1) returnToHome(attempt!)
     }
     await invoke('launch_game', { instanceDirectory, progress })
