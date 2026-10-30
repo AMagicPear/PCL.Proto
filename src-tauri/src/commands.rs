@@ -19,6 +19,23 @@ use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use tokio::sync::Mutex;
 
+#[derive(Clone, serde::Serialize)]
+pub struct LaunchProgress {
+    stage: String,
+    progress: f64,
+    downloading: bool,
+}
+
+impl LaunchProgress {
+    fn new(stage: &str, progress: f64, downloading: bool) -> Self {
+        Self {
+            stage: stage.into(),
+            progress,
+            downloading,
+        }
+    }
+}
+
 #[tauri::command]
 pub async fn get_launch_arguments(
     instance_directory: Option<std::path::PathBuf>,
@@ -336,7 +353,12 @@ pub async fn preview_memory_settings(
 pub async fn launch_game(
     window: tauri::WebviewWindow,
     instance_directory: std::path::PathBuf,
+    progress: tauri::ipc::Channel<LaunchProgress>,
 ) -> Result<(), String> {
+    let report = |stage, value, downloading| {
+        let _ = progress.send(LaunchProgress::new(stage, value, downloading));
+    };
+    report("Minecraft.Launch.Stage.GetJava", 0.08, false);
     let info = java::selection::prepare(instance_directory.clone()).await?;
     let runtime = info.runtime.ok_or_else(|| {
         format!(
@@ -345,6 +367,7 @@ pub async fn launch_game(
         )
     })?;
     let expected = instance_directory.clone();
+    report("Minecraft.Launch.Stage.GetArguments", 0.2, false);
     let mut option = tauri::async_runtime::spawn_blocking(move || {
         ConfigManager::instance().ensure_instance_isolation(&instance_directory)?;
         let state = ConfigManager::instance().app_state.blocking_lock();
@@ -365,14 +388,18 @@ pub async fn launch_game(
     let config = ConfigManager::instance();
     let downloader =
         crate::core::downloader::Downloader::with_bases(config.api_client.api_bases_async().await);
+    report("Minecraft.Launch.Stage.CompleteFiles", 0.35, true);
     let natives = option
         .prepare_natives(&downloader)
         .await
         .map_err(|e| format!("{e:#}"))?;
+    report("Minecraft.Launch.Stage.CompleteFiles", 0.65, true);
     option
         .prepare_legacy_assets(&downloader)
         .await
         .map_err(|e| format!("{e:#}"))?;
+    report("Minecraft.Launch.Stage.StartProcess", 0.85, false);
+    let session_progress = progress.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let state = config.app_state.blocking_lock();
         current_instance(&state, &expected).map_err(|e| e.to_string())?;
@@ -384,7 +411,26 @@ pub async fn launch_game(
             expected,
             option.access_token(),
             move || drop(natives),
-            move |id, event| crate::core::visibility::handle(&window, id, visibility, event),
+            move |id, event| {
+                match event {
+                    crate::core::launch_session::SessionEvent::Spawned => {
+                        let _ = session_progress.send(LaunchProgress::new(
+                            "Minecraft.Launch.Stage.WaitWindow",
+                            0.92,
+                            false,
+                        ));
+                    }
+                    crate::core::launch_session::SessionEvent::Ready => {
+                        let _ = session_progress.send(LaunchProgress::new(
+                            "Minecraft.Launch.Stage.End",
+                            1.0,
+                            false,
+                        ));
+                    }
+                    crate::core::launch_session::SessionEvent::Finished { .. } => {}
+                }
+                crate::core::visibility::handle(&window, id, visibility, event)
+            },
         );
         Ok(())
     })
@@ -923,4 +969,22 @@ pub async fn get_plugin_versions(
         _ => Err(api_client::McApiError::PluginMismatch(plugin_type)),
     };
     verisons.map_err(|err| err.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::LaunchProgress;
+
+    #[test]
+    fn launch_progress_uses_the_frontend_channel_shape() {
+        let value = serde_json::to_value(LaunchProgress::new(
+            "Minecraft.Launch.Stage.GetJava",
+            0.08,
+            false,
+        ))
+        .unwrap();
+        assert_eq!(value["stage"], "Minecraft.Launch.Stage.GetJava");
+        assert_eq!(value["progress"], 0.08);
+        assert_eq!(value["downloading"], false);
+    }
 }
