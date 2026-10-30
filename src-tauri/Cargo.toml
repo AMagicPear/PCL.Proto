@@ -26,7 +26,7 @@ log = "0"
 tauri = { version = "2.10.0", features = [] }
 tauri-plugin-log = "2.8.0"
 tauri-plugin-os = "2.3.2"
-chrono = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
 tauri-plugin-dialog = "2.6.0"
 regex = { workspace = true }
 shlex = "1.3"

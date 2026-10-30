@@ -39,13 +39,16 @@ const { preparing, launching, downloadSpeed, leavingLaunch } = storeToRefs(launc
 
 async function getLaunchMethod() {
   try {
-    const account = await invoke<Record<string, Record<string, string>> | null>('get_account')
+    const account = await invoke<{
+      profileType: 'microsoft' | 'offline' | 'authlib' | 'yggdrasilConnect'
+      serverName?: string | null
+    } | null>('get_account')
     if (!account) return text('Launch.Account.Type.Offline')
-    if (account.Microsoft) return text('Launch.Account.Type.Microsoft')
-    const thirdParty = account.Yggdrasil || account.AuthlibInjector
-    return thirdParty
-      ? `${text('Launch.Account.Type.ThirdParty')}${thirdParty.server_name ? ` / ${thirdParty.server_name}` : ''}`
-      : text('Launch.Account.Type.Offline')
+    if (account.profileType === 'microsoft') return text('Launch.Account.Type.Microsoft')
+    if (account.profileType === 'authlib' || account.profileType === 'yggdrasilConnect') {
+      return `${text('Launch.Account.Type.ThirdParty')}${account.serverName ? ` / ${account.serverName}` : ''}`
+    }
+    return text('Launch.Account.Type.Offline')
   } catch {
     return text('Launch.Account.Type.Offline')
   }

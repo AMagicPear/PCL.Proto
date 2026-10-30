@@ -4,7 +4,7 @@ import PCard from '@/components/widget/PCard.vue'
 import PListItem from '@/components/widget/PListItem.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PIconTextButton from '@/components/widget/PIconTextButton.vue'
-import { type IJavaRuntimeInfo } from '@/api/javaReq'
+import { javaBrandLabel, javaDisplayName, type IJavaRuntimeInfo } from '@/api/javaReq'
 import { onMounted, ref } from 'vue'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import sideTip from '@/composables/sideTip'
@@ -84,12 +84,12 @@ function info(runtime: IJavaRuntimeInfo) {
     title: text('Setup.Java.Info.Title'),
     plainText: true,
     content: text('Setup.Java.Info.Format', [
-      runtime.is_jdk ? 'JDK' : 'JRE',
+      runtime.is_jre ? 'JRE' : 'JDK',
       runtime.version,
       architectureLabels[runtime.architecture],
       runtime.is_64_bit ? '64 Bit' : '32 Bit',
-      runtime.implementor || '—',
-      runtime.directory_path,
+      javaBrandLabel(runtime.brand),
+      runtime.java_folder,
     ]),
     buttons: [{ content: text('Common.Action.Close'), operation: () => modal.close() }],
   })
@@ -135,9 +135,9 @@ onMounted(() => load())
               v-for="runtime in java.runtimes"
               :key="runtime.java_exe"
               :class="{ 'java-disabled': !runtime.is_enabled }"
-              :title="`${runtime.is_jdk ? 'JDK' : 'JRE'} ${runtime.slug_version} (${runtime.version})`"
-              :tags="[architectureLabels[runtime.architecture], runtime.implementor || '—']"
-              :subtitle="runtime.directory_path"
+              :title="javaDisplayName(runtime)"
+              :tags="[architectureLabels[runtime.architecture], javaBrandLabel(runtime.brand)]"
+              :subtitle="runtime.java_folder"
               clickable
               :selected="java.globalJava === runtime.java_exe"
               @click="select(runtime)"

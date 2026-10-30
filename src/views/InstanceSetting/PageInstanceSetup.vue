@@ -98,7 +98,7 @@ const javaOptions = computed(() => [
   },
   ...java.runtimes.map((runtime) => ({
     key: runtime.java_exe,
-    text: `${runtime.version} · ${runtime.architecture} · ${runtime.directory_path}${runtime.is_enabled ? '' : ` · ${text('Setup.Java.EnableBeforeSelect')}`}`,
+    text: `${runtime.version} · ${runtime.architecture} · ${runtime.java_folder}${runtime.is_enabled ? '' : ` · ${text('Setup.Java.EnableBeforeSelect')}`}`,
     disabled: !runtime.is_enabled,
   })),
   ...(javaSettings.value.preference.kind === 'exist' &&

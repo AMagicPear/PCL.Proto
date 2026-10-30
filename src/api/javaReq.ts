@@ -1,18 +1,65 @@
 import { Channel, invoke } from '@tauri-apps/api/core'
 
+export type JavaBrand =
+  | 'eclipseTemurin'
+  | 'liberica'
+  | 'zulu'
+  | 'corretto'
+  | 'microsoft'
+  | 'ibmSemeru'
+  | 'oracle'
+  | 'dragonwell'
+  | 'tencentKona'
+  | 'openJdk'
+  | 'graalVm'
+  | 'jetBrains'
+  | 'unknown'
+
+export type JavaSource = 'auto_scanned' | 'auto_installed' | 'manual_added'
+
+/** Flat IPC view of `minecraft::java::JavaEntry`. */
 export interface IJavaRuntimeInfo {
-  directory_path: string
-  is_user_imported: boolean
-  version: string
-  slug_version: number
-  is_64_bit: boolean
-  architecture: 'X86' | 'X64' | 'Arm64' | 'FatFile' | 'Unknown'
-  compability: 'Perfect' | 'Translation' | 'No' | 'Unknown'
-  is_jdk: boolean
+  java_folder: string
   java_exe: string
-  implementor: string | null
+  version: string
+  brand: JavaBrand
+  architecture: 'X86' | 'X64' | 'Arm64' | 'FatFile' | 'Unknown'
+  is_64_bit: boolean
+  is_jre: boolean
+  compatibility: 'Perfect' | 'Translation' | 'No' | 'Unknown'
   is_enabled: boolean
+  source: JavaSource
 }
+
+const brandLabels: Record<JavaBrand, string> = {
+  eclipseTemurin: 'Eclipse Temurin',
+  liberica: 'BellSoft Liberica',
+  zulu: 'Azul Zulu',
+  corretto: 'Amazon Corretto',
+  microsoft: 'Microsoft OpenJDK',
+  ibmSemeru: 'IBM Semeru',
+  oracle: 'Oracle',
+  dragonwell: 'Alibaba Dragonwell',
+  tencentKona: 'Tencent Kona',
+  openJdk: 'OpenJDK',
+  graalVm: 'GraalVM Community',
+  jetBrains: 'JetBrains Runtime',
+  unknown: '—',
+}
+
+export const javaBrandLabel = (brand: JavaBrand) => brandLabels[brand] || brand
+
+/** Java 8 is reported as `1.8.0_x`, so normalize it for display/sorting. */
+export function javaMajorVersion(version: string): number {
+  const parts = version.split(/[._+-]/).map((part) => Number.parseInt(part, 10))
+  const major = parts[0] ?? 0
+  const minor = parts[1] ?? 0
+  if (Number.isNaN(major)) return 0
+  return major === 1 && minor > 0 ? minor : major
+}
+
+export const javaDisplayName = (runtime: IJavaRuntimeInfo) =>
+  `${runtime.is_jre ? 'JRE' : 'JDK'} ${javaMajorVersion(runtime.version)} (${runtime.version})`
 export type JavaPreference =
   | { kind: 'global' | 'auto' }
   | { kind: 'exist'; java_exe: string }

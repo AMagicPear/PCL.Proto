@@ -4,29 +4,33 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import SteveSkin from '/default-skin/Steve_(classic_texture)_JE6.png'
 
-interface AccountInner {
-  username: string
+export type ProfileType = 'microsoft' | 'offline' | 'authlib' | 'yggdrasilConnect'
+
+/** IPC view of `minecraft::profile::McProfile`. */
+export interface McProfile {
+  profileId: string
+  userName: string
   uuid: string
-}
-interface Account {
-  Offline?: AccountInner
+  tokenType: string
+  profileType: ProfileType
+  description: string
+  skinHeadId: string
+  server?: string | null
+  serverName?: string | null
+  serverHomepage?: string | null
 }
 
 export const useAccountInfo = defineStore('account-info', () => {
   const username = ref<string>()
   const uuid = ref<string>()
+  const profile = ref<McProfile | null>(null)
 
   async function initialize() {
     try {
-      const account = await invoke<Account>('get_account')
-      for (const key in account) {
-        if (Object.prototype.hasOwnProperty.call(account, key)) {
-          const element = (account as any)[key] as AccountInner
-          username.value = element.username
-          uuid.value = element.uuid
-          break
-        }
-      }
+      const account = await invoke<McProfile | null>('get_account')
+      profile.value = account
+      username.value = account?.userName
+      uuid.value = account?.uuid
     } catch (error) {
       console.error('Failed to initialize account:', error)
     }
@@ -35,6 +39,7 @@ export const useAccountInfo = defineStore('account-info', () => {
   return {
     username,
     uuid,
+    profile,
     initialize,
   }
 })

@@ -10,14 +10,14 @@ export interface MCPingResult {
   players: {
     max: number
     online: number
-    samples?: {
+    sample?: {
       name: string
       id: string
     }[]
   }
   description: ExtraItem
   favicon?: string
-  modInfo?: {
+  modinfo?: {
     type: string
     modList: {
       id: string
