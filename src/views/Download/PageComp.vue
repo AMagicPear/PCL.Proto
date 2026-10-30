@@ -98,7 +98,12 @@ watch(() => props.projectType, reset, { immediate: true })
 </script>
 <template>
   <section class="pcl-page comp-page">
-    <PSearchBox v-model="values.query" :placeholder="searchHint" @search="firstSearch" />
+    <PSearchBox
+      v-model="values.query"
+      search-button
+      :placeholder="searchHint"
+      @search="firstSearch"
+    />
     <PCard hide-title
       ><div class="filters">
         <label for="comp-source">{{ text('Download.Comp.Filter.Source') }}</label>

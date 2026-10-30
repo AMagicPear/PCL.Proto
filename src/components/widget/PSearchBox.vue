@@ -3,7 +3,7 @@ import { pclText } from '@/api/pclLocale'
 import PButton from './PButton.vue'
 import PCard from './PCard.vue'
 import PSvgIcon from './PSvgIcon.vue'
-defineProps<{ placeholder?: string; autoSearch?: boolean }>()
+defineProps<{ placeholder?: string; searchButton?: boolean }>()
 const emit = defineEmits(['search'])
 const query = defineModel<string>({ default: '' })
 </script>
@@ -21,8 +21,24 @@ const query = defineModel<string>({ default: '' })
         v-model="query"
         v-on:keydown.enter="emit('search', query)"
       />
+      <!-- 有输入时才出现清除按钮，对齐 CE 的 MySearchBox -->
+      <button
+        v-if="query"
+        type="button"
+        class="pcl-icon-button search-clear"
+        :aria-label="pclText('Common.Action.Clear')"
+        :title="pclText('Common.Action.Clear')"
+        @click="
+          () => {
+            query = ''
+            emit('search', '')
+          }
+        "
+      >
+        <PSvgIcon name="lucide/x" :size="14" />
+      </button>
       <PButton
-        v-if="!autoSearch"
+        v-if="searchButton"
         type="tint"
         class="search-button"
         @click="emit('search', query)"
@@ -59,6 +75,14 @@ const query = defineModel<string>({ default: '' })
   border: none;
   outline: none;
   background-color: transparent;
+}
+.search-clear {
+  flex-shrink: 0;
+  margin-right: 6px;
+  color: var(--color-text-grey);
+}
+.search-clear:not(:disabled):hover {
+  color: var(--color-text-black);
 }
 .search-button {
   width: 60px;

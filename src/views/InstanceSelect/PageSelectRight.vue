@@ -178,7 +178,6 @@ watch(
     <PSearchBox
       v-if="instances.length || query"
       v-model="query"
-      auto-search
       :placeholder="text('Select.Instance.Search.Hint')"
     />
     <PLoading v-if="loading" :loading-text="text('Select.Instance.Loading')" />

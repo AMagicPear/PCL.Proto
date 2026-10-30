@@ -2,10 +2,14 @@
 import modrinthApi, { type IProject, type IVersion } from '@/api/modrinthApi'
 import PCard from '@/components/widget/PCard.vue'
 import PVirtualList from '@/components/widget/PVirtualList.vue'
-import { groupCompVersions } from '@/api/compResources'
+import {
+  compVersionFilters,
+  groupCompVersions,
+  groupedVersionName,
+  loaderNames,
+} from '@/api/compResources'
 import PCompItem from '@/components/widget/PCompItem.vue'
 import PListItem from '@/components/widget/PListItem.vue'
-import PComboBox from '@/components/widget/PComboBox.vue'
 import PButton from '@/components/widget/PButton.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import PHint from '@/components/widget/PHint.vue'
@@ -24,6 +28,7 @@ const versions = shallowRef<IVersion[]>([])
 const loading = ref(false)
 const error = ref('')
 const versionFilter = ref('')
+const requestedVersion = ref('')
 const loaderFilter = ref('')
 const item = computed(
   () =>
@@ -31,21 +36,23 @@ const item = computed(
       ...project.value,
       date_modified: project.value.updated,
       project_id: project.value.id,
-      versions: gameVersions.value,
+      versions: [...new Set(versions.value.flatMap((version) => version.game_versions))],
     },
 )
-const gameVersions = computed(() =>
-  [...new Set(versions.value.flatMap((version) => version.game_versions))]
-    .sort(new Intl.Collator('en', { numeric: true }).compare)
-    .reverse(),
+// 筛选选项按 CE 规则逐级合并（1.21.1 → 1.21 → 远古版）
+const versionFilters = computed(() =>
+  compVersionFilters(versions.value.flatMap((version) => version.game_versions)),
 )
 const loaders = computed(() => [...new Set(versions.value.flatMap((version) => version.loaders))])
+const isMod = computed(() => project.value?.project_type === 'mod')
 const groups = computed(() =>
   groupCompVersions(
     versions.value,
     versionFilter.value,
     loaderFilter.value,
-    project.value?.project_type === 'mod' && loaders.value.length > 1,
+    isMod.value && loaders.value.length > 1,
+    versionFilters.value.byDrop,
+    versionFilters.value.foldOld,
   ),
 )
 const projectUrl = computed(() =>
@@ -74,6 +81,13 @@ async function load() {
     if (current !== request) return
     project.value = data
     versions.value = files
+    // 路由带入的是实例的具体版本号，需要归到筛选选项上
+    if (requestedVersion.value)
+      versionFilter.value = groupedVersionName(
+        requestedVersion.value,
+        versionFilters.value.byDrop,
+        versionFilters.value.foldOld,
+      )
   } catch (err) {
     if (current === request) error.value = pclText('Proto.Error.Resource', [String(err)])
   } finally {
@@ -97,7 +111,8 @@ function openProject() {
 watch(
   () => route.query.id,
   () => {
-    versionFilter.value = route.query.version === 'all' ? '' : String(route.query.version || '')
+    requestedVersion.value = route.query.version === 'all' ? '' : String(route.query.version || '')
+    versionFilter.value = requestedVersion.value
     loaderFilter.value = String(route.query.loader || '')
     void load()
   },
@@ -156,24 +171,52 @@ watch(
           </div>
         </div>
       </PCard>
-      <PCard hide-title>
+      <PCard v-if="versionFilters.list.length >= 2" hide-title>
         <div class="filters">
-          <PComboBox
-            v-model="versionFilter"
-            :options="[
-              { key: '', text: text('Common.Option.All') },
-              ...gameVersions.map((value) => ({ key: value, text: value })),
-            ]"
-            :aria-label="pclText('Proto.Label.GameVersion')"
-          />
-          <PComboBox
-            v-model="loaderFilter"
-            :options="[
-              { key: '', text: text('Common.Option.All') },
-              ...loaders.map((value) => ({ key: value, text: value })),
-            ]"
-            :aria-label="pclText('Download.Comp.Filter.Loader')"
-          />
+          <div class="filter-row">
+            <span v-if="isMod" class="filter-label">{{
+              text('Download.Comp.Detail.InstanceFilter')
+            }}</span>
+            <button
+              type="button"
+              class="pcl-chip"
+              :class="{ active: !versionFilter }"
+              @click="versionFilter = ''"
+            >
+              {{ text('Common.Option.All') }}
+            </button>
+            <button
+              v-for="value in versionFilters.list"
+              :key="value"
+              type="button"
+              class="pcl-chip"
+              :class="{ active: versionFilter === value }"
+              @click="versionFilter = value"
+            >
+              {{ value }}
+            </button>
+          </div>
+          <div v-if="isMod" class="filter-row">
+            <span class="filter-label">{{ text('Download.Comp.Detail.LoaderFilter') }}</span>
+            <button
+              type="button"
+              class="pcl-chip"
+              :class="{ active: !loaderFilter }"
+              @click="loaderFilter = ''"
+            >
+              {{ text('Common.Option.All') }}
+            </button>
+            <button
+              v-for="value in loaders"
+              :key="value"
+              type="button"
+              class="pcl-chip"
+              :class="{ active: loaderFilter === value }"
+              @click="loaderFilter = value"
+            >
+              {{ loaderNames[value] || value }}
+            </button>
+          </div>
         </div>
       </PCard>
       <PCard
@@ -239,13 +282,18 @@ watch(
 }
 .filters {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 15px;
+  flex-direction: column;
+  padding: 5px 0;
 }
-.filters > * {
-  flex: 1;
-  min-width: 150px;
+.filter-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 5px 10px;
+}
+.filter-label {
+  margin: 0 2px 0 2px;
+  color: var(--color-text-black);
 }
 .version-files {
   padding: 0 20px 15px;

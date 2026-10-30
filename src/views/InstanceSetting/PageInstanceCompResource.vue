@@ -7,7 +7,6 @@ import PCard from '@/components/widget/PCard.vue'
 import { computed, ref } from 'vue'
 import PLocalModItem from '@/components/widget/PLocalModItem.vue'
 import PSearchBox from '@/components/widget/PSearchBox.vue'
-import PComboBox from '@/components/widget/PComboBox.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
@@ -60,13 +59,33 @@ const items = computed(() =>
   }),
 )
 
+// 筛选计数只统计搜索命中的条目，口径与 CE 一致
+const searchedItems = computed(() =>
+  items.value.filter((item) =>
+    `${item.title} ${item.description || ''}`.toLowerCase().includes(query.value.toLowerCase()),
+  ),
+)
+const filterOptions = computed(() => {
+  const total = searchedItems.value.length
+  const enabled = searchedItems.value.filter((item) => item.enabled !== false).length
+  const disabled = total - enabled
+  return [
+    { key: 'All', count: total, visible: true },
+    { key: 'Enabled', count: enabled, visible: enabled > 0 && enabled < total },
+    { key: 'Disabled', count: disabled, visible: disabled > 0 },
+  ]
+})
+function filterLabel(option: { key: string; count: number }) {
+  if (option.key === 'All' && query.value) return text('Instance.Resource.Filter.SearchResult')
+  return text(`Instance.Resource.Filter.${option.key}WithCount`, [option.count])
+}
+
 const visibleItems = computed(() => {
-  const matched = items.value.filter(
+  const matched = searchedItems.value.filter(
     (item) =>
-      `${item.title} ${item.description || ''}`.toLowerCase().includes(query.value.toLowerCase()) &&
-      (filter.value === 'All' ||
-        (filter.value === 'Enabled' && item.enabled !== false) ||
-        (filter.value === 'Disabled' && item.enabled === false)),
+      filter.value === 'All' ||
+      (filter.value === 'Enabled' && item.enabled !== false) ||
+      (filter.value === 'Disabled' && item.enabled === false),
   )
   return sorted.value ? [...matched].sort((a, b) => a.title.localeCompare(b.title)) : matched
 })
@@ -179,17 +198,20 @@ const text = pclText
               >
               <PCard hide-title
                 ><div class="resource-actions">
-                  <PComboBox
-                    v-model="filter"
-                    :options="
-                      ['All', 'Enabled', 'Disabled'].map(
-                        (value) => ({
-                          key: value,
-                          text: text(`Instance.Resource.Filter.${value}`),
-                        }),
-                      )
-                    "
-                  /><PButton inline @click="() => (sorted = !sorted)">{{
+                  <div class="resource-filter">
+                    <button
+                      v-for="option in filterOptions"
+                      v-show="option.visible || filter === option.key"
+                      :key="option.key"
+                      type="button"
+                      class="pcl-chip"
+                      :class="{ active: filter === option.key }"
+                      @click="filter = option.key"
+                    >
+                      {{ filterLabel(option) }}
+                    </button>
+                  </div>
+                  <PButton inline @click="() => (sorted = !sorted)">{{
                     text('Instance.Resource.Sort.Text')
                   }}</PButton>
                 </div>
@@ -313,6 +335,11 @@ const text = pclText
   align-items: center;
   gap: 15px;
   padding: 15px;
+}
+.resource-filter {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
 }
 .resource-list {
   padding: 0 20px 20px;
