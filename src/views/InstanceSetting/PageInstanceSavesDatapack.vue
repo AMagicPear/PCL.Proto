@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
@@ -8,13 +8,72 @@ import PCard from '@/components/widget/PCard.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import PSearchBox from '@/components/widget/PSearchBox.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import PListItem from '@/components/widget/PListItem.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
+import PComboBox from '@/components/widget/PComboBox.vue'
+import { useInstanceResources } from '@/composables/useInstanceResources'
+
+const route = useRoute()
+const router = useRouter()
+const { values } = usePageSettings('PageInstanceSavesDatapack', {
+  filter: 'All',
+  SearchBox: '',
+})
+const selectedSave = ref(
+  String(route.query.id || '')
+    .split(/[\\/]/)
+    .pop() || '',
+)
+const saveList = useInstanceResources({ kind: () => 'save' })
+const saveOptions = computed(() =>
+  saveList.items.value.map((entry) => ({ key: entry.name, text: entry.name })),
+)
+watch(saveOptions, (options) => {
+  if (!selectedSave.value && options.length) selectedSave.value = options[0]?.key || ''
+})
+
+const resources = useInstanceResources({
+  kind: () => 'datapack',
+  save: () => selectedSave.value || undefined,
+  messages: {
+    deleted: 'Instance.Saves.Datapack.Delete.RecycleSingle',
+    deletedMultiple: 'Instance.Saves.Datapack.Delete.RecycleMultiple',
+    deleteFailed: 'Instance.Saves.Datapack.Delete.FileOccupied',
+    toggleFailed: 'Instance.Saves.Datapack.ToggleWarning',
+  },
+})
+const loading = computed(() => saveList.loading.value || resources.loading.value)
+const datapacks = computed(() =>
+  resources.items.value.map((entry) => ({
+    id: entry.path,
+    name: entry.name,
+    description: entry.size ? `${Math.round(entry.size / 1024)} KB` : '',
+    enabled: entry.enabled,
+    updatable: false,
+    error: false,
+  })),
+)
+
 const selected = ref(new Set<string>())
 function select(id: string, checked: boolean) {
   if (checked) selected.value.add(id)
   else selected.value.delete(id)
+}
+function toggleItem(id: string) {
+  const entry = resources.items.value.find((item) => item.path === id)
+  if (entry) void resources.toggle(entry)
+}
+function runSelection(action: string) {
+  const chosen = resources.items.value.filter((entry) => selected.value.has(entry.path))
+  if (action === 'Enable') void resources.setEnabled(chosen, true)
+  else if (action === 'Disable') void resources.setEnabled(chosen, false)
+  else if (action === 'Delete') void resources.remove(chosen)
+  else {
+    showUnavailable()
+    return
+  }
+  selected.value.clear()
 }
 const selectionActions = [
   { id: 'Update', key: 'Instance.Resource.Update', icon: 'upload' },
@@ -24,26 +83,8 @@ const selectionActions = [
   { id: 'Share', key: 'Instance.Resource.ShareSelected', icon: 'share-2' },
   { id: 'Delete', key: 'Common.Action.Delete', icon: 'trash-2' },
 ]
-const props = withDefaults(
-  defineProps<{
-    loading?: boolean
-    datapacks?: {
-      id: string
-      name: string
-      description?: string
-      enabled: boolean
-      updatable?: boolean
-      error?: boolean
-    }[]
-  }>(),
-  { loading: false, datapacks: () => [] },
-)
-const { values } = usePageSettings('PageInstanceSavesDatapack', {
-  filter: 'All',
-  SearchBox: '',
-})
 const visibleDatapacks = computed(() =>
-  props.datapacks.filter((pack) => {
+  datapacks.value.filter((pack) => {
     const matches = `${pack.name} ${pack.description || ''}`
       .toLowerCase()
       .includes(String(values.SearchBox).toLowerCase())
@@ -52,14 +93,11 @@ const visibleDatapacks = computed(() =>
       matches &&
       (filter === 'All' ||
         (filter === 'Enabled' && pack.enabled) ||
-        (filter === 'Disabled' && !pack.enabled) ||
-        (filter === 'CanUpdate' && pack.updatable) ||
-        (filter === 'Error' && pack.error))
+        (filter === 'Disabled' && !pack.enabled))
     )
   }),
 )
 
-const router = useRouter()
 const text = pclText
 </script>
 <template>
@@ -76,6 +114,15 @@ const text = pclText
           style="grid-row: 1 / span 1; grid-column: 1 / span 1; display: grid"
         >
           <div data-control="PanBack" style="grid-row: 1 / span 1; grid-column: 1 / span 1">
+            <PCard
+              data-control="PanSaveSelect"
+              style="margin: 15px 25px 0px 25px"
+              :title="text('Instance.Saves.Info.LevelName')"
+            >
+              <div style="margin: 0px 15px 15px 15px">
+                <PComboBox v-model="selectedSave" :options="saveOptions" />
+              </div>
+            </PCard>
             <div
               v-if="datapacks.length"
               data-control="PanMain"
@@ -100,14 +147,14 @@ const text = pclText
                   <PButton
                     data-control="BtnManageOpen"
                     style="min-width: 110px; margin: 7px 15px 0px 0px; padding: 7px 13px"
-                    @click="showUnavailable"
+                    @click="resources.openFolder()"
                     type="tint"
                     >{{ text('Common.Action.OpenFolder') }}</PButton
                   >
                   <PButton
                     data-control="BtnManageInstall"
                     style="min-width: 110px; margin: 7px 15px 0px 0px; padding: 7px 13px"
-                    @click="showUnavailable"
+                    @click="resources.importFiles()"
                     >{{ text('Instance.Resource.InstallFromFiles') }}</PButton
                   >
                   <PButton
@@ -119,7 +166,7 @@ const text = pclText
                   <PButton
                     data-control="BtnManageSelectAll"
                     style="min-width: 110px; margin: 7px 15px 0px 0px; padding: 7px 13px"
-                    @click="showUnavailable"
+                    @click="() => visibleDatapacks.forEach((pack) => selected.add(pack.id))"
                     >{{ text('Instance.Resource.SelectAll') }}</PButton
                   >
                   <PButton
@@ -197,6 +244,29 @@ const text = pclText
                     :title="pack.name"
                     :subtitle="pack.description"
                     ><template #actions
+                      ><button
+                        class="pcl-icon-button"
+                        type="button"
+                        :title="
+                          text(
+                            pack.enabled
+                              ? 'Instance.Resource.Filter.Disabled'
+                              : 'Instance.Resource.Filter.Enabled',
+                          )
+                        "
+                        :aria-label="
+                          text(
+                            pack.enabled
+                              ? 'Instance.Resource.Filter.Disabled'
+                              : 'Instance.Resource.Filter.Enabled',
+                          )
+                        "
+                        @click="toggleItem(pack.id)"
+                      >
+                        <PSvgIcon
+                          :name="pack.enabled ? 'lucide/x' : 'lucide/check'"
+                          :size="15"
+                        /></button
                       ><PCheckBox
                         :id="`datapack-${pack.id}`"
                         :label="pclText('Proto.Label.Select', [pack.name])"
@@ -248,7 +318,7 @@ const text = pclText
                 <PButton
                   data-control="BtnHintInstall"
                   style="height: 35px; min-width: 130px; margin: 0px 5px; padding: 0px 12px"
-                  @click="showUnavailable"
+                  @click="resources.importFiles()"
                   type="tint"
                   >{{ text('Instance.Resource.InstallFromFiles') }}</PButton
                 >
@@ -261,7 +331,7 @@ const text = pclText
                 <PButton
                   data-control="BtnHintOpen"
                   style="height: 35px; min-width: 130px; margin: 0px 5px; padding: 0px 12px"
-                  @click="showUnavailable"
+                  @click="resources.openFolder()"
                   >{{ text('Common.Action.OpenFolder') }}</PButton
                 >
               </div>
@@ -273,7 +343,11 @@ const text = pclText
     <PCard v-if="selected.size" hide-title class="pcl-selection-toolbar"
       ><p>{{ text('Instance.Resource.SelectedCount', [selected.size]) }}</p>
       <div>
-        <PButton v-for="action in selectionActions" :key="action.id" inline @click="showUnavailable"
+        <PButton
+          v-for="action in selectionActions"
+          :key="action.id"
+          inline
+          @click="runSelection(action.id)"
           ><PSvgIcon :name="`lucide/${action.icon}`" :size="18" />{{ text(action.key) }}</PButton
         ><PButton inline @click="() => selected.clear()"
           ><PSvgIcon name="lucide/x" :size="18" />{{

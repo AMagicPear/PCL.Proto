@@ -14,17 +14,17 @@ fn legacy_assets_preserve_existing_files_and_reject_conflicts() {
         "map_to_resources": true, "objects": {"sounds/a.ogg": {"hash": hash, "size": 5}}
     }))
     .unwrap();
-    materialize_assets(&index, &root, &instance, "test").unwrap();
-    materialize_assets(&index, &root, &instance, "test").unwrap();
+    materialize_assets(&index, &root, &instance, "test", true).unwrap();
+    materialize_assets(&index, &root, &instance, "test", true).unwrap();
     let target = instance.join("resources/sounds/a.ogg");
     fs::write(&target, b"user data").unwrap();
-    assert!(materialize_assets(&index, &root, &instance, "test").is_err());
+    assert!(materialize_assets(&index, &root, &instance, "test", true).is_err());
     assert_eq!(fs::read(&target).unwrap(), b"user data");
     #[cfg(unix)]
     {
         fs::remove_dir_all(instance.join("resources/sounds")).unwrap();
         std::os::unix::fs::symlink(&root, instance.join("resources/sounds")).unwrap();
-        assert!(materialize_assets(&index, &root, &instance, "test").is_err());
+        assert!(materialize_assets(&index, &root, &instance, "test", true).is_err());
         assert!(!root.join("a.ogg").exists());
     }
     fs::remove_dir_all(root).unwrap();
@@ -257,10 +257,16 @@ async fn maven_libraries_are_verified_and_published_before_launch() {
         "downloads":{"client":download}, "assetIndex":{"id":"test","sha1":"a".repeat(40),"size":1,"url":"https://example.org/index"},
         "libraries":[{"name":"net.fabricmc:fabric-loader:0.16", "url":"https://libraries.minecraft.net/"}]
     })).unwrap();
-    let natives =
-        prepare_launch_libraries(&details, &root, &root, &RuleContext::current(), &downloader)
-            .await
-            .unwrap();
+    let natives = prepare_launch_libraries(
+        &details,
+        &root,
+        &root,
+        &RuleContext::current(),
+        &downloader,
+        true,
+    )
+    .await
+    .unwrap();
     let path = root.join("libraries/net/fabricmc/fabric-loader/0.16/fabric-loader-0.16.jar");
     assert_eq!(fs::read(&path).unwrap(), body);
     assert_eq!(server.count(&format!("{artifact}.sha1")), 1);
@@ -269,16 +275,30 @@ async fn maven_libraries_are_verified_and_published_before_launch() {
     details.libraries[0].sha1 = Some("b".repeat(40));
     details.libraries[0].size = Some(body.len() as u64);
     assert!(
-        prepare_launch_libraries(&details, &root, &root, &RuleContext::current(), &downloader)
-            .await
-            .is_err()
+        prepare_launch_libraries(
+            &details,
+            &root,
+            &root,
+            &RuleContext::current(),
+            &downloader,
+            true
+        )
+        .await
+        .is_err()
     );
     assert_eq!(fs::read(&path).unwrap(), b"previous");
     details.libraries[0].url = Some("http://localhost/".into());
     assert!(
-        prepare_launch_libraries(&details, &root, &root, &RuleContext::current(), &downloader)
-            .await
-            .is_err()
+        prepare_launch_libraries(
+            &details,
+            &root,
+            &root,
+            &RuleContext::current(),
+            &downloader,
+            true
+        )
+        .await
+        .is_err()
     );
     fs::remove_dir_all(root).unwrap();
 }
@@ -310,6 +330,7 @@ async fn official_fabric_maven_libraries_smoke() {
             &root,
             &RuleContext::current(),
             &Downloader::default(),
+            true,
         )
         .await;
         let valid = result.is_ok()
@@ -581,8 +602,8 @@ async fn launch_preparation_selects_java_classifier_and_isolates_natives() {
     let x86 = context("x86");
     let x64 = context("x86_64");
     let (a, b) = tokio::join!(
-        prepare_launch_libraries(&details, &root, &root, &x86, &downloader),
-        prepare_launch_libraries(&details, &root, &root, &x64, &downloader),
+        prepare_launch_libraries(&details, &root, &root, &x86, &downloader, true),
+        prepare_launch_libraries(&details, &root, &root, &x64, &downloader, true),
     );
     let (a, b) = (a.unwrap(), b.unwrap());
     assert_ne!(a.path(), b.path());
@@ -597,7 +618,7 @@ async fn launch_preparation_selects_java_classifier_and_isolates_natives() {
     fs::remove_file(root.join("libraries/test/32.jar")).unwrap();
     let mirror = MockMirror::new([("/maven/test/32.jar".into(), archive32)].into(), false);
     let downloader = Downloader::with_bases(mirror.client().api_bases_async().await);
-    let downloaded = prepare_launch_libraries(&details, &root, &root, &x86, &downloader)
+    let downloaded = prepare_launch_libraries(&details, &root, &root, &x86, &downloader, true)
         .await
         .unwrap();
     assert_eq!(
@@ -606,7 +627,7 @@ async fn launch_preparation_selects_java_classifier_and_isolates_natives() {
     );
     assert_eq!(mirror.count("/maven/test/32.jar"), 1);
     drop(downloaded);
-    let cached = prepare_launch_libraries(&details, &root, &root, &x86, &downloader)
+    let cached = prepare_launch_libraries(&details, &root, &root, &x86, &downloader, true)
         .await
         .unwrap();
     assert_eq!(mirror.count("/maven/test/32.jar"), 1);
@@ -989,7 +1010,7 @@ async fn full_install_retries_publishes_custom_name_and_reuses_verified_cache() 
     assert_eq!(instances[0].version, "1.test");
     let details = instances[0].read_version_json().unwrap();
     let downloader = Downloader::with_bases(client.api_bases_async().await);
-    prepare_legacy_assets(&details, &root, &root, &downloader)
+    prepare_legacy_assets(&details, &root, &root, &downloader, true)
         .await
         .unwrap();
     assert_eq!(
@@ -999,12 +1020,12 @@ async fn full_install_retries_publishes_custom_name_and_reuses_verified_cache() 
     let mut external_details = details.clone();
     external_details.asset_index.download.sha1.clear();
     external_details.asset_index.download.url.clear();
-    prepare_legacy_assets(&external_details, &root, &root, &downloader)
+    prepare_legacy_assets(&external_details, &root, &root, &downloader, true)
         .await
         .unwrap();
     fs::write(root.join("resources/sounds/a.ogg"), b"user data").unwrap();
     assert!(
-        prepare_legacy_assets(&details, &root, &root, &downloader)
+        prepare_legacy_assets(&details, &root, &root, &downloader, true)
             .await
             .is_err()
     );

@@ -104,6 +104,27 @@ pub struct AppState {
     pub instance_launch_arguments: HashMap<PathBuf, crate::core::launch_arguments::LaunchArguments>,
     #[serde(default)]
     pub launcher_visibility: crate::core::visibility::VisibilityMode,
+    #[serde(default)]
+    pub instance_launch_settings:
+        HashMap<PathBuf, crate::core::instance_settings::InstanceLaunchSettings>,
+    #[serde(default)]
+    pub renderer: u8,
+    #[serde(default = "crate::core::instance_settings::default_version_info")]
+    pub version_info: String,
+    #[serde(default = "default_true")]
+    pub disable_jlw: bool,
+    #[serde(default)]
+    pub disable_legacy_fix: bool,
+    #[serde(default)]
+    pub disable_lwjgl_unsafe_agent: bool,
+    #[serde(default)]
+    pub proxy: crate::core::network::ProxySettings,
+    #[serde(default)]
+    pub instance_descriptions: HashMap<PathBuf, String>,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, PartialEq)]
@@ -530,6 +551,11 @@ impl ConfigManager {
             pcl_identifier,
         };
         instance.load_or_init()?;
+        // The API client is built before the proxy policy is loaded.
+        instance
+            .api_client
+            .rebuild_client()
+            .map_err(|_| ConfigManagerError::ApiClientBuildError)?;
         let download_settings = instance
             .app_state
             .blocking_lock()
@@ -547,6 +573,27 @@ impl ConfigManager {
         CONFIG_MANAGER
             .as_ref()
             .expect("config manager failed to initialize")
+    }
+
+    /// Directory holding the config file and extracted launcher resources.
+    pub fn config_dir(&self) -> &std::path::Path {
+        &self.config_dir
+    }
+
+    pub fn update_proxy_settings(
+        &self,
+        settings: crate::core::network::ProxySettings,
+    ) -> Result<crate::core::network::ProxySettings, String> {
+        settings.validate()?;
+        // Validate the resulting client before committing the setting.
+        crate::core::network::build_proxy_client(&settings)?;
+        self.update(|state| {
+            state.proxy = settings.clone();
+            Ok(settings.clone())
+        })?;
+        crate::core::network::apply(&settings)?;
+        self.api_client.rebuild_client()?;
+        Ok(settings)
     }
 
     fn load_or_init(&self) -> Result<(), ConfigManagerError> {
@@ -639,12 +686,26 @@ impl ConfigManager {
         {
             return Err(ConfigManagerError::ConfigFileCorrupted);
         }
+        if state_read.renderer > 3
+            || state_read.proxy.validate().is_err()
+            || state_read
+                .instance_launch_settings
+                .values()
+                .any(|settings| settings.validate().is_err())
+        {
+            return Err(ConfigManagerError::ConfigFileCorrupted);
+        }
+        crate::core::network::apply(&state_read.proxy)
+            .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
         let mut state = self.app_state.blocking_lock();
         *state = state_read;
         migrate_java_settings(&mut state);
         // update the api provider
         self.api_client
             .switch_provider(&state.pcl_setup_info.api_provider);
+        self.api_client
+            .rebuild_client()
+            .map_err(|_| ConfigManagerError::ApiClientBuildError)?;
         Ok(())
     }
 

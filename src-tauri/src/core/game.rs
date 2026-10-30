@@ -42,6 +42,55 @@ pub enum GameInstanceError {
     InvalidVersionJar,
 }
 
+/// Rename an instance folder, its version JSON and self jar, like CE does.
+pub fn rename_instance_files(
+    old_directory: &Path,
+    new_directory: &Path,
+    old_name: &str,
+    new_name: &str,
+) -> Result<(), String> {
+    // Only case changes need an intermediate hop on case-insensitive file systems.
+    let case_only = old_name.to_lowercase() == new_name.to_lowercase();
+    let temp_directory = new_directory
+        .parent()
+        .ok_or("Invalid instance parent")?
+        .join(format!("{new_name}_pcl_rename"));
+    let target = if case_only {
+        &temp_directory
+    } else {
+        new_directory
+    };
+    std::fs::rename(old_directory, target).map_err(|error| error.to_string())?;
+    if case_only && let Err(error) = std::fs::rename(target, new_directory) {
+        let _ = std::fs::rename(target, old_directory);
+        return Err(error.to_string());
+    }
+    let old_json = new_directory.join(format!("{old_name}.json"));
+    let new_json = new_directory.join(format!("{new_name}.json"));
+    if old_json.is_file() {
+        let mut value: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&old_json).map_err(|error| error.to_string())?)
+                .map_err(|error| error.to_string())?;
+        value["id"] = new_name.into();
+        std::fs::write(
+            &new_json,
+            serde_json::to_vec(&value).map_err(|error| error.to_string())?,
+        )
+        .map_err(|error| error.to_string())?;
+        if !case_only {
+            std::fs::remove_file(&old_json).map_err(|error| error.to_string())?;
+        }
+    }
+    if !case_only {
+        let old_jar = new_directory.join(format!("{old_name}.jar"));
+        if old_jar.is_file() {
+            std::fs::rename(&old_jar, new_directory.join(format!("{new_name}.jar")))
+                .map_err(|error| error.to_string())?;
+        }
+    }
+    Ok(())
+}
+
 impl GameInstance {
     pub fn shortcut_directory(&self, game_directory: &Path, kind: InstanceFolder) -> PathBuf {
         match kind {
@@ -673,4 +722,50 @@ fn from_version_folder() {
     let game_repo = Arc::new(game_repo);
     let instance = GameInstance::from_version_folder(&version_folder, &game_repo);
     println!("{:?}", instance);
+}
+
+#[cfg(test)]
+mod rename_tests {
+    use super::*;
+
+    #[test]
+    fn renames_folder_version_json_and_self_jar() {
+        let root = std::env::temp_dir().join(format!("pcl-rename-{}", uuid::Uuid::new_v4()));
+        let versions = root.join("versions");
+        let old = versions.join("Old Name");
+        std::fs::create_dir_all(&old).unwrap();
+        std::fs::write(
+            old.join("Old Name.json"),
+            br#"{"id":"Old Name","type":"release"}"#,
+        )
+        .unwrap();
+        std::fs::write(old.join("Old Name.jar"), b"client").unwrap();
+        let new = versions.join("New Name");
+        rename_instance_files(&old, &new, "Old Name", "New Name").unwrap();
+        assert!(!old.exists());
+        assert!(!new.join("Old Name.json").exists());
+        assert!(!new.join("Old Name.jar").exists());
+        assert!(new.join("New Name.jar").is_file());
+        let json: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(new.join("New Name.json")).unwrap()).unwrap();
+        assert_eq!(json["id"], "New Name");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn rejects_missing_source_without_leaving_files_behind() {
+        let root = std::env::temp_dir().join(format!("pcl-rename-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&root).unwrap();
+        assert!(
+            rename_instance_files(
+                &root.join("versions/Missing"),
+                &root.join("versions/New"),
+                "Missing",
+                "New"
+            )
+            .is_err()
+        );
+        assert!(!root.join("versions/New").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }

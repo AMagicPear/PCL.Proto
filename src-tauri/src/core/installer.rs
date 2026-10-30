@@ -567,6 +567,7 @@ pub async fn prepare_launch_libraries(
     instance: &Path,
     context: &RuleContext,
     downloader: &Downloader,
+    verify: bool,
 ) -> anyhow::Result<LaunchNatives> {
     let mut plan = InstallPlan::new();
     plan.libraries(details, repo, context)?;
@@ -575,10 +576,14 @@ pub async fn prepare_launch_libraries(
         .map(|file| {
             let downloader = downloader.clone();
             async move {
-                downloader
-                    .download(&file.info, &file.out_path)
-                    .await
-                    .with_context(|| format!("Cannot prepare {}", file.out_path.display()))
+                let result = if verify {
+                    downloader.download(&file.info, &file.out_path).await
+                } else {
+                    downloader
+                        .download_unverified(&file.info, &file.out_path)
+                        .await
+                };
+                result.with_context(|| format!("Cannot prepare {}", file.out_path.display()))
             }
         })
         .buffer_unordered(64)
@@ -606,15 +611,22 @@ pub async fn prepare_legacy_assets(
     repo: &Path,
     game_directory: &Path,
     downloader: &Downloader,
+    verify: bool,
 ) -> anyhow::Result<()> {
     validate_file_name(&details.asset_index.id)?;
     let index_path = repo
         .join("assets/indexes")
         .join(format!("{}.json", details.asset_index.id));
     if details.asset_index.download.validate().is_ok() {
-        downloader
-            .download(&details.asset_index.download, &index_path)
-            .await?;
+        if verify {
+            downloader
+                .download(&details.asset_index.download, &index_path)
+                .await?;
+        } else {
+            downloader
+                .download_unverified(&details.asset_index.download, &index_path)
+                .await?;
+        }
     } else {
         ensure!(
             index_path.is_file(),
@@ -630,7 +642,15 @@ pub async fn prepare_legacy_assets(
     let mut plan = InstallPlan::new();
     plan.assets(&index, repo, "https://resources.download.minecraft.net")?;
     futures_util::stream::iter(plan.files)
-        .map(|file| async move { downloader.download(&file.info, &file.out_path).await })
+        .map(|file| async move {
+            if verify {
+                downloader.download(&file.info, &file.out_path).await
+            } else {
+                downloader
+                    .download_unverified(&file.info, &file.out_path)
+                    .await
+            }
+        })
         .buffer_unordered(16)
         .try_collect::<Vec<_>>()
         .await?;
@@ -638,7 +658,7 @@ pub async fn prepare_legacy_assets(
     let game_directory = game_directory.to_owned();
     let index_id = details.asset_index.id.clone();
     tokio::task::spawn_blocking(move || {
-        materialize_assets(&index, &repo, &game_directory, &index_id)
+        materialize_assets(&index, &repo, &game_directory, &index_id, verify)
     })
     .await??;
     Ok(())
@@ -649,6 +669,7 @@ fn materialize_assets(
     repo: &Path,
     instance: &Path,
     index_id: &str,
+    verify: bool,
 ) -> anyhow::Result<()> {
     let mut roots = Vec::new();
     if index.virtual_assets {
@@ -705,8 +726,11 @@ fn materialize_assets(
                     let metadata = fs::symlink_metadata(&target)?;
                     ensure!(
                         metadata.file_type().is_file()
-                            && metadata.len() == object.size
-                            && check_sha1(&target, &hash)?,
+                            && (if verify {
+                                metadata.len() == object.size && check_sha1(&target, &hash)?
+                            } else {
+                                true
+                            }),
                         "Asset conflicts with existing file: {}",
                         target.display()
                     );
@@ -857,7 +881,7 @@ async fn install_version(
     let index_id = details.asset_index.id;
     tokio::task::spawn_blocking(move || {
         extract_natives(&plan.natives, &instance_path.join("natives"))?;
-        materialize_assets(&index, &repo, &instance_path, &index_id)
+        materialize_assets(&index, &repo, &instance_path, &index_id, true)
     })
     .await??;
     // CE preserves the source version separately when the instance has a custom name.

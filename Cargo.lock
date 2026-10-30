@@ -4854,6 +4854,7 @@ dependencies = [
  "trash",
  "trust-dns-resolver",
  "uuid",
+ "windows-sys 0.52.0",
  "zip 0.6.6",
 ]
 

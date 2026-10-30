@@ -58,9 +58,7 @@ pub async fn save_loader_file(
             .filter(|p| p.is_dir())
             .context("Invalid destination")?;
         ensure!(destination.file_name().is_some(), "Invalid destination");
-        let client = reqwest::Client::builder()
-            .user_agent(crate::setup::constants::USER_AGENT)
-            .build()?;
+        let client = crate::core::network::builder().build()?;
         let sha1 = client
             .get(format!("{url}.sha1"))
             .send()

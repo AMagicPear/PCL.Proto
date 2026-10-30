@@ -1,6 +1,5 @@
 //! Verified file transfers shared by installation and client/server export.
 use super::api_client::{McApiError, game::DownloadInfo};
-use crate::setup::constants::USER_AGENT;
 use futures_util::StreamExt;
 use sha1::Digest;
 use std::{
@@ -74,13 +73,16 @@ pub(super) const SMALL_FILE_THRESHOLD: u64 = 4 * 1024 * 1024;
 type ProgressSink<'a> = Option<(&'a DownloadConfig, &'a mpsc::Sender<ProgressUpdate>)>;
 
 struct DownloadClients {
+    generation: u64,
     multiplexed: reqwest::Client,
     http1: reqwest::Client,
 }
-static CLIENTS: LazyLock<DownloadClients> = LazyLock::new(|| {
+static CLIENTS: LazyLock<std::sync::RwLock<DownloadClients>> =
+    LazyLock::new(|| std::sync::RwLock::new(build_clients()));
+
+fn build_clients() -> DownloadClients {
     let build = |http1| {
-        let mut builder = reqwest::Client::builder()
-            .user_agent(USER_AGENT)
+        let mut builder = crate::core::network::builder()
             .connect_timeout(Duration::from_secs(15))
             .read_timeout(Duration::from_secs(15))
             .pool_max_idle_per_host(64)
@@ -91,10 +93,26 @@ static CLIENTS: LazyLock<DownloadClients> = LazyLock::new(|| {
         builder.build().expect("static download HTTP configuration")
     };
     DownloadClients {
+        generation: crate::core::network::generation(),
         multiplexed: build(false),
         http1: build(true),
     }
-});
+}
+
+/// Proxy changes replace both clients outside in-flight requests.
+fn clients() -> (reqwest::Client, reqwest::Client) {
+    {
+        let guard = CLIENTS.read().unwrap();
+        if guard.generation == crate::core::network::generation() {
+            return (guard.multiplexed.clone(), guard.http1.clone());
+        }
+    }
+    let mut guard = CLIENTS.write().unwrap();
+    if guard.generation != crate::core::network::generation() {
+        *guard = build_clients();
+    }
+    (guard.multiplexed.clone(), guard.http1.clone())
+}
 
 impl Downloader {
     pub(super) fn source_urls(&self, url: &str) -> Vec<String> {
@@ -120,6 +138,7 @@ impl Downloader {
                 &options.info,
                 &options.out_path,
                 Some((&options, &progress_tx)),
+                true,
             )
             .await;
         report(
@@ -135,13 +154,22 @@ impl Downloader {
         result.map(|_| ())
     }
     pub async fn download(&self, info: &DownloadInfo, path: &Path) -> Result<(), McApiError> {
-        self.transfer(info, path, None).await.map(|_| ())
+        self.transfer(info, path, None, true).await.map(|_| ())
+    }
+    /// Instance setting "disable file verification": reuse existing files as-is.
+    pub async fn download_unverified(
+        &self,
+        info: &DownloadInfo,
+        path: &Path,
+    ) -> Result<(), McApiError> {
+        self.transfer(info, path, None, false).await.map(|_| ())
     }
     async fn transfer(
         &self,
         info: &DownloadInfo,
         path: &Path,
         progress: ProgressSink<'_>,
+        verify: bool,
     ) -> Result<u64, McApiError> {
         if !super::minecraft::valid_sha1(&info.sha1) {
             return Err(McApiError::InvalidMetadata("Invalid download SHA-1".into()));
@@ -150,9 +178,16 @@ impl Downloader {
         let cached_path = path.to_owned();
         let expected = info.clone();
         let cached = tokio::task::spawn_blocking(move || {
-            std::fs::metadata(&cached_path).is_ok_and(|m| m.len() == expected.size)
-                && crate::util::file::check_sha1(&cached_path, &expected.sha1.to_ascii_lowercase())
+            if verify {
+                std::fs::metadata(&cached_path).is_ok_and(|m| m.len() == expected.size)
+                    && crate::util::file::check_sha1(
+                        &cached_path,
+                        &expected.sha1.to_ascii_lowercase(),
+                    )
                     .unwrap_or(false)
+            } else {
+                cached_path.is_file()
+            }
         })
         .await
         .map_err(|e| McApiError::InvalidMetadata(e.to_string()))?;
@@ -173,7 +208,7 @@ impl Downloader {
                     continue;
                 }
                 report(progress, 0, TaskStatus::Running).await;
-                let result = self.transfer_from(info, path, url, progress).await;
+                let result = self.transfer_from(info, path, url, progress, verify).await;
                 match result {
                     Ok(()) => return Ok(info.size),
                     Err(error) => {
@@ -201,20 +236,23 @@ impl Downloader {
         path: &Path,
         url: &str,
         progress: ProgressSink<'_>,
+        verify: bool,
     ) -> Result<(), McApiError> {
         if info.size >= SMALL_FILE_THRESHOLD && self.resources.settings().file_connections > 1 {
             let partial = partial_file(path);
             match self.download_ranges(info, &partial.0, url, progress).await {
                 Ok(()) => {
-                    let check_path = partial.0.clone();
-                    let hash = info.sha1.to_ascii_lowercase();
-                    let valid = tokio::task::spawn_blocking(move || {
-                        crate::util::file::check_sha1(&check_path, &hash)
-                    })
-                    .await
-                    .map_err(|e| McApiError::InvalidMetadata(e.to_string()))??;
-                    if !valid {
-                        return Err(McApiError::Sha1Mismatch(path.to_owned()));
+                    if verify {
+                        let check_path = partial.0.clone();
+                        let hash = info.sha1.to_ascii_lowercase();
+                        let valid = tokio::task::spawn_blocking(move || {
+                            crate::util::file::check_sha1(&check_path, &hash)
+                        })
+                        .await
+                        .map_err(|e| McApiError::InvalidMetadata(e.to_string()))??;
+                        if !valid {
+                            return Err(McApiError::Sha1Mismatch(path.to_owned()));
+                        }
                     }
                     tokio::fs::rename(&partial.0, path).await?;
                     return Ok(());
@@ -271,7 +309,7 @@ impl Downloader {
                 path.display()
             )));
         }
-        if !format!("{:x}", hasher.finalize()).eq_ignore_ascii_case(&info.sha1) {
+        if verify && !format!("{:x}", hasher.finalize()).eq_ignore_ascii_case(&info.sha1) {
             return Err(McApiError::Sha1Mismatch(path.to_owned()));
         }
         output.flush().await?;
@@ -279,13 +317,6 @@ impl Downloader {
         drop(output);
         tokio::fs::rename(&partial.0, path).await?;
         Ok(())
-    }
-}
-fn http_client(mode: HttpMode, large: bool) -> &'static reqwest::Client {
-    match mode {
-        HttpMode::Http11 => &CLIENTS.http1,
-        HttpMode::Auto if large => &CLIENTS.http1,
-        _ => &CLIENTS.multiplexed,
     }
 }
 pub(super) async fn send_request(
@@ -307,11 +338,17 @@ pub(super) async fn send_request(
         }
         request.send()
     };
-    let client = http_client(mode, large);
+    let (multiplexed, http1) = clients();
+    let client = match mode {
+        HttpMode::Http11 => &http1,
+        HttpMode::Auto if large => &http1,
+        _ => &multiplexed,
+    };
+    let can_fallback = !std::ptr::eq(client, &http1);
     match send(client).await {
-        Err(error) if std::ptr::eq(client, &CLIENTS.multiplexed) && !error.is_timeout() => {
+        Err(error) if can_fallback && !error.is_timeout() => {
             log::debug!("HTTP negotiation failed for {url}, retrying HTTP/1.1: {error}");
-            send(&CLIENTS.http1).await
+            send(&http1).await
         }
         result => result,
     }

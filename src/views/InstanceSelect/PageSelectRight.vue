@@ -16,6 +16,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { pclText } from '@/api/pclLocale'
+import { useInstanceFavorites } from '@/composables/useInstanceFavorites'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,25 +28,10 @@ const loading = ref(false)
 const error = ref('')
 const selecting = ref(false)
 const query = ref('')
-const favoriteKey = 'pcl-instance-favorites'
-const favorites = ref<string[]>([])
-try {
-  const saved: unknown = JSON.parse(localStorage.getItem(favoriteKey) || '[]')
-  if (Array.isArray(saved))
-    favorites.value = saved.filter((value): value is string => typeof value === 'string')
-} catch {
-  /* Invalid preferences do not prevent opening the page. */
-}
+const { favorites, toggleFavorite: toggleFavoritePath } = useInstanceFavorites()
 function toggleFavorite(item: GameInstance) {
-  const next = favorites.value.includes(item.directory)
-    ? favorites.value.filter((path) => path !== item.directory)
-    : [...favorites.value, item.directory]
-  try {
-    localStorage.setItem(favoriteKey, JSON.stringify(next))
-    favorites.value = next
-  } catch (err) {
-    sideTip.show(String(err), 'warn')
-  }
+  const error = toggleFavoritePath(item.directory)
+  if (error) sideTip.show(error, 'warn')
 }
 const filtered = computed(() =>
   instances.value.filter((item) =>

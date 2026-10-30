@@ -5,6 +5,21 @@ use std::{
 
 use sha1::Digest;
 
+/// Open a folder in the platform file manager.
+pub fn open_directory(path: &Path) -> Result<(), String> {
+    std::process::Command::new(if cfg!(windows) {
+        "explorer"
+    } else if cfg!(target_os = "macos") {
+        "open"
+    } else {
+        "xdg-open"
+    })
+    .arg(path)
+    .spawn()
+    .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
 pub fn check_sha1(file: &Path, given: &str) -> Result<bool, std::io::Error> {
     let file = std::fs::File::open(file)?;
     let mut reader = BufReader::new(file);

@@ -1,13 +1,31 @@
 <script setup lang="ts">
-import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
 import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
-withDefaults(defineProps<{ screenshots?: { id: string; url: string; name: string }[] }>(), {
-  screenshots: () => [],
+import PSvgIcon from '@/components/widget/PSvgIcon.vue'
+import { computed } from 'vue'
+import { resourceUrl, useInstanceResources } from '@/composables/useInstanceResources'
+
+const resources = useInstanceResources({
+  kind: () => 'screenshot',
+  messages: {
+    deleted: 'Instance.Screenshot.Deleted',
+    deletedMultiple: 'Instance.Resource.Delete.RecycleMultiple',
+    deleteFailed: 'Instance.Screenshot.DeleteFailed',
+  },
 })
-const safeUrl = (value: string) =>
-  /^(https?:|blob:|asset:|data:image\/)/i.test(value) ? value : undefined
+const screenshots = computed(() =>
+  resources.items.value.map((entry) => ({
+    id: entry.path,
+    url: resourceUrl(entry.token),
+    name: entry.name,
+  })),
+)
+
+function remove(id: string) {
+  const entry = resources.items.value.find((item) => item.path === id)
+  if (entry) void resources.remove([entry])
+}
 
 const text = pclText
 </script>
@@ -19,24 +37,27 @@ const text = pclText
           <div v-if="screenshots.length" class="screenshots-content">
             <PCard :title="text('Instance.Screenshot.QuickActions')"
               ><div class="screenshot-actions">
-                <PButton type="tint" @click="showUnavailable">{{
+                <PButton type="tint" @click="resources.openFolder()">{{
                   text('Instance.Screenshot.OpenFolder')
                 }}</PButton>
               </div></PCard
             >
             <div class="screenshots">
-              <a
-                v-for="screenshot in screenshots"
-                :key="screenshot.id"
-                :href="safeUrl(screenshot.url)"
-                target="_blank"
-                rel="noopener noreferrer"
-                ><img
-                  :src="safeUrl(screenshot.url)"
-                  :alt="screenshot.name"
-                  loading="lazy"
-                /><span>{{ screenshot.name }}</span></a
-              >
+              <figure v-for="screenshot in screenshots" :key="screenshot.id">
+                <img :src="screenshot.url" :alt="screenshot.name" loading="lazy" />
+                <figcaption>
+                  <span>{{ screenshot.name }}</span>
+                  <button
+                    class="pcl-icon-button"
+                    type="button"
+                    :title="text('Common.Action.Delete')"
+                    :aria-label="text('Common.Action.Delete')"
+                    @click="remove(screenshot.id)"
+                  >
+                    <PSvgIcon name="lucide/trash-2" :size="15" />
+                  </button>
+                </figcaption>
+              </figure>
             </div>
           </div>
           <PCard
@@ -96,7 +117,7 @@ const text = pclText
                   grid-column: 2 / span 1;
                   justify-self: center;
                 "
-                @click="showUnavailable"
+                @click="resources.openFolder()"
                 type="tint"
                 >{{ text('Instance.Screenshot.OpenFolder') }}</PButton
               >
@@ -123,9 +144,16 @@ const text = pclText
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 15px;
 }
-.screenshots a {
+.screenshots figure {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+.screenshots figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 6px;
 }
 .screenshots img {

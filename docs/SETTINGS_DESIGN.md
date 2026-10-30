@@ -24,6 +24,12 @@
 
 新增进度（2026-10-30）：全局及实例 JVM、游戏参数与实例前置 classpath 接入 Rust 配置和启动进程。实例 JVM/游戏参数留空时分别继承全局，支持已实现的元数据替换标记；参数按引号和反斜杠解析成数组，不经过 shell。前置 classpath 使用分号分隔绝对路径。最大堆以内存设置为准，自定义 `-Xms` 优先于初始堆设置。保存失败保留页面草稿；此前未生效的旧参数草稿不自动执行。真实游戏、Tauri 桌面和 Windows/Linux 参数解析尚未验收。
 
+新增进度（2026-10-30）：实例资源页接通真实目录扫描与文件操作，数据包页按存档切换；图片用令牌化自定义协议，避免开启宽泛的 asset 作用域。存档信息页（NBT 解析）、模组元数据与依赖检查、整合包导出页仍未实现。
+
+新增进度（2026-10-30）：实例概览接通重命名（Rust 事务迁移实例目录键并同步 JSON/主 Jar）、描述与收藏、回收站删除、导出启动脚本与补全文件。导出脚本复用启动解析并在补全阶段保留 natives 目录；删除复用既有回收站命令；补全文件按所选 Java 架构校验并重下客户端 Jar、Libraries 与旧版资源。测试游戏、重置、修补核心与实例图标/分类仍未实现。
+
+新增进度（2026-10-30）：实例自定义信息、渲染器、启动前命令与等待、关闭文件校验、使用全局代理、Java Wrapper、LegacyFix、Debug Log4j2 和 LWJGL Unsafe Agent 接入 Rust 实例配置与启动链。渲染器在 Windows 上从腾讯镜像补全 mesa-loader；其余 agent 随包释放到配置目录并按 CE 条件添加。文件校验关闭后启动补全直接复用已有文件。游戏窗口标题改写、认证/服务器组和 Mod 更新仍不可用。全局 HTTP 代理（不使用/系统/自定义）接入下载器、元数据与导出请求，实例开关按 CE 只把自定义代理写入游戏 JVM；代理凭据只支持写在地址中，DoH 仍未实现。以上均未完成真实游戏与跨平台验收。
+
 新增进度（2026-10-30）：启动器可见性的隐藏后退出、隐藏后恢复、最小化和保持不变接入 Rust 配置及游戏会话。仅在游戏输出出现已知就绪标志后改变窗口；所有会话结束后，异常退出或输出不完整会恢复隐藏的窗口。旧的无效选择不自动启用，立即关闭选项仍不可用。就绪检测依赖游戏日志，不能识别的版本将保持窗口不变；真实游戏和各平台窗口行为尚未验收。
 
 ## 1. 结论与证据边界
@@ -138,12 +144,17 @@
 | ------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 接通   | Java 选择、忽略兼容性警告                              | `ComboArgumentJava`, `CheckAdvanceJava`；改走 Rust `java_preferences`，不以页面通用缓存为准                                                                                                             |
 | 接通   | 版本隔离                                               | `ComboArgumentIndieV2`；切换前警告，目录不自动搬迁                                                                                                              |
-| 未接入 | 标题、明确使用默认标题、自定义信息                     | `TextArgumentTitle`, `CheckArgumentTitleEmpty`, `TextArgumentInfo`                                                                                                              |
+| 未接入 | 标题、明确使用默认标题                                 | `TextArgumentTitle`, `CheckArgumentTitleEmpty`；需要 Win32 改写游戏窗口标题，暂不实现                                                                                                              |
+| 接通   | 自定义信息                                             | `TextArgumentInfo`；实例值经 Rust 保存，启动时覆盖 `${version_type}`，留空跟随全局 |
 | 接通   | 内存模式、最大/初始内存                                | `VersionRamType`, `SliderRamCustom`, `SliderRamInitialCustom`；可跟随全局，启动时解析实例覆盖                                                                                                           |
 | 未接入 | 登录限制、认证服务器/注册页/名称、自动进入服务器       | `ComboServerLoginRequire`, `TextServerAuthServer`, `TextServerAuthRegister`, `TextServerAuthName`, `TextServerEnter`                                                                                    |
 | 接通   | JVM/游戏参数、前置 classpath                           | `TextAdvanceJvm`, `TextAdvanceGame`, `TextAdvanceClasspathHead`；参数留空跟随全局，classpath 为实例专属 |
-| 未接入 | 渲染器、启动前命令与等待                               | `ComboAdvanceRenderer`, `TextAdvanceRun`, `CheckAdvanceRunWait`                                                                        |
-| 未接入 | Mod 更新、文件验证、游戏代理、包装器等                 | `CheckAdvanceDisableModUpdate`, `CheckAdvanceAssetsV2`, `CheckAdvanceUseProxyV2`, `CheckAdvanceDisableJLW`, `CheckAdvanceDisableLF`, `CheckUseDebugLog4j2Config`, `CheckAdvanceDisableLwjglUnsafeAgent` |
+| 接通   | 渲染器                                               | `ComboAdvanceRenderer`；仅 Windows 启用，启动补全阶段从腾讯镜像下载 mesa-loader 并生成 `-javaagent` |
+| 接通   | 启动前命令与等待                                     | `TextAdvanceRun`, `CheckAdvanceRunWait`；启动前在全局游戏目录执行，失败只记日志 |
+| 接通   | 文件验证、游戏代理                                     | `CheckAdvanceAssetsV2`, `CheckAdvanceUseProxyV2`；关闭校验复用已有文件，代理读取全局自定义代理 |
+| 接通   | 包装器、LegacyFix、Debug Log4j2、LWJGL Agent          | `CheckAdvanceDisableJLW`, `CheckAdvanceDisableLF`, `CheckUseDebugLog4j2Config`, `CheckAdvanceDisableLwjglUnsafeAgent`；资源随包，按 CE 条件启用 |
+| 未接入 | Mod 更新                                               | `CheckAdvanceDisableModUpdate`；PCL.Proto 没有模组更新检查，控件保持禁用 |
+| 未接入 | 登录限制、认证服务器/注册页/名称、自动进入服务器       | `ComboServerLoginRequire`, `TextServerAuthServer`, `TextServerAuthRegister`, `TextServerAuthName`, `TextServerEnter`；本轮不实现 |
 
 LittleSkin 按钮会填写/确认覆盖表单，但没有把认证配置送入启动链；锁定登录、新建档案按钮是占位。不能标成外置登录已经支持。
 
@@ -152,8 +163,8 @@ LittleSkin 按钮会填写/确认覆盖表单，但没有把认证配置送入�
 - 更新页确实请求 GitHub latest release 并显示结果/链接；这不是自动升级器，也不是 Minecraft 新版本提醒。当前仅比较版本字符串是否相等，尚无可靠的新旧版本排序。
 - 反馈页实际请求 GitHub issues，关于页展示真实构建版本；都不属于设置持久化机制。
 - 启动器日志页按钮仍为占位；游戏日志查看器已接入运行中及已结束的进程会话，支持选择、导出、清空、自动滚动和终止所选进程，运行栈导出尚不可用。
-- 实例概览的 Logo/显示分类、整合包导出的表单选项也使用 `usePageSettings()`；对应业务没有接通。**整合包导出页**与已实现的**原版客户端/服务端导出命令**是不同入口。
-- 数据包页 `filter` / `SearchBox` 会过滤传入列表，是有效的页面交互，但路由没有提供真实数据包列表；应归为页面状态，不升级成全局设置。
+- 实例概览的 Logo/显示分类、整合包导出的表单选项也使用 `usePageSettings()`；对应业务没有接通。实例概览的重命名、描述、收藏、删除、导出启动脚本、补全文件已接入真实命令；**整合包导出页**与已实现的**原版客户端/服务端导出命令**是不同入口。
+- 实例资源页（模组、资源包、光影、投影、存档、截图、数据包）已接入真实目录：`instance_files.rs` 扫描实例游戏目录（遵循实例隔离），支持打开文件夹、从文件安装、文件级启用/禁用（`.disabled` 后缀，与 CE 一致）、回收站删除；数据包页新增存档选择器。图片通过自定义 `pclinstance` 协议按令牌提供，未开放全局资源文件访问。仍未实现：模组元数据/图标解析、模组依赖与更新检查、存档 NBT 详情页、整合包导出页与服务端页。
 - 工具测试页 `TextSkinID` 被 `saveSkin()` 使用，确实参与皮肤获取/下载；`TextDownloadUrl` / `TextDownloadFolder` / `TextDownloadName`、四个 `Achievement*TextBox` 与 `CmbHeadSize` 尚未接通对应操作。这些均为工具表单，不应混入启动器偏好。
 - 整合包导出页还有 22 个动态包含选项及名称/版本/高级开关，只控制本页选项和提示，最终导出仍为占位。实例概览 `ComboDisplayLogo` / `ComboDisplayType` 只保存而不改变实例元数据。迁移必须覆盖这些 `usePageSettings()` 调用点，分别改成领域设置、局部表单或明确不可用。
 

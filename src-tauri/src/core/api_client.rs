@@ -250,7 +250,7 @@ pub mod plugins {
 }
 
 pub struct MinecraftApiClient {
-    client: Client,
+    client: std::sync::RwLock<Client>,
     api_bases: RwLock<ApiBases>,
     cache: DashMap<String, (Instant, serde_json::Value)>,
     ttl: Duration,
@@ -260,11 +260,20 @@ impl MinecraftApiClient {
     /// Create a new MinecraftApiClient
     pub fn new(client: Client, api_provider: &ApiProvider) -> Self {
         Self {
-            client,
+            client: std::sync::RwLock::new(client),
             api_bases: RwLock::new(ApiBases::new(api_provider)),
             cache: DashMap::new(),
             ttl: Duration::from_secs(60 * 5),
         }
+    }
+
+    /// Rebuild the dedicated client after the proxy policy changed.
+    pub fn rebuild_client(&self) -> Result<(), String> {
+        let client = super::network::builder()
+            .build()
+            .map_err(|error| error.to_string())?;
+        *self.client.write().unwrap() = client;
+        Ok(())
     }
 
     #[cfg(test)]
@@ -461,8 +470,8 @@ impl MinecraftApiClient {
             ApiProvider::Official => {
                 drop(guard);
                 let url = format!("{forge_base}/maven-metadata.xml");
-                let response = self
-                    .client
+                let client = self.client.read().unwrap().clone();
+                let response = client
                     .get(url)
                     .header(reqwest::header::USER_AGENT, USER_AGENT)
                     .send()

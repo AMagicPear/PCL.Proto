@@ -93,8 +93,7 @@ pub async fn install(
         crate::core::platform::host_architecture(),
     )
     .context("Mojang does not provide a runtime for this OS/architecture; install Java manually")?;
-    let client = reqwest::Client::builder()
-        .user_agent(crate::setup::constants::USER_AGENT)
+    let client = crate::core::network::builder()
         .timeout(std::time::Duration::from_secs(30))
         .build()?;
     let index: BTreeMap<String, BTreeMap<String, Vec<RuntimeRelease>>> =

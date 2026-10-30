@@ -24,6 +24,8 @@ import { useModal } from '@/composables/useModal'
 import { getInstanceIsolation, setInstanceIsolation } from '@/api/isolationSettings'
 import { launchArgumentKeys } from '@/api/launchArguments'
 import { useLaunchArguments } from '@/composables/useLaunchArguments'
+import { useInstanceLaunchSettings } from '@/composables/useInstanceLaunchSettings'
+import currentPlatform, { currentArch } from '@/util/platform'
 const props = defineProps<{
   loginLocked?: boolean
   memoryOverLimit?: boolean
@@ -36,6 +38,15 @@ const directory = computed(() => selected.instance_info?.directory)
 const { jvm: argumentJvm, game: argumentGame, classpath: argumentClasspath, ready: argumentsReady, error: argumentsError, load: loadArguments, save: saveArguments } = useLaunchArguments(directory)
 const memoryJava64 = computed(() => directory.value && java.runtimes.length ? (java.instanceIs64Bit[directory.value] ?? null) : null)
 const { mode: memoryMode, maximum: memoryMaximum, initial: memoryInitial, ready: memoryReady, error: memoryError, preview: memoryPreview, segments: memorySegments, load: loadMemory, save: saveMemory } = useMemorySettings(directory, memoryJava64)
+const {
+  settings: launchSettings,
+  ready: launchSettingsReady,
+  error: launchSettingsError,
+  save: saveLaunchSettings,
+} = useInstanceLaunchSettings(directory)
+const rendererWindowsOnly = currentPlatform !== 'windows'
+const jlwForced = computed(() => currentArch === 'aarch64')
+
 const javaSettings = computed<InstanceJavaSettings>(
   () =>
     (directory.value && java.instances[directory.value]) || {
@@ -139,6 +150,42 @@ const java32Bit = computed(
 )
 const authVisible = computed(() => ['2', '3'].includes(String(values.ComboServerLoginRequire)))
 const modal = useModal()
+// CE remembers these confirmations for the whole run; the page only warns once.
+let rendererHinted = false
+let debugLogHinted = false
+async function confirmWarning(message: string) {
+  const result = await modal.open({
+    title: text('Common.Dialog.Warning'),
+    content: message,
+    plainText: true,
+    buttons: [
+      {
+        content: text('Setup.Launch.Advanced.Renderer.Warning.Confirm'),
+        operation: () => modal.close(true),
+      },
+      { content: text('Common.Action.Cancel'), operation: () => modal.close(false) },
+    ],
+  })
+  return !!result.confirmed
+}
+async function changeRenderer(value: string | undefined) {
+  if (!value || Number(value) === launchSettings.renderer) return
+  if (value !== '0' && !rendererHinted) {
+    if (!(await confirmWarning(text('Setup.Launch.Advanced.Renderer.Warning.Message')))) return
+    rendererHinted = true
+  }
+  launchSettings.renderer = Number(value)
+  saveLaunchSettings()
+}
+async function changeDebugLog(value: boolean) {
+  if (value === launchSettings.debug_log4j2) return
+  if (value && !debugLogHinted) {
+    if (!(await confirmWarning(text('Instance.Setup.Advanced.UseDebugLog4j.Message')))) return
+    debugLogHinted = true
+  }
+  launchSettings.debug_log4j2 = value
+  saveLaunchSettings()
+}
 const isolationValue = ref('0')
 const isolationReady = ref(false)
 const isolationBusy = ref(false)
@@ -210,6 +257,7 @@ const text = pclText
     <p class="settings-unavailable">{{ text('Proto.Settings.Unavailable') }}</p>
     <p v-if="isolationError" role="alert">{{ isolationError }} <button @click="loadIsolation()">{{ text('Launch.Homepage.LoadFailed.Retry') }}</button></p>
     <p v-if="argumentsError" role="alert">{{ argumentsError }} <button @click="argumentsReady ? saveArguments() : loadArguments()">{{ text('Launch.Homepage.LoadFailed.Retry') }}</button></p>
+    <p v-if="launchSettingsError" role="alert">{{ launchSettingsError }} <button @click="saveLaunchSettings()">{{ text('Launch.Homepage.LoadFailed.Retry') }}</button></p>
     <div>
       <div data-control="PanBack">
         <div
@@ -264,12 +312,13 @@ const text = pclText
                   v-model="values.CheckArgumentTitleEmpty"
                 />
                 <SetupItem :label="text('Setup.Launch.Options.CustomInfo.Label')" v-slot="{ id }"
-                  ><PTextBox disabled
+                  ><PTextBox :disabled="!launchSettingsReady"
                     :input-id="id"
                     data-control="TextArgumentInfo"
                     :title="text('Instance.Setup.Options.CustomInfo.ToolTip')"
                     :placeholder="text('Instance.Setup.FollowGlobal')"
-                    v-model="values.TextArgumentInfo"
+                    v-model="launchSettings.info"
+                    @blur="saveLaunchSettings()"
                 /></SetupItem>
                 <SetupItem :label="text('Instance.Setup.Options.Java')" v-slot="{ id }"
                   ><PComboBox
@@ -633,9 +682,11 @@ const text = pclText
           >
             <div class="settings-grid" style="margin: 0px 25px 15px 25px">
               <SetupItem :label="text('Setup.Launch.Advanced.Renderer.Label')" v-slot="{ id }"
-                ><PComboBox disabled
+                ><PComboBox
+                  :disabled="!launchSettingsReady || rendererWindowsOnly"
                   :input-id="id"
                   data-control="ComboAdvanceRenderer"
+                  :title="rendererWindowsOnly ? text('Proto.Settings.RendererWindowsOnly') : undefined"
                   :options="[
                     { key: '0', text: text('Instance.Setup.FollowGlobal') },
                     { key: '1', text: text('Setup.Launch.Advanced.Renderer.GameDefault') },
@@ -643,7 +694,8 @@ const text = pclText
                     { key: '3', text: text('Setup.Launch.Advanced.Renderer.DirectX12') },
                     { key: '4', text: text('Setup.Launch.Advanced.Renderer.Vulkan') },
                   ]"
-                  v-model="values.ComboAdvanceRenderer"
+                  :model-value="String(launchSettings.renderer)"
+                  @update:model-value="changeRenderer"
               /></SetupItem>
               <SetupItem :label="text('Setup.Launch.Advanced.JvmHead')" v-slot="{ id }"
                 ><PTextBox :disabled="!argumentsReady"
@@ -672,13 +724,14 @@ const text = pclText
                   v-model="argumentClasspath" @blur="saveArguments()"
               /></SetupItem>
               <SetupItem :label="text('Setup.Launch.Advanced.PreLaunchCommand')" v-slot="{ id }"
-                ><PTextBox disabled
+                ><PTextBox :disabled="!launchSettingsReady"
                   :input-id="id"
                   data-control="TextAdvanceRun"
                   style="margin: 0px 0px 3px 0px"
                   :title="text('Instance.Setup.Advanced.PreLaunchCommand.ToolTip')"
                   :placeholder="text('')"
-                  v-model="values.TextAdvanceRun"
+                  v-model="launchSettings.prelaunch_command"
+                  @blur="saveLaunchSettings()"
               /></SetupItem>
               <div
                 style="
@@ -688,19 +741,26 @@ const text = pclText
                   grid-column: 1 / -1;
                 "
               >
-                <PCheckBox disabled
-                  v-if="String(values.TextAdvanceRun || '').trim()"
+                <PCheckBox
+                  v-if="launchSettings.prelaunch_command.trim()"
                   data-control="CheckAdvanceRunWait"
                   style="margin: 0 0 8px"
                   id="PageInstanceSetup-CheckAdvanceRunWait"
+                  :disabled="!launchSettingsReady"
                   :label="text('Setup.Launch.Advanced.PreLaunchCommand.Wait')"
-                  v-model="values.CheckAdvanceRunWait"
+                  :model-value="launchSettings.prelaunch_wait"
+                  @update:model-value="
+                    (value) => {
+                      launchSettings.prelaunch_wait = value
+                      saveLaunchSettings()
+                    }
+                  "
                 />
 
                 <PCheckBox disabled
                   data-control="CheckAdvanceDisableModUpdate"
                   style="height: 28px"
-                  :title="text('Setup.Ui.FeatureHide.Item.ModUpdate.ToolTip')"
+                  :title="text('Proto.Settings.ModUpdateUnavailable')"
                   id="PageInstanceSetup-CheckAdvanceDisableModUpdate"
                   :label="text('Instance.Setup.Advanced.DisableModUpdate')"
                   v-model="values.CheckAdvanceDisableModUpdate"
@@ -717,52 +777,93 @@ const text = pclText
                     (value) => saveJava({ ...javaSettings, ignore_compatibility: value })
                   "
                 />
-                <PCheckBox disabled
+                <PCheckBox
                   data-control="CheckAdvanceAssetsV2"
                   style="height: 28px; margin: 0px 60px 0px 0px"
                   :title="text('Instance.Setup.Advanced.DisableFileVerification.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceAssetsV2"
+                  :disabled="!launchSettingsReady"
                   :label="text('Instance.Setup.Advanced.DisableFileVerification')"
-                  v-model="values.CheckAdvanceAssetsV2"
+                  :model-value="launchSettings.disable_asset_verify"
+                  @update:model-value="
+                    (value) => {
+                      launchSettings.disable_asset_verify = value
+                      saveLaunchSettings()
+                    }
+                  "
                 />
-                <PCheckBox disabled
+                <PCheckBox
                   data-control="CheckAdvanceUseProxyV2"
                   style="height: 28px"
                   :title="text('Instance.Setup.Advanced.UseGlobalProxy.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceUseProxyV2"
+                  :disabled="!launchSettingsReady"
                   :label="text('Instance.Setup.Advanced.UseGlobalProxy')"
-                  v-model="values.CheckAdvanceUseProxyV2"
+                  :model-value="launchSettings.use_proxy"
+                  @update:model-value="
+                    (value) => {
+                      launchSettings.use_proxy = value
+                      saveLaunchSettings()
+                    }
+                  "
                 />
-                <PCheckBox disabled
+                <PCheckBox
                   data-control="CheckAdvanceDisableJLW"
                   style="height: 28px"
-                  :title="text('Setup.Launch.Advanced.DisableJlw.ToolTip')"
+                  :title="
+                    jlwForced
+                      ? text('Setup.Launch.Advanced.DisableJlw.Arm64ToolTip')
+                      : text('Setup.Launch.Advanced.DisableJlw.ToolTip')
+                  "
                   id="PageInstanceSetup-CheckAdvanceDisableJLW"
+                  :disabled="jlwForced || !launchSettingsReady"
                   :label="text('Setup.Launch.Advanced.DisableJlw')"
-                  v-model="values.CheckAdvanceDisableJLW"
+                  :model-value="jlwForced || launchSettings.disable_jlw"
+                  @update:model-value="
+                    (value) => {
+                      launchSettings.disable_jlw = value
+                      saveLaunchSettings()
+                    }
+                  "
                 />
-                <PCheckBox disabled
+                <PCheckBox
                   data-control="CheckAdvanceDisableLF"
                   style="height: 28px"
                   :title="text('Setup.Launch.Advanced.DisableLF.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceDisableLF"
+                  :disabled="!launchSettingsReady"
                   :label="text('Setup.Launch.Advanced.DisableLF')"
-                  v-model="values.CheckAdvanceDisableLF"
+                  :model-value="launchSettings.disable_legacy_fix"
+                  @update:model-value="
+                    (value) => {
+                      launchSettings.disable_legacy_fix = value
+                      saveLaunchSettings()
+                    }
+                  "
                 />
-                <PCheckBox disabled
+                <PCheckBox
                   data-control="CheckUseDebugLog4j2Config"
                   style="height: 28px"
                   id="PageInstanceSetup-CheckUseDebugLog4j2Config"
+                  :disabled="!launchSettingsReady"
                   :label="text('Instance.Setup.Advanced.UseDebugLog4j')"
-                  v-model="values.CheckUseDebugLog4j2Config"
+                  :model-value="launchSettings.debug_log4j2"
+                  @update:model-value="changeDebugLog"
                 />
-                <PCheckBox disabled
+                <PCheckBox
                   data-control="CheckAdvanceDisableLwjglUnsafeAgent"
                   style="height: 28px"
                   :title="text('Setup.Launch.Advanced.DisableLwjglUnsafeAgent.ToolTip')"
                   id="PageInstanceSetup-CheckAdvanceDisableLwjglUnsafeAgent"
+                  :disabled="!launchSettingsReady"
                   :label="text('Setup.Launch.Advanced.DisableLwjglUnsafeAgent')"
-                  v-model="values.CheckAdvanceDisableLwjglUnsafeAgent"
+                  :model-value="launchSettings.disable_lwjgl_unsafe_agent"
+                  @update:model-value="
+                    (value) => {
+                      launchSettings.disable_lwjgl_unsafe_agent = value
+                      saveLaunchSettings()
+                    }
+                  "
                 />
               </div>
             </div>

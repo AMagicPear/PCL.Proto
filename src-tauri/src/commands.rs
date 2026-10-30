@@ -13,6 +13,7 @@ use crate::{
         repository::GameRepository,
     },
     setup::ConfigManager,
+    util::file::open_directory,
 };
 use std::{
     future::Future,
@@ -234,6 +235,54 @@ pub async fn set_launch_arguments(
         ConfigManager::instance().update(|state| {
             crate::core::launch_arguments::update(state, instance_directory.as_deref(), settings)
         })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_instance_launch_settings(
+    instance_directory: std::path::PathBuf,
+) -> Result<crate::core::instance_settings::InstanceLaunchSettings, String> {
+    let state = ConfigManager::instance().app_state.lock().await;
+    current_instance(&state, &instance_directory).map_err(|error| error.to_string())?;
+    Ok(state
+        .instance_launch_settings
+        .get(&instance_directory)
+        .cloned()
+        .unwrap_or_default())
+}
+
+#[tauri::command]
+pub async fn set_instance_launch_settings(
+    instance_directory: std::path::PathBuf,
+    settings: crate::core::instance_settings::InstanceLaunchSettings,
+) -> Result<crate::core::instance_settings::InstanceLaunchSettings, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update(|state| {
+            crate::core::instance_settings::update(state, &instance_directory, settings)
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_proxy_settings() -> crate::core::network::ProxySettings {
+    ConfigManager::instance()
+        .app_state
+        .lock()
+        .await
+        .proxy
+        .clone()
+}
+
+#[tauri::command]
+pub async fn set_proxy_settings(
+    settings: crate::core::network::ProxySettings,
+) -> Result<crate::core::network::ProxySettings, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update_proxy_settings(settings)
     })
     .await
     .map_err(|error| error.to_string())?
@@ -912,21 +961,6 @@ pub async fn open_java_folder(java_exe: std::path::PathBuf) -> Result<(), String
     .map_err(|e| e.to_string())?
 }
 
-fn open_directory(path: &std::path::Path) -> Result<(), String> {
-    let mut command = std::process::Command::new(if cfg!(windows) {
-        "explorer"
-    } else if cfg!(target_os = "macos") {
-        "open"
-    } else {
-        "xdg-open"
-    });
-    command
-        .arg(path)
-        .spawn()
-        .map_err(|error| error.to_string())?;
-    Ok(())
-}
-
 #[tauri::command]
 pub async fn open_instance_folder(
     instance_directory: std::path::PathBuf,
@@ -1111,6 +1145,420 @@ pub async fn instance_folder_action(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+/// Resolve the instance from the configured repositories and build its launch plan.
+async fn prepare_launch_option(
+    instance_directory: std::path::PathBuf,
+) -> Result<LaunchOption, String> {
+    let info = java::selection::prepare(instance_directory.clone()).await?;
+    let runtime = info.runtime.ok_or_else(|| {
+        format!(
+            "No compatible Java found: {}",
+            info.requirements.description()
+        )
+    })?;
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().ensure_instance_isolation(&instance_directory)?;
+        let state = ConfigManager::instance().app_state.blocking_lock();
+        current_instance(&state, &instance_directory).map_err(|e| e.to_string())?;
+        LaunchOption::from_state(&state, Arc::new(runtime)).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn export_launch_script(
+    window: tauri::WebviewWindow,
+    instance_directory: std::path::PathBuf,
+    target_path: std::path::PathBuf,
+) -> Result<(), String> {
+    if !target_path.is_absolute() || target_path.file_name().is_none() {
+        return Err("Invalid launch script path".into());
+    }
+    let mut option = prepare_launch_option(instance_directory).await?;
+    if option.uses_launcher_size() {
+        let size = window.inner_size().map_err(|error| error.to_string())?;
+        if size.width == 0 || size.height == 0 {
+            return Err("Launcher window size is unavailable".into());
+        }
+        option = option.with_window_size(size.width as usize, size.height as usize);
+    }
+    let downloader = crate::core::downloader::Downloader::with_bases(
+        ConfigManager::instance().api_client.api_bases_async().await,
+    );
+    let natives = option
+        .prepare_natives(&downloader)
+        .await
+        .map_err(|e| format!("{e:#}"))?;
+    option
+        .prepare_legacy_assets(&downloader)
+        .await
+        .map_err(|e| format!("{e:#}"))?;
+    // The exported script keeps pointing at this natives folder, so it must survive.
+    std::mem::forget(natives);
+    option
+        .export_script(&target_path)
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+/// Re-download missing or broken instance files (CE "补全文件").
+#[tauri::command]
+pub async fn repair_instance_files(instance_directory: std::path::PathBuf) -> Result<(), String> {
+    let info = java::selection::prepare(instance_directory.clone()).await?;
+    let arch = info
+        .runtime
+        .as_ref()
+        .map(|runtime| runtime.architecture.clone());
+    let (details, global_dir, directory, game_directory, jar_path, vanilla) =
+        tauri::async_runtime::spawn_blocking(move || {
+            ConfigManager::instance().ensure_instance_isolation(&instance_directory)?;
+            let state = ConfigManager::instance().app_state.blocking_lock();
+            let instance =
+                current_instance(&state, &instance_directory).map_err(|e| e.to_string())?;
+            let details = instance
+                .read_version_json()
+                .map_err(|error| error.to_string())?;
+            let game_directory = crate::core::isolation::directory(&state, instance).to_owned();
+            // Loader instances share the parent's client JAR; only vanilla owns `jar_path`.
+            let vanilla = instance
+                .plugins_version
+                .keys()
+                .all(|plugin| plugin == "vanilla");
+            Ok::<_, String>((
+                details,
+                instance.global_dir.clone(),
+                instance.directory.clone(),
+                game_directory,
+                instance.jar_path.clone(),
+                vanilla,
+            ))
+        })
+        .await
+        .map_err(|error| error.to_string())??;
+    let context = match arch {
+        Some(arch) => crate::core::minecraft::RuleContext::for_java(&arch)
+            .map_err(|error| error.to_string())?,
+        None => crate::core::minecraft::RuleContext::current(),
+    };
+    let downloader = crate::core::downloader::Downloader::with_bases(
+        ConfigManager::instance().api_client.api_bases_async().await,
+    );
+    if vanilla && details.downloads.client.validate().is_ok() {
+        downloader
+            .download(&details.downloads.client, &jar_path)
+            .await
+            .map_err(|error| format!("Cannot repair client JAR: {error}"))?;
+    }
+    crate::core::installer::prepare_launch_libraries(
+        &details,
+        &global_dir,
+        &directory,
+        &context,
+        &downloader,
+        true,
+    )
+    .await
+    .map_err(|error| format!("{error:#}"))?;
+    crate::core::installer::prepare_legacy_assets(
+        &details,
+        &global_dir,
+        &game_directory,
+        &downloader,
+        true,
+    )
+    .await
+    .map_err(|error| format!("{error:#}"))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_instance_description(
+    instance_directory: std::path::PathBuf,
+) -> Result<String, String> {
+    let state = ConfigManager::instance().app_state.lock().await;
+    current_instance(&state, &instance_directory).map_err(|error| error.to_string())?;
+    Ok(state
+        .instance_descriptions
+        .get(&instance_directory)
+        .cloned()
+        .unwrap_or_default())
+}
+
+#[tauri::command]
+pub async fn set_instance_description(
+    instance_directory: std::path::PathBuf,
+    description: String,
+) -> Result<String, String> {
+    if description.len() > 4096 || description.contains('\0') {
+        return Err("Invalid instance description".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        ConfigManager::instance().update(|state| {
+            current_instance(state, &instance_directory).map_err(|e| e.to_string())?;
+            if description.trim().is_empty() {
+                state.instance_descriptions.remove(&instance_directory);
+            } else {
+                state
+                    .instance_descriptions
+                    .insert(instance_directory.clone(), description.clone());
+            }
+            Ok(description)
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn rename_instance(
+    instance_directory: std::path::PathBuf,
+    new_name: String,
+) -> Result<GameInstance, String> {
+    crate::util::file::validate_file_name(&new_name).map_err(|error| error.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        rename_instance_inner(instance_directory, new_name)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+fn rename_instance_inner(
+    instance_directory: std::path::PathBuf,
+    new_name: String,
+) -> Result<GameInstance, String> {
+    let manager = ConfigManager::instance();
+    let (instance, repo) = {
+        let state = manager.app_state.blocking_lock();
+        let instance = current_instance(&state, &instance_directory)
+            .map_err(|error| error.to_string())?
+            .clone();
+        let repo = state
+            .repositories
+            .iter()
+            .find(|repo| repo.path == instance.global_dir)
+            .cloned()
+            .ok_or("Minecraft folder was not found")?;
+        (instance, repo)
+    };
+    let old_name = instance.name.clone();
+    if new_name == old_name {
+        return Ok(instance);
+    }
+    let versions = repo
+        .path
+        .join("versions")
+        .canonicalize()
+        .map_err(|error| error.to_string())?;
+    let old_directory = instance
+        .directory
+        .canonicalize()
+        .map_err(|error| error.to_string())?;
+    if old_directory.parent() != Some(versions.as_path())
+        || std::fs::symlink_metadata(&instance.directory)
+            .map_err(|error| error.to_string())?
+            .file_type()
+            .is_symlink()
+    {
+        return Err("Instance directory is not a direct, canonical child of versions".into());
+    }
+    let new_directory = repo.path.join("versions").join(&new_name);
+    if new_directory.exists() {
+        return Err("An instance with that name already exists".into());
+    }
+    crate::core::game::rename_instance_files(
+        &instance.directory,
+        &new_directory,
+        &old_name,
+        &new_name,
+    )?;
+    let refreshed = GameInstance::from_version_folder(&new_directory, &repo)
+        .map_err(|_| "The renamed instance is no longer valid".to_string())?;
+    let saved = manager.update(|state| {
+        if let Some(value) = state.instance_memory_custom.remove(&instance.directory) {
+            state
+                .instance_memory_custom
+                .insert(new_directory.clone(), value);
+        }
+        if let Some(value) = state.instance_memory_settings.remove(&instance.directory) {
+            state
+                .instance_memory_settings
+                .insert(new_directory.clone(), value);
+        }
+        if let Some(value) = state.instance_launch_arguments.remove(&instance.directory) {
+            state
+                .instance_launch_arguments
+                .insert(new_directory.clone(), value);
+        }
+        if let Some(value) = state.instance_launch_settings.remove(&instance.directory) {
+            state
+                .instance_launch_settings
+                .insert(new_directory.clone(), value);
+        }
+        if let Some(value) = state.java_preferences.remove(&instance.directory) {
+            state.java_preferences.insert(new_directory.clone(), value);
+        }
+        if let Some(value) = state.instance_isolation.remove(&instance.directory) {
+            state
+                .instance_isolation
+                .insert(new_directory.clone(), value);
+        }
+        if state.edited_memory_instances.remove(&instance.directory) {
+            state.edited_memory_instances.insert(new_directory.clone());
+        }
+        if let Some(description) = state.instance_descriptions.remove(&instance.directory) {
+            state
+                .instance_descriptions
+                .insert(new_directory.clone(), description);
+        }
+        if state
+            .active_game_instance
+            .as_ref()
+            .is_some_and(|active| active.directory == instance.directory)
+        {
+            state.active_game_instance = Some(Arc::new(refreshed.clone()));
+        }
+        Ok(())
+    });
+    if let Err(error) = saved {
+        // Keep the folder and the stored instance keys consistent.
+        if let Err(rollback) = std::fs::rename(&new_directory, &instance.directory) {
+            log::warn!("Cannot roll back instance rename: {rollback}");
+        }
+        return Err(error);
+    }
+    Ok(refreshed)
+}
+
+/// Game directory that owns the instance resource folders (isolation aware).
+fn instance_game_directory(
+    instance_directory: &std::path::Path,
+) -> Result<std::path::PathBuf, String> {
+    ConfigManager::instance().ensure_instance_isolation(instance_directory)?;
+    let state = ConfigManager::instance().app_state.blocking_lock();
+    let instance =
+        current_instance(&state, instance_directory).map_err(|error| error.to_string())?;
+    Ok(crate::core::isolation::directory(&state, instance).to_owned())
+}
+
+/// Resource mutations must stay inside the instance game directory.
+fn ensure_inside_instance(root: &std::path::Path, path: &std::path::Path) -> Result<(), String> {
+    let root = root.canonicalize().map_err(|error| error.to_string())?;
+    let canonical = path.canonicalize().map_err(|error| error.to_string())?;
+    if !canonical.starts_with(&root) {
+        return Err("Resource path is outside the instance directory".into());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn list_instance_resources(
+    instance_directory: std::path::PathBuf,
+    kind: String,
+    save: Option<String>,
+) -> Result<Vec<crate::core::instance_files::Entry>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let kind = crate::core::instance_files::Kind::parse(&kind)?;
+        let game_directory = instance_game_directory(&instance_directory)?;
+        let directory =
+            crate::core::instance_files::directory(kind, &game_directory, save.as_deref())?;
+        let mut entries = crate::core::instance_files::list(kind, &directory)?;
+        for entry in &mut entries {
+            let picture = match kind {
+                crate::core::instance_files::Kind::Screenshot => Some(entry.path.as_path()),
+                _ => entry.icon.as_deref(),
+            };
+            entry.token = picture.map(crate::protocol::register);
+        }
+        Ok(entries)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn open_instance_resource_folder(
+    instance_directory: std::path::PathBuf,
+    kind: String,
+    save: Option<String>,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let kind = crate::core::instance_files::Kind::parse(&kind)?;
+        let game_directory = instance_game_directory(&instance_directory)?;
+        let directory =
+            crate::core::instance_files::directory(kind, &game_directory, save.as_deref())?;
+        std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+        open_directory(&directory)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn open_instance_path(
+    instance_directory: std::path::PathBuf,
+    path: std::path::PathBuf,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let game_directory = instance_game_directory(&instance_directory)?;
+        ensure_inside_instance(&game_directory, &path)?;
+        open_directory(&path)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn set_instance_resources_enabled(
+    instance_directory: std::path::PathBuf,
+    paths: Vec<std::path::PathBuf>,
+    enabled: bool,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let game_directory = instance_game_directory(&instance_directory)?;
+        for path in &paths {
+            ensure_inside_instance(&game_directory, path)?;
+        }
+        crate::core::instance_files::set_enabled(&paths, enabled)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn delete_instance_resources(
+    instance_directory: std::path::PathBuf,
+    paths: Vec<std::path::PathBuf>,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let game_directory = instance_game_directory(&instance_directory)?;
+        for path in &paths {
+            ensure_inside_instance(&game_directory, path)?;
+        }
+        crate::core::instance_files::delete(&paths)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn import_instance_resources(
+    instance_directory: std::path::PathBuf,
+    kind: String,
+    save: Option<String>,
+    sources: Vec<std::path::PathBuf>,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let kind = crate::core::instance_files::Kind::parse(&kind)?;
+        let game_directory = instance_game_directory(&instance_directory)?;
+        let directory =
+            crate::core::instance_files::directory(kind, &game_directory, save.as_deref())?;
+        crate::core::instance_files::import(&sources, kind, &directory)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command(rename_all = "snake_case")]

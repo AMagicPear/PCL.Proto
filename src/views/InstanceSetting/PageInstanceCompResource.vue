@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
 import PButton from '@/components/widget/PButton.vue'
@@ -11,46 +11,86 @@ import PComboBox from '@/components/widget/PComboBox.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
-import { useRoute } from 'vue-router'
+import { resourceUrl, useInstanceResources } from '@/composables/useInstanceResources'
+import type { InstanceResourceKind } from '@/api/instanceResources'
+
 const route = useRoute()
-const props = withDefaults(
-  defineProps<{
-    loading?: boolean
-    schematicAvailable?: boolean
-    error?: string
-    items?: {
-      id: string
-      title: string
-      description?: string
-      icon?: string
-      enabled?: boolean
-      updatable?: boolean
-      error?: string
-      duplicate?: boolean
-    }[]
-  }>(),
-  { loading: false, error: '', items: () => [], schematicAvailable: false },
-)
+const router = useRouter()
+const kind = computed<InstanceResourceKind>(() => {
+  switch (route.meta.resourceType) {
+    case 'ResourcePack':
+      return 'resourcepack'
+    case 'Shader':
+      return 'shader'
+    case 'Schematic':
+      return 'schematic'
+    default:
+      return 'mod'
+  }
+})
+const resources = useInstanceResources({ kind: () => kind.value })
+// Schematic users are shown the list; unsupported mods surface through the filter instead.
+const schematicAvailable = true
 const query = ref('')
 const filter = ref('All')
 const selected = ref(new Set<string>())
 const sorted = ref(false)
+
+function formatSize(size: number) {
+  if (!size) return ''
+  if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`
+  return `${(size / 1024 / 1024).toFixed(1)} MB`
+}
+
+function formatDate(seconds: number) {
+  if (!seconds) return ''
+  return new Date(seconds * 1000).toLocaleDateString()
+}
+
+const items = computed(() =>
+  resources.items.value.map((entry) => {
+    const detail = [formatSize(entry.size), formatDate(entry.modified)].filter(Boolean).join(' · ')
+    return {
+      id: entry.path,
+      title: entry.name,
+      description: detail,
+      enabled: entry.enabled,
+      icon: resourceUrl(entry.token),
+    }
+  }),
+)
+
 const visibleItems = computed(() => {
-  const items = props.items.filter(
+  const matched = items.value.filter(
     (item) =>
       `${item.title} ${item.description || ''}`.toLowerCase().includes(query.value.toLowerCase()) &&
       (filter.value === 'All' ||
         (filter.value === 'Enabled' && item.enabled !== false) ||
-        (filter.value === 'Disabled' && item.enabled === false) ||
-        (filter.value === 'Updatable' && item.updatable) ||
-        (filter.value === 'Error' && item.error) ||
-        (filter.value === 'Duplicate' && item.duplicate)),
+        (filter.value === 'Disabled' && item.enabled === false)),
   )
-  return sorted.value ? [...items].sort((a, b) => a.title.localeCompare(b.title)) : items
+  return sorted.value ? [...matched].sort((a, b) => a.title.localeCompare(b.title)) : matched
 })
+
 function select(id: string, value: boolean) {
   if (value) selected.value.add(id)
   else selected.value.delete(id)
+}
+
+function toggleItem(id: string) {
+  const entry = resources.items.value.find((item) => item.path === id)
+  if (entry) void resources.toggle(entry)
+}
+
+function runSelection(action: string) {
+  const chosen = resources.items.value.filter((entry) => selected.value.has(entry.path))
+  if (action === 'Enable') void resources.setEnabled(chosen, true)
+  else if (action === 'Disable') void resources.setEnabled(chosen, false)
+  else if (action === 'Delete') void resources.remove(chosen)
+  else {
+    showUnavailable()
+    return
+  }
+  selected.value.clear()
 }
 
 const selectionActions = [
@@ -66,7 +106,8 @@ function downloadResources() {
   return router.push(`/download/${category === 'schematic' ? 'mod' : category}`)
 }
 
-const router = useRouter()
+const loading = computed(() => resources.loading.value)
+const error = computed(() => resources.error.value)
 const text = pclText
 </script>
 <template>
@@ -97,15 +138,23 @@ const text = pclText
           <div data-control="PanBack" style="grid-row: 1 / span 1; grid-column: 1 / span 1">
             <div v-if="items.length && !error" class="resource-main">
               <PSearchBox
+                v-model="query"
                 :placeholder="text('Instance.Resource.Search.Hint')"
-                @search="(value) => (query = value || '')"
               />
               <PCard hide-title
                 ><div class="resource-actions">
                   <PButton
                     v-for="action in [
-                      { id: 'BtnManageOpen', key: 'Common.Action.OpenFolder' },
-                      { id: 'BtnManageInstall', key: 'Instance.Resource.InstallFromFiles' },
+                      {
+                        id: 'BtnManageOpen',
+                        key: 'Common.Action.OpenFolder',
+                        run: () => resources.openFolder(),
+                      },
+                      {
+                        id: 'BtnManageInstall',
+                        key: 'Instance.Resource.InstallFromFiles',
+                        run: () => resources.importFiles(),
+                      },
                       {
                         id: 'BtnManageDownload',
                         key: 'Instance.Resource.DownloadNew',
@@ -117,9 +166,10 @@ const text = pclText
                     :key="action.id"
                     @click="(action.run || showUnavailable)()"
                     >{{ text(action.key) }}</PButton
-                  ><PButton @click="() => visibleItems.forEach((item) => selected.add(item.id))">{{
-                    text('Instance.Resource.SelectAll')
-                  }}</PButton
+                  ><PButton
+                    @click="
+                      () => visibleItems.forEach((item) => selected.add(item.id))
+                    ">{{ text('Instance.Resource.SelectAll') }}</PButton
                   ><RouterLink
                     to="/instance_setting/mod/jarinjar"
                     :title="text('Instance.Resource.Mod.JarInJar.Entry.ToolTip')"
@@ -132,7 +182,7 @@ const text = pclText
                   <PComboBox
                     v-model="filter"
                     :options="
-                      ['All', 'Enabled', 'Disabled', 'Updatable', 'Error', 'Duplicate'].map(
+                      ['All', 'Enabled', 'Disabled'].map(
                         (value) => ({
                           key: value,
                           text: text(`Instance.Resource.Filter.${value}`),
@@ -150,7 +200,7 @@ const text = pclText
                     v-bind="item"
                     :selected="selected.has(item.id)"
                     @select="(value) => select(item.id, value)"
-                    @toggle="showUnavailable()"
+                    @toggle="toggleItem(item.id)"
                     @update="showUnavailable()"
                   />
                   <p v-if="!visibleItems.length" class="pcl-empty">
@@ -162,7 +212,7 @@ const text = pclText
           </div>
           <PHint v-if="error" severity="error" class="resource-status"
             >{{ error
-            }}<PButton inline @click="showUnavailable">{{
+            }}<PButton inline @click="resources.refresh()">{{
               text('Common.Action.Refresh')
             }}</PButton></PHint
           >
@@ -204,7 +254,7 @@ const text = pclText
                 <PButton
                   data-control="BtnHintInstall"
                   style="height: 35px; min-width: 130px; margin: 0px 5px; padding: 0px 12px"
-                  @click="showUnavailable"
+                  @click="resources.importFiles()"
                   type="tint"
                   >{{ text('Instance.Resource.InstallFromFiles') }}</PButton
                 >
@@ -217,7 +267,7 @@ const text = pclText
                 <PButton
                   data-control="BtnHintOpen"
                   style="height: 35px; min-width: 130px; margin: 0px 5px; padding: 0px 12px"
-                  @click="showUnavailable"
+                  @click="resources.openFolder()"
                   >{{ text('Common.Action.OpenFolder') }}</PButton
                 >
               </div>
@@ -229,7 +279,11 @@ const text = pclText
     <PCard v-if="selected.size" hide-title class="pcl-selection-toolbar"
       ><p>{{ text('Instance.Resource.SelectedCount', [selected.size]) }}</p>
       <div>
-        <PButton v-for="action in selectionActions" :key="action.id" inline @click="showUnavailable"
+        <PButton
+          v-for="action in selectionActions"
+          :key="action.id"
+          inline
+          @click="runSelection(action.id)"
           ><PSvgIcon :name="`lucide/${action.icon}`" :size="18" />{{ text(action.key) }}</PButton
         ><PButton inline @click="() => selected.clear()"
           ><PSvgIcon name="lucide/x" :size="18" />{{

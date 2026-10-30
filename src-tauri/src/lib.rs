@@ -12,12 +12,14 @@ use tauri_plugin_log::{Target, TargetKind};
 
 mod commands;
 mod core;
+mod protocol;
 mod setup;
 mod util;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .register_uri_scheme_protocol("pclinstance", |_app, request| protocol::serve(request))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .plugin(
@@ -86,6 +88,21 @@ pub fn run() {
             commands::set_instance_isolation,
             commands::get_launch_arguments,
             commands::set_launch_arguments,
+            commands::get_instance_launch_settings,
+            commands::set_instance_launch_settings,
+            commands::get_proxy_settings,
+            commands::set_proxy_settings,
+            commands::export_launch_script,
+            commands::repair_instance_files,
+            commands::get_instance_description,
+            commands::set_instance_description,
+            commands::rename_instance,
+            commands::list_instance_resources,
+            commands::open_instance_resource_folder,
+            commands::open_instance_path,
+            commands::set_instance_resources_enabled,
+            commands::delete_instance_resources,
+            commands::import_instance_resources,
             util::toys::get_lucky_today,
             commands::add_java,
             commands::get_java_list,

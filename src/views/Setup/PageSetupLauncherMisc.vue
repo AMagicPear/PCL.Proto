@@ -9,9 +9,23 @@ import PComboBox from '@/components/widget/PComboBox.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
 import { logSlider, logSaveError, saveLogSettings, updateLogSlider } from '@/api/logSettings'
+import { useProxySettings } from '@/composables/useProxySettings'
+import sideTip from '@/composables/sideTip'
 const { values } = usePageSettings('PageSetupLauncherMisc', {
   ComboSystemActivity: '0',
 }, ['SliderMaxLog'])
+const {
+  mode: proxyMode,
+  address: proxyAddress,
+  ready: proxyReady,
+  busy: proxyBusy,
+  error: proxyError,
+  save: saveProxy,
+} = useProxySettings()
+async function applyProxy() {
+  await saveProxy()
+  if (!proxyError.value) sideTip.show(text('Proto.Settings.ProxySaved'), 'success')
+}
 
 const text = pclText
 </script>
@@ -19,6 +33,7 @@ const text = pclText
   <div class="pcl-page">
     <p class="settings-unavailable">{{ text('Proto.Settings.Unavailable') }}</p>
     <p v-if="logSaveError" role="alert">{{ logSaveError }} <button @click="saveLogSettings">{{ text('Launch.Homepage.LoadFailed.Retry') }}</button></p>
+    <p v-if="proxyError" role="alert">{{ proxyError }} <button @click="saveProxy()">{{ text('Launch.Homepage.LoadFailed.Retry') }}</button></p>
     <div>
       <div data-control="PanBack">
         <div
@@ -217,7 +232,7 @@ const text = pclText
                   data-control="RadioHttpProxyType0"
                   style="height: 22px; grid-row: 1 / span 1; grid-column: 1 / span 1"
                   class="pcl-radio"
-                  ><input disabled type="radio" v-model="values['SystemHttpProxyType']" value="0" />{{
+                  ><input :disabled="!proxyReady" type="radio" v-model="proxyMode" value="off" />{{
                     text('Setup.Misc.Network.Proxy.None')
                   }}</label
                 >
@@ -225,7 +240,7 @@ const text = pclText
                   data-control="RadioHttpProxyType1"
                   style="height: 22px; grid-row: 1 / span 1; grid-column: 2 / span 1"
                   class="pcl-radio"
-                  ><input disabled type="radio" v-model="values['SystemHttpProxyType']" value="1" />{{
+                  ><input :disabled="!proxyReady" type="radio" v-model="proxyMode" value="system" />{{
                     text('Setup.Misc.Network.Proxy.System')
                   }}</label
                 >
@@ -233,7 +248,7 @@ const text = pclText
                   data-control="RadioHttpProxyType2"
                   style="height: 22px; grid-row: 1 / span 1; grid-column: 3 / span 1"
                   class="pcl-radio"
-                  ><input disabled type="radio" v-model="values['SystemHttpProxyType']" value="2" />{{
+                  ><input :disabled="!proxyReady" type="radio" v-model="proxyMode" value="custom" />{{
                     text('Setup.Misc.Network.Proxy.Custom')
                   }}</label
                 >
@@ -251,12 +266,13 @@ const text = pclText
                 <PHint style="grid-row: 1 / span 1; grid-column: 1 / span 5" severity="warning">{{
                   text('Setup.Misc.Network.Proxy.UntrustedWarning')
                 }}</PHint>
-                <PTextBox disabled
+                <PTextBox
                   data-control="TextSystemHttpProxy"
                   style="grid-row: 3 / span 1; grid-column: 1 / span 5"
+                  :disabled="!proxyReady || proxyMode !== 'custom'"
                   :title="text('Setup.Misc.Network.Proxy.InvalidWarning')"
                   :placeholder="text('Proto.Settings.ProxyExample')"
-                  v-model="values.TextSystemHttpProxy"
+                  v-model="proxyAddress"
                 />
                 <span
                   style="
@@ -272,6 +288,7 @@ const text = pclText
                 <PTextBox disabled
                   data-control="TextSystemHttpProxyCustomUsername"
                   style="margin: 0px 5px 0px 0px; grid-row: 5 / span 1; grid-column: 2 / span 1"
+                  :title="text('Proto.Settings.ProxyCredentialsHint')"
                   :placeholder="text('Setup.Misc.Network.Proxy.Optional')"
                   v-model="values.TextSystemHttpProxyCustomUsername"
                 />
@@ -290,13 +307,15 @@ const text = pclText
                   type="password"
                   data-control="TextSystemHttpProxyCustomPassword"
                   style="margin: 0px 5px 0px 0px; grid-row: 5 / span 1; grid-column: 4 / span 1"
+                  :title="text('Proto.Settings.ProxyCredentialsHint')"
                   :placeholder="text('Setup.Misc.Network.Proxy.Optional')"
                   v-model="values.TextSystemHttpProxyCustomPassword"
                 />
                 <PButton
                   data-control="BtnApplyHttpProxy"
                   style="grid-row: 5 / span 1; grid-column: 5 / span 1"
-                  @click="showUnavailable"
+                  :disabled="!proxyReady || proxyBusy"
+                  @click="applyProxy"
                   >{{ text('Setup.Misc.Network.Proxy.Apply') }}</PButton
                 >
               </div>

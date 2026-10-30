@@ -30,6 +30,7 @@ pub struct LaunchOption {
     version_details: VersionDetails,
     natives_path: std::path::PathBuf,
     arguments: crate::core::launch_arguments::LaunchArguments,
+    extras: crate::core::instance_settings::LaunchExtras,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -54,6 +55,9 @@ pub enum GameLaunchError {
 
     #[error("Invalid custom launch arguments: {0}")]
     CustomArguments(String),
+
+    #[error("Launcher resource error: {0}")]
+    Resource(String),
 }
 
 impl LaunchOption {
@@ -75,6 +79,13 @@ impl LaunchOption {
 
     /// Launch a Minecraft game with the given options
     fn launch(&self) -> Result<std::process::Child, GameLaunchError> {
+        let mut command = self.command()?;
+        crate::core::instance_settings::run_prelaunch(&self.extras, &self.game_instance.global_dir);
+        Ok(command.spawn()?)
+    }
+
+    /// Build the java command without running it, so scripts can be exported.
+    fn command(&self) -> Result<std::process::Command, GameLaunchError> {
         let mut command = std::process::Command::new(&self.java_runtime.java_exe);
         let context = RuleContext::for_java(&self.java_runtime.architecture)
             .map_err(|e| GameLaunchError::InvalidMetadata(e.to_string()))?;
@@ -90,23 +101,110 @@ impl LaunchOption {
             !arg.starts_with("-Xmx")
                 && !(arg.starts_with("-Xms") && (custom_initial || self.initial_memory.is_some()))
         });
+        let wrapper = self.java_wrapper()?;
         command
             .args(custom_jvm)
-            .args(self.build_jvm_arguments(custom_initial))
-            .args(jvm)
+            .args(self.build_jvm_arguments(custom_initial)?)
+            .args(jvm);
+        if let Some(wrapper) = wrapper {
+            command.args(wrapper.0).arg("-jar").arg(wrapper.1);
+        }
+        command
             .arg(&self.version_details.main_class)
             .args(game)
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
             .current_dir(&self.game_directory);
-        Ok(command.spawn()?)
+        Ok(command)
+    }
+
+    /// Write a launch script that reproduces this launch without the launcher.
+    pub fn export_script(&self, path: &std::path::Path) -> Result<(), GameLaunchError> {
+        let command = self.command()?;
+        let args: Vec<String> = command
+            .get_args()
+            .map(|arg| arg.to_string_lossy().into_owned())
+            .collect();
+        let java = command.get_program().to_string_lossy().into_owned();
+        let mut script = String::new();
+        if cfg!(windows) {
+            script.push_str("@echo off\r\n");
+            script.push_str(&format!(
+                "title {} - {}\r\n",
+                LAUNCHER_NAME, self.game_instance.name
+            ));
+            script.push_str("chcp 65001>nul\r\n");
+            script.push_str(&format!(
+                "cd /D \"{}\"\r\n",
+                self.game_instance.global_dir.display()
+            ));
+            if !self.extras.prelaunch_command.trim().is_empty() {
+                script.push_str(self.extras.prelaunch_command.trim());
+                script.push_str("\r\n");
+            }
+            script.push_str(&format!(
+                "\"{}\" {}\r\n",
+                java,
+                args.iter()
+                    .map(|arg| quote_windows(arg))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            ));
+            script.push_str("echo.\r\npause\r\n");
+        } else {
+            script.push_str("#!/bin/sh\n");
+            script.push_str(&format!(
+                "cd {} || exit 1\n",
+                quote_unix(&self.game_instance.global_dir.to_string_lossy())
+            ));
+            if !self.extras.prelaunch_command.trim().is_empty() {
+                script.push_str(self.extras.prelaunch_command.trim());
+                script.push('\n');
+            }
+            script.push_str(&quote_unix(&java));
+            for arg in &args {
+                script.push(' ');
+                script.push_str(&quote_unix(arg));
+            }
+            script.push('\n');
+        }
+        let parent = path
+            .parent()
+            .ok_or_else(|| GameLaunchError::Resource("Invalid launch script path".into()))?;
+        std::fs::create_dir_all(parent)?;
+        let temp = path.with_extension("pcl-script-tmp");
+        std::fs::write(&temp, script)?;
+        std::fs::rename(&temp, path)?;
+        Ok(())
     }
 
     pub fn access_token(&self) -> Option<String> {
         self.account.access_token().map(str::to_owned)
     }
 
-    fn build_jvm_arguments(&self, custom_initial: bool) -> Vec<String> {
+    fn java_wrapper(&self) -> Result<Option<(Vec<String>, std::path::PathBuf)>, GameLaunchError> {
+        // CE only wraps under a UTF-8 Windows code page, and the wrapper is off by default.
+        if !self.extras.java_wrapper || !crate::core::instance_settings::java_wrapper_supported() {
+            return Ok(None);
+        }
+        let path = crate::core::instance_settings::java_wrapper().map_err(|error| {
+            GameLaunchError::Resource(format!("Cannot extract Java wrapper: {error}"))
+        })?;
+        let mut args = Vec::new();
+        if self.java_runtime.slug_version >= 9 {
+            args.push("--add-exports".into());
+            args.push("cpw.mods.bootstraplauncher/cpw.mods.bootstraplauncher=ALL-UNNAMED".into());
+        }
+        args.push(format!(
+            "-Doolloo.jlw.tmpdir={}",
+            crate::setup::ConfigManager::instance()
+                .config_dir()
+                .display()
+        ));
+        Ok(Some((args, path)))
+    }
+
+    fn build_jvm_arguments(&self, custom_initial: bool) -> Result<Vec<String>, GameLaunchError> {
         let mut args = Vec::new();
         // memory setting
         args.push(format!("-Xmx{}m", self.max_memory));
@@ -159,7 +257,92 @@ impl LaunchOption {
         // launcher info
         args.push(format!("-Dminecraft.launcher.brand={}", LAUNCHER_NAME));
         args.push(format!("-Dminecraft.launcher.version={}", APP_VERSION));
-        args
+        args.extend(self.agent_arguments()?);
+        Ok(args)
+    }
+
+    /// Java agents and JVM switches from the instance settings (CE order: agents last).
+    fn agent_arguments(&self) -> Result<Vec<String>, GameLaunchError> {
+        let mut args = Vec::new();
+        let resource = |result: std::io::Result<std::path::PathBuf>, name: &str| {
+            result.map_err(|error| {
+                GameLaunchError::Resource(format!("Cannot extract {name}: {error}"))
+            })
+        };
+        if let Some((host, port)) = &self.extras.proxy {
+            for scheme in ["http", "https"] {
+                args.push(format!("-D{scheme}.proxyHost={host}"));
+                args.push(format!("-D{scheme}.proxyPort={port}"));
+            }
+        }
+        if self.extras.debug_log4j2 {
+            let legacy = self.release_year().is_some_and(|year| year < 2017);
+            let path = resource(
+                crate::core::instance_settings::log4j2_config(legacy),
+                "log4j2 config",
+            )?;
+            args.push(format!("-Dlog4j.configurationFile={}", path.display()));
+        }
+        if self.extras.lwjgl_unsafe_agent && self.lwjgl_version().as_deref() == Some("3.4.1") {
+            let path = resource(
+                crate::core::instance_settings::lwjgl_unsafe_agent(),
+                "LWJGL unsafe agent",
+            )?;
+            args.push(format!("-javaagent:{}", path.display()));
+        }
+        if self.extras.legacy_fix && self.needs_legacy_fix() {
+            let path = resource(crate::core::instance_settings::legacy_fix(), "LegacyFix")?;
+            args.push(format!("-javaagent:{}", path.display()));
+            if self
+                .version_details
+                .release_time
+                .as_deref()
+                .is_some_and(|date| date < "2011-05-25")
+            {
+                args.push("-Djava.util.Arrays.useLegacyMergeSort=true".into());
+            }
+        }
+        // CE only ships the renderer agent for Windows.
+        if self.extras.renderer != 0 && cfg!(windows) {
+            let path = crate::core::instance_settings::mesa_loader_path();
+            if !path.is_file() {
+                return Err(GameLaunchError::Resource(
+                    "Renderer agent is missing; start the game again to download it".into(),
+                ));
+            }
+            let mode = match self.extras.renderer {
+                1 => "llvmpipe",
+                2 => "d3d12",
+                _ => "zink",
+            };
+            args.push(format!("-javaagent:{}={mode}", path.display()));
+        }
+        Ok(args)
+    }
+
+    fn release_year(&self) -> Option<u32> {
+        self.version_details
+            .release_time
+            .as_deref()
+            .and_then(|time| time.get(..4))
+            .and_then(|year| year.parse().ok())
+    }
+
+    fn needs_legacy_fix(&self) -> bool {
+        self.version_details
+            .release_time
+            .as_deref()
+            .is_some_and(|date| ("2000".."2013-06-25").contains(&date))
+    }
+
+    fn lwjgl_version(&self) -> Option<String> {
+        self.version_details.libraries.iter().find_map(|library| {
+            let mut parts = library.name.split(':');
+            if parts.next()? != "org.lwjgl" || parts.next()? != "lwjgl" {
+                return None;
+            }
+            parts.next().map(str::to_owned)
+        })
     }
 
     fn metadata_arguments(
@@ -201,7 +384,7 @@ impl LaunchOption {
             ("launcher_name", LAUNCHER_NAME.into()),
             ("launcher_version", APP_VERSION.into()),
             ("version_name", instance.name.clone()),
-            ("version_type", LAUNCHER_NAME.into()),
+            ("version_type", self.extras.info.clone()),
             (
                 "game_directory",
                 self.game_directory.to_string_lossy().into_owned(),
@@ -404,6 +587,8 @@ impl LaunchOption {
             arguments
                 .validate(true)
                 .map_err(GameLaunchError::CustomArguments)?;
+            let extras =
+                crate::core::instance_settings::resolve(state, Some(&game_instance.directory));
             return Ok(Self {
                 account: active_account.unwrap().clone(),
                 java_runtime: java_selected.clone(),
@@ -418,6 +603,7 @@ impl LaunchOption {
                 version_details: game_instance.read_version_json()?,
                 natives_path: game_instance.natives_path.clone(),
                 arguments,
+                extras,
             });
         }
         Err(GameLaunchError::MissingGameInstance)
@@ -428,12 +614,21 @@ impl LaunchOption {
         downloader: &super::downloader::Downloader,
     ) -> anyhow::Result<super::installer::LaunchNatives> {
         let context = RuleContext::for_java(&self.java_runtime.architecture)?;
+        if self.extras.renderer != 0
+            && cfg!(windows)
+            && !crate::core::instance_settings::mesa_loader_path().is_file()
+        {
+            crate::core::instance_settings::ensure_mesa_loader()
+                .await
+                .map_err(|error| anyhow::anyhow!("Cannot prepare renderer agent: {error}"))?;
+        }
         let natives = super::installer::prepare_launch_libraries(
             &self.version_details,
             &self.game_instance.global_dir,
             &self.game_instance.directory,
             &context,
             downloader,
+            !self.extras.disable_asset_verify,
         )
         .await?;
         self.natives_path = natives.path().to_owned();
@@ -449,9 +644,28 @@ impl LaunchOption {
             &self.game_instance.global_dir,
             &self.game_directory,
             downloader,
+            !self.extras.disable_asset_verify,
         )
         .await
     }
+}
+
+/// Batch tokens break on whitespace and shell metacharacters; quote those arguments.
+fn quote_windows(arg: &str) -> String {
+    if arg.chars().any(|c| {
+        matches!(
+            c,
+            ' ' | '\t' | ';' | '&' | '|' | '<' | '>' | '^' | '(' | ')'
+        )
+    }) {
+        format!("\"{arg}\"")
+    } else {
+        arg.to_owned()
+    }
+}
+
+fn quote_unix(arg: &str) -> String {
+    format!("'{}'", arg.replace('\'', "'\\''"))
 }
 
 fn build_classpath(
@@ -536,6 +750,7 @@ pub fn game_launch_test() {
         version_details: game_instance.read_version_json().unwrap(),
         natives_path: game_instance.natives_path.clone(),
         arguments: crate::core::launch_arguments::LaunchArguments::global_default(),
+        extras: Default::default(),
     }
     .with_window_size(1280, 720);
     if let Ok(mut child) = launch_option.launch() {
@@ -609,7 +824,37 @@ mod tests {
             version_details: instance.read_version_json().unwrap(),
             natives_path: instance.natives_path.clone(),
             arguments: crate::core::launch_arguments::LaunchArguments::global_default(),
+            extras: Default::default(),
         };
+        option.extras.proxy = Some(("127.0.0.1".into(), 7891));
+        let proxy_args = option.agent_arguments().unwrap();
+        assert!(proxy_args.contains(&"-Dhttp.proxyHost=127.0.0.1".into()));
+        assert!(proxy_args.contains(&"-Dhttps.proxyPort=7891".into()));
+        assert!(!proxy_args.iter().any(|arg| arg.starts_with("-javaagent")));
+        option.extras.proxy = None;
+        option.version_details.release_time = Some("2013-06-24T00:00:00Z".into());
+        assert!(option.needs_legacy_fix());
+        option.version_details.release_time = Some("2013-06-25T00:00:00Z".into());
+        assert!(!option.needs_legacy_fix());
+        option.version_details.release_time = Some("1999-12-31T00:00:00Z".into());
+        assert!(!option.needs_legacy_fix());
+        option.version_details.release_time = None;
+        option.version_details.libraries = serde_json::from_value(json!([
+            {"name":"org.lwjgl:lwjgl:3.4.1"},
+            {"name":"example:other:1.0"}
+        ]))
+        .unwrap();
+        assert_eq!(option.lwjgl_version().as_deref(), Some("3.4.1"));
+        option.version_details.libraries.clear();
+        option.extras.info = "Custom Info".into();
+        let original_arguments = option.version_details.arguments.take();
+        option.version_details.arguments = Some(
+            serde_json::from_value(json!({"jvm":[],"game":["--versionType","${version_type}"]}))
+                .unwrap(),
+        );
+        let (_, _, game) = option.metadata_arguments("a path").unwrap();
+        assert_eq!(game, ["--versionType", "Custom Info"]);
+        option.version_details.arguments = original_arguments;
         assert!(option.launch_checked().unwrap().wait().unwrap().success());
         let output = fs::read_to_string(root.join("captured")).unwrap();
         let lines: Vec<_> = output.lines().collect();
@@ -833,6 +1078,7 @@ mod tests {
         assert!(
             global_memory
                 .build_jvm_arguments(false)
+                .unwrap()
                 .contains(&"-Xms2048m".into())
         );
         state.instance_memory_settings.insert(
@@ -881,6 +1127,22 @@ mod tests {
             [forge_library, child.join("Fabric.jar")]
         );
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn launch_script_quotes_paths_and_arguments() {
+        assert_eq!(
+            quote_windows("-Djava.library.path=/tmp/a"),
+            "-Djava.library.path=/tmp/a"
+        );
+        assert_eq!(
+            quote_windows("-cp C:\\a b\\lib.jar;C:\\c.jar"),
+            "\"-cp C:\\a b\\lib.jar;C:\\c.jar\""
+        );
+        assert_eq!(
+            quote_unix("/tmp/with space/it's.jar"),
+            "'/tmp/with space/it'\\''s.jar'"
+        );
     }
 
     #[test]

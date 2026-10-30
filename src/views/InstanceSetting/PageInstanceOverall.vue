@@ -10,13 +10,193 @@ import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import { save } from '@tauri-apps/plugin-dialog'
 import sideTip from '@/composables/sideTip'
+import { useModal } from '@/composables/useModal'
+import { useRouter } from 'vue-router'
+import { useRepositoriesStore } from '@/stores/repositories'
+import { useInstanceFavorites } from '@/composables/useInstanceFavorites'
+import { getInstanceIsolation } from '@/api/isolationSettings'
+import currentPlatform from '@/util/platform'
+import type GameInstance from '@/types/gameInstance'
+import { ref, watch } from 'vue'
 const { values } = usePageSettings('PageInstanceOverall', {
   ComboDisplayLogo: '0',
   ComboDisplayType: '0',
 })
+const router = useRouter()
+const modal = useModal()
+const repos = useRepositoriesStore()
+const { isFavorite, toggleFavorite } = useInstanceFavorites()
+const busy = ref('')
+const description = ref('')
 
 const text = pclText
+
+watch(
+  () => instance.instance_info?.directory,
+  async (directory) => {
+    description.value = ''
+    if (!directory || !isTauri()) return
+    try {
+      description.value = await invoke<string>('get_instance_description', {
+        instanceDirectory: directory,
+      })
+    } catch (error) {
+      console.error(error)
+    }
+  },
+  { immediate: true },
+)
+
+async function exportScript() {
+  const info = instance.instance_info
+  if (!info || busy.value || !isTauri()) return
+  const windows = currentPlatform === 'windows'
+  const target = await save({
+    title: text('Instance.Overall.Script.SelectSaveTitle'),
+    defaultPath: `启动 ${info.name}.${windows ? 'bat' : 'sh'}`,
+    filters: windows
+      ? [{ name: text('Instance.Overall.Script.FileFilter'), extensions: ['bat'] }]
+      : [{ name: 'Shell script', extensions: ['sh'] }],
+  })
+  if (!target) return
+  busy.value = 'script'
+  sideTip.show(text('Instance.Overall.Script.ExportingWarning'))
+  try {
+    await invoke('export_launch_script', {
+      instanceDirectory: info.directory,
+      targetPath: target,
+    })
+    sideTip.show(text('Minecraft.Launch.ExportScript.Success'), 'success')
+  } catch (error) {
+    sideTip.show(`${text('Instance.Overall.Script.ExportFailed')}: ${error}`, 'warn')
+  } finally {
+    busy.value = ''
+  }
+}
+
+async function repairFiles() {
+  const info = instance.instance_info
+  if (!info || busy.value || !isTauri()) return
+  busy.value = 'repair'
+  sideTip.show(text('Instance.Overall.Repair.Processing'))
+  try {
+    await invoke('repair_instance_files', { instanceDirectory: info.directory })
+    sideTip.show(text('Instance.Overall.Repair.Success'), 'success')
+  } catch (error) {
+    sideTip.show(`${text('Instance.Overall.Repair.Failed')} ${error}`, 'warn')
+  } finally {
+    busy.value = ''
+  }
+}
+
+async function renameInstance() {
+  const info = instance.instance_info
+  if (!info || busy.value || !isTauri()) return
+  const result = await modal.open({
+    title: text('Instance.Overall.Name.EditTitle'),
+    showInput: true,
+    defaultInputText: info.name,
+    buttons: [
+      { content: text('Common.Action.Confirm'), operation: () => modal.close(true) },
+      { content: text('Common.Action.Cancel'), operation: () => modal.close(false) },
+    ],
+  })
+  const newName = (result.input || '').trim()
+  if (!result.confirmed || !newName || newName === info.name) return
+  busy.value = 'rename'
+  try {
+    const renamed = await invoke<GameInstance>('rename_instance', {
+      instanceDirectory: info.directory,
+      newName,
+    })
+    instance.setInstance(renamed)
+    sideTip.show(text('Instance.Overall.Name.RenameSuccess'), 'success')
+  } catch (error) {
+    sideTip.show(`${text('Instance.Overall.Error.OperationFailed')} ${error}`, 'warn')
+  } finally {
+    busy.value = ''
+  }
+}
+
+async function editDescription() {
+  const info = instance.instance_info
+  if (!info || busy.value || !isTauri()) return
+  const result = await modal.open({
+    title: text('Instance.Overall.Description.EditTitle'),
+    content: text('Instance.Overall.Description.EditMessage'),
+    plainText: true,
+    showInput: true,
+    defaultInputText: description.value,
+    buttons: [
+      { content: text('Common.Action.Confirm'), operation: () => modal.close(true) },
+      { content: text('Common.Action.Cancel'), operation: () => modal.close(false) },
+    ],
+  })
+  if (!result.confirmed) return
+  busy.value = 'description'
+  try {
+    description.value = await invoke<string>('set_instance_description', {
+      instanceDirectory: info.directory,
+      description: result.input || '',
+    })
+  } catch (error) {
+    sideTip.show(`${text('Instance.Overall.Error.OperationFailed')} ${error}`, 'warn')
+  } finally {
+    busy.value = ''
+  }
+}
+
+function toggleStar() {
+  const info = instance.instance_info
+  if (!info) return
+  const error = toggleFavorite(info.directory)
+  if (error) sideTip.show(error, 'warn')
+}
+
+async function deleteInstance() {
+  const info = instance.instance_info
+  if (!info || busy.value || !isTauri()) return
+  if (!repos.repositories) await repos.fetchFromBackend().catch(() => {})
+  const repositoryIndex =
+    repos.repositories?.findIndex((repo) => repo.path === info.global_dir) ?? -1
+  if (repositoryIndex < 0) {
+    sideTip.show(text('Instance.Overall.Error.OperationFailed'), 'warn')
+    return
+  }
+  const isolated = await getInstanceIsolation(info.directory).catch(() => false)
+  const message = isolated
+    ? 'Instance.Overall.Delete.ConfirmMessageIsolated'
+    : 'Instance.Overall.Delete.ConfirmMessage'
+  const result = await modal.open({
+    title: text('Instance.Overall.Delete.ConfirmTitle'),
+    content: text(message, [info.name]),
+    plainText: true,
+    buttons: [
+      { content: text('Common.Action.Delete'), type: 'warn', operation: () => modal.close(true) },
+      { content: text('Common.Action.Cancel'), operation: () => modal.close(false) },
+    ],
+  })
+  if (!result.confirmed) return
+  busy.value = 'delete'
+  try {
+    await invoke('instance_folder_action', {
+      repository_index: repositoryIndex,
+      instance_name: info.name,
+      instance_directory: info.directory,
+      delete: true,
+    })
+    if (isFavorite(info.directory)) toggleFavorite(info.directory)
+    instance.setInstance(null)
+    sideTip.show(text('Instance.Overall.Delete.RecycleBinSuccess', [info.name]), 'success')
+    await router.push('/instance_select')
+  } catch (error) {
+    sideTip.show(`${text('Instance.Overall.Error.OperationFailed')} ${error}`, 'warn')
+  } finally {
+    busy.value = ''
+  }
+}
 async function openFolder(kind: 'instance' | 'saves' | 'mods') {
   const instanceDirectory = instance.instance_info?.directory
   if (!instanceDirectory || !isTauri()) return
@@ -61,6 +241,7 @@ async function openFolder(kind: 'instance' | 'saves' | 'mods') {
                 {{ pluginShowText[loader] || loader }} {{ version }}
               </p>
               <p>{{ instance.instance_info?.directory }}</p>
+              <p v-if="description" data-control="LabDisplayDesc">{{ description }}</p>
             </div>
           </PCard>
           <PCard
@@ -157,7 +338,8 @@ async function openFolder(kind: 'instance' | 'saves' | 'mods') {
                     grid-row: 1 / span 1;
                     grid-column: 1 / span 1;
                   "
-                  @click="showUnavailable"
+                  :disabled="!instance.instance_info || busy !== ''"
+                  @click="renameInstance"
                   >{{ text('Instance.Overall.Rename') }}</PButton
                 >
                 <PButton
@@ -169,7 +351,8 @@ async function openFolder(kind: 'instance' | 'saves' | 'mods') {
                     grid-row: 1 / span 1;
                     grid-column: 2 / span 1;
                   "
-                  @click="showUnavailable"
+                  :disabled="!instance.instance_info || busy !== ''"
+                  @click="editDescription"
                   >{{ text('Instance.Overall.EditDescription') }}</PButton
                 >
                 <PButton
@@ -181,8 +364,13 @@ async function openFolder(kind: 'instance' | 'saves' | 'mods') {
                     grid-row: 1 / span 1;
                     grid-column: 3 / span 1;
                   "
-                  @click="showUnavailable"
-                  >{{ text('Instance.Overall.Favorite') }}</PButton
+                  :disabled="!instance.instance_info"
+                  @click="toggleStar"
+                  >{{
+                    instance.instance_info && isFavorite(instance.instance_info.directory)
+                      ? text('Instance.Overall.Unfavorite')
+                      : text('Instance.Overall.Favorite')
+                  }}</PButton
                 >
               </div>
             </div>
@@ -266,7 +454,8 @@ async function openFolder(kind: 'instance' | 'saves' | 'mods') {
                     margin: 7px 20px 0px 0px;
                     padding: 0px 13px;
                   "
-                  @click="showUnavailable"
+                  :disabled="!instance.instance_info || busy !== ''"
+                  @click="exportScript"
                   >{{ text('Instance.Overall.Manage.ExportLaunchScript') }}</PButton
                 >
                 <PButton
@@ -289,7 +478,8 @@ async function openFolder(kind: 'instance' | 'saves' | 'mods') {
                     padding: 0px 13px;
                   "
                   :title="text('Instance.Overall.Manage.RepairFiles.ToolTip')"
-                  @click="showUnavailable"
+                  :disabled="!instance.instance_info || busy !== ''"
+                  @click="repairFiles"
                   >{{ text('Instance.Overall.Manage.RepairFiles') }}</PButton
                 >
                 <PButton
@@ -312,7 +502,8 @@ async function openFolder(kind: 'instance' | 'saves' | 'mods') {
                     margin: 7px 20px 0px 0px;
                     padding: 0px 13px;
                   "
-                  @click="showUnavailable"
+                  :disabled="!instance.instance_info || busy !== ''"
+                  @click="deleteInstance"
                   type="warn"
                   >{{ text('Instance.Overall.Manage.Delete') }}</PButton
                 >
