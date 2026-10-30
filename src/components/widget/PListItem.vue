@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PButton from './PButton.vue'
 import PSelectionIndicator from './PSelectionIndicator.vue'
+import PListActions from './PListActions.vue'
 
 withDefaults(
   defineProps<{
@@ -43,6 +44,8 @@ const emit = defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
                 .subtitle {{ subtitle }}
         .right(@click.stop)
             slot(name="actions")
+            PListActions(v-if="$slots['icon-actions']")
+                slot(name="icon-actions")
             a(v-if="btn" :href="btn.link"): PButton(:inline="true") {{btn.text}}
 
 </template>
@@ -80,7 +83,7 @@ const emit = defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
     background-color: var(--color-tint-lighter);
   }
 
-  &.clickable:active {
+  &.clickable:active:not(:has(.right:active)) {
     scale: 0.98;
     background-color: var(--half-transparent-blue);
   }

@@ -47,6 +47,7 @@ uuid = { workspace = true, features = ["v4"] }
 trust-dns-resolver = "0.23.2"
 base64 = "0.22.1"
 sysinfo = { version = "0.39.6", default-features = false, features = ["system"] }
+trash = "5.2.9"
 # tauri-invoke-http = "0.1.0"
 
 

@@ -1,4 +1,7 @@
-use std::{collections::HashSet, sync::{LazyLock, Mutex}};
+use std::{
+    collections::HashSet,
+    sync::{LazyLock, Mutex},
+};
 
 use super::launch_session::SessionEvent;
 
@@ -20,10 +23,19 @@ trait WindowActions {
 }
 
 impl WindowActions for tauri::WebviewWindow {
-    fn hide(&self) -> Result<(), String> { self.hide().map_err(|error| error.to_string()) }
-    fn show(&self) -> Result<(), String> { self.show().map_err(|error| error.to_string()) }
-    fn minimize(&self) -> Result<(), String> { self.minimize().map_err(|error| error.to_string()) }
-    fn exit(&self) { use tauri::Manager; self.app_handle().exit(0); }
+    fn hide(&self) -> Result<(), String> {
+        self.hide().map_err(|error| error.to_string())
+    }
+    fn show(&self) -> Result<(), String> {
+        self.show().map_err(|error| error.to_string())
+    }
+    fn minimize(&self) -> Result<(), String> {
+        self.minimize().map_err(|error| error.to_string())
+    }
+    fn exit(&self) {
+        use tauri::Manager;
+        self.app_handle().exit(0);
+    }
 }
 
 #[derive(Default)]
@@ -34,10 +46,18 @@ struct Controller {
 }
 
 impl Controller {
-    fn event(&mut self, window: &impl WindowActions, id: &str, mode: VisibilityMode, event: SessionEvent) {
+    fn event(
+        &mut self,
+        window: &impl WindowActions,
+        id: &str,
+        mode: VisibilityMode,
+        event: SessionEvent,
+    ) {
         match event {
             SessionEvent::Spawned => {
-                if self.active.is_empty() { self.failed = false; }
+                if self.active.is_empty() {
+                    self.failed = false;
+                }
                 self.active.insert(id.to_owned());
             }
             SessionEvent::Ready if self.active.contains(id) => match mode {
@@ -47,10 +67,14 @@ impl Controller {
                         *hidden_exit &= exit;
                     } else if let Err(error) = window.hide() {
                         log::warn!("Cannot hide launcher window: {error}");
-                    } else { self.hidden_exit = Some(exit); }
+                    } else {
+                        self.hidden_exit = Some(exit);
+                    }
                 }
                 VisibilityMode::Minimize if self.hidden_exit.is_none() => {
-                    if let Err(error) = window.minimize() { log::warn!("Cannot minimize launcher window: {error}"); }
+                    if let Err(error) = window.minimize() {
+                        log::warn!("Cannot minimize launcher window: {error}");
+                    }
                 }
                 _ => {}
             },
@@ -58,8 +82,11 @@ impl Controller {
                 self.failed |= !safe_exit;
                 if self.active.is_empty() {
                     if let Some(exit) = self.hidden_exit.take() {
-                        if exit && !self.failed { window.exit(); }
-                        else if let Err(error) = window.show() { log::error!("Cannot restore launcher window: {error}"); }
+                        if exit && !self.failed {
+                            window.exit();
+                        } else if let Err(error) = window.show() {
+                            log::error!("Cannot restore launcher window: {error}");
+                        }
                     }
                     self.failed = false;
                 }
@@ -69,7 +96,8 @@ impl Controller {
     }
 }
 
-static CONTROLLER: LazyLock<Mutex<Controller>> = LazyLock::new(|| Mutex::new(Controller::default()));
+static CONTROLLER: LazyLock<Mutex<Controller>> =
+    LazyLock::new(|| Mutex::new(Controller::default()));
 
 pub fn handle(window: &tauri::WebviewWindow, id: &str, mode: VisibilityMode, event: SessionEvent) {
     match CONTROLLER.lock() {
@@ -84,12 +112,30 @@ mod tests {
     use std::cell::{Cell, RefCell};
 
     #[derive(Default)]
-    struct FakeWindow { actions: RefCell<Vec<&'static str>>, fail_hide: Cell<bool> }
+    struct FakeWindow {
+        actions: RefCell<Vec<&'static str>>,
+        fail_hide: Cell<bool>,
+    }
     impl WindowActions for FakeWindow {
-        fn hide(&self) -> Result<(), String> { self.actions.borrow_mut().push("hide"); if self.fail_hide.get() { Err("failed".into()) } else { Ok(()) } }
-        fn show(&self) -> Result<(), String> { self.actions.borrow_mut().push("show"); Ok(()) }
-        fn minimize(&self) -> Result<(), String> { self.actions.borrow_mut().push("minimize"); Ok(()) }
-        fn exit(&self) { self.actions.borrow_mut().push("exit"); }
+        fn hide(&self) -> Result<(), String> {
+            self.actions.borrow_mut().push("hide");
+            if self.fail_hide.get() {
+                Err("failed".into())
+            } else {
+                Ok(())
+            }
+        }
+        fn show(&self) -> Result<(), String> {
+            self.actions.borrow_mut().push("show");
+            Ok(())
+        }
+        fn minimize(&self) -> Result<(), String> {
+            self.actions.borrow_mut().push("minimize");
+            Ok(())
+        }
+        fn exit(&self) {
+            self.actions.borrow_mut().push("exit");
+        }
     }
 
     #[test]
@@ -101,13 +147,28 @@ mod tests {
         controller.event(&window, "b", VisibilityMode::Keep, SessionEvent::Spawned);
         assert!(window.actions.borrow().is_empty());
         controller.event(&window, "a", mode, SessionEvent::Ready);
-        controller.event(&window, "a", mode, SessionEvent::Finished { safe_exit: true });
+        controller.event(
+            &window,
+            "a",
+            mode,
+            SessionEvent::Finished { safe_exit: true },
+        );
         assert_eq!(*window.actions.borrow(), ["hide"]);
-        controller.event(&window, "b", VisibilityMode::Keep, SessionEvent::Finished { safe_exit: false });
+        controller.event(
+            &window,
+            "b",
+            VisibilityMode::Keep,
+            SessionEvent::Finished { safe_exit: false },
+        );
         assert_eq!(*window.actions.borrow(), ["hide", "show"]);
         controller.event(&window, "c", mode, SessionEvent::Spawned);
         controller.event(&window, "c", mode, SessionEvent::Ready);
-        controller.event(&window, "c", mode, SessionEvent::Finished { safe_exit: true });
+        controller.event(
+            &window,
+            "c",
+            mode,
+            SessionEvent::Finished { safe_exit: true },
+        );
         assert_eq!(*window.actions.borrow(), ["hide", "show", "hide", "exit"]);
     }
 
@@ -116,17 +177,62 @@ mod tests {
         let window = FakeWindow::default();
         let mut controller = Controller::default();
         window.fail_hide.set(true);
-        controller.event(&window, "a", VisibilityMode::HideAndExit, SessionEvent::Spawned);
-        controller.event(&window, "a", VisibilityMode::HideAndExit, SessionEvent::Ready);
-        controller.event(&window, "a", VisibilityMode::HideAndExit, SessionEvent::Finished { safe_exit: true });
+        controller.event(
+            &window,
+            "a",
+            VisibilityMode::HideAndExit,
+            SessionEvent::Spawned,
+        );
+        controller.event(
+            &window,
+            "a",
+            VisibilityMode::HideAndExit,
+            SessionEvent::Ready,
+        );
+        controller.event(
+            &window,
+            "a",
+            VisibilityMode::HideAndExit,
+            SessionEvent::Finished { safe_exit: true },
+        );
         assert_eq!(*window.actions.borrow(), ["hide"]);
         window.fail_hide.set(false);
-        controller.event(&window, "a", VisibilityMode::HideAndExit, SessionEvent::Spawned);
-        controller.event(&window, "b", VisibilityMode::HideAndReopen, SessionEvent::Spawned);
-        controller.event(&window, "a", VisibilityMode::HideAndExit, SessionEvent::Ready);
-        controller.event(&window, "b", VisibilityMode::HideAndReopen, SessionEvent::Ready);
-        controller.event(&window, "a", VisibilityMode::HideAndExit, SessionEvent::Finished { safe_exit: true });
-        controller.event(&window, "b", VisibilityMode::HideAndReopen, SessionEvent::Finished { safe_exit: true });
+        controller.event(
+            &window,
+            "a",
+            VisibilityMode::HideAndExit,
+            SessionEvent::Spawned,
+        );
+        controller.event(
+            &window,
+            "b",
+            VisibilityMode::HideAndReopen,
+            SessionEvent::Spawned,
+        );
+        controller.event(
+            &window,
+            "a",
+            VisibilityMode::HideAndExit,
+            SessionEvent::Ready,
+        );
+        controller.event(
+            &window,
+            "b",
+            VisibilityMode::HideAndReopen,
+            SessionEvent::Ready,
+        );
+        controller.event(
+            &window,
+            "a",
+            VisibilityMode::HideAndExit,
+            SessionEvent::Finished { safe_exit: true },
+        );
+        controller.event(
+            &window,
+            "b",
+            VisibilityMode::HideAndReopen,
+            SessionEvent::Finished { safe_exit: true },
+        );
         assert_eq!(*window.actions.borrow(), ["hide", "hide", "show"]);
     }
 }

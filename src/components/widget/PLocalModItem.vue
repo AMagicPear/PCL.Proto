@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import PListItem from './PListItem.vue'
-import PButton from './PButton.vue'
 import PSvgIcon from './PSvgIcon.vue'
 import { pclText } from '@/api/pclLocale'
 defineProps<{
@@ -33,15 +32,18 @@ const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
         alt=""
         @error="($event.target as HTMLImageElement).src = fallback"
     /></template>
-    <template #actions
-      ><PButton
+    <template #icon-actions
+      ><button
         v-if="updatable"
-        inline
+        class="pcl-icon-button"
+        type="button"
         @click="() => emit('update')"
         :title="pclText('Instance.Resource.Filter.Updatable')"
-        ><PSvgIcon name="lucide/upload" :size="18" /></PButton
-      ><PButton
-        inline
+        :aria-label="pclText('Instance.Resource.Filter.Updatable')"
+        ><PSvgIcon name="lucide/upload" :size="15" /></button
+      ><button
+        class="pcl-icon-button"
+        type="button"
         @click="() => emit('toggle')"
         :title="
           pclText(
@@ -50,9 +52,10 @@ const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
               : 'Instance.Resource.Filter.Disabled',
           )
         "
-        ><PSvgIcon :name="enabled === false ? 'lucide/check' : 'lucide/x'" :size="18" /></PButton
-      ><slot name="actions"
-    /></template>
+        :aria-label="pclText(enabled === false ? 'Instance.Resource.Filter.Enabled' : 'Instance.Resource.Filter.Disabled')"
+        ><PSvgIcon :name="enabled === false ? 'lucide/check' : 'lucide/x'" :size="15" /></button
+      ></template>
+    <template #actions><slot name="actions" /></template>
   </PListItem>
 </template>
 <style scoped>

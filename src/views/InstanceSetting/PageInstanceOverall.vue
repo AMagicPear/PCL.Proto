@@ -3,7 +3,7 @@ import { showUnavailable } from '@/util/showUnavailable'
 import { pclText } from '@/api/pclLocale'
 import { useSelectedInstance } from '@/stores/gameLaunch'
 import PListItem from '@/components/widget/PListItem.vue'
-import { pluginShowText, showIconPath } from '@/types/gameInfo'
+import { pluginShowText, instanceIcon } from '@/types/gameInfo'
 const instance = useSelectedInstance()
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
@@ -41,7 +41,12 @@ async function openFolder(kind: 'instance' | 'saves' | 'mods') {
                 v-if="instance.instance_info"
                 :title="instance.instance_info.name"
                 :subtitle="instance.instance_info.version"
-                :icon="showIconPath.grass"
+                :icon="
+                  instanceIcon(
+                    instance.instance_info.version,
+                    instance.instance_info.pluginsVersion || {},
+                  )
+                "
               />
               <p v-else class="pcl-empty">{{ pclText('Proto.Instance.SelectFirst') }}</p>
             </div>

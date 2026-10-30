@@ -1,9 +1,67 @@
 const mainLoaders = ['Forge', 'Cleanroom', 'NeoForge', 'Fabric', 'LegacyFabric', 'LabyMod']
 
 export function fabricInstanceName(version: string, selected: Record<string, string>) {
-  return version + (selected.Fabric
-    ? `-Fabric_${selected.Fabric.replace('+build', '')}`
-    : selected.LegacyFabric ? `-LegacyFabric_${selected.LegacyFabric}` : '')
+  return (
+    version +
+    (selected.Fabric
+      ? `-Fabric_${selected.Fabric.replace('+build', '')}`
+      : selected.LegacyFabric
+        ? `-LegacyFabric_${selected.LegacyFabric}`
+        : '')
+  )
+}
+
+export function instanceDefaultName(version: string, selected: Record<string, string>) {
+  return (
+    fabricInstanceName(version, selected) +
+    (selected.LabyMod ? `-LabyMod_${selected.LabyMod}` : '') +
+    (selected.Forge ? `-Forge_${selected.Forge}` : '') +
+    (selected.NeoForge ? `-NeoForge_${selected.NeoForge}` : '') +
+    (selected.Cleanroom ? `-Cleanroom_${selected.Cleanroom}` : '') +
+    (selected.LiteLoader ? '-LiteLoader' : '') +
+    (selected.OptiFine
+      ? `-OptiFine_${selected.OptiFine.replace(`${version} `, '').replace(/ /g, '_')}`
+      : '')
+  )
+}
+
+export function loaderConflict(
+  loader: string,
+  selected: Record<string, string>,
+  version: string,
+): string | undefined {
+  const active = mainLoaders.find((name) => selected[name])
+  if (mainLoaders.includes(loader) && active && active !== loader) return active
+  if (
+    loader === 'LiteLoader' &&
+    active &&
+    ['NeoForge', 'LegacyFabric', 'LabyMod', 'Cleanroom'].includes(active)
+  )
+    return active
+  if (['Cleanroom', 'LegacyFabric', 'LabyMod', 'NeoForge'].includes(loader) && selected.LiteLoader)
+    return 'LiteLoader'
+  if (selected.OptiFine && ['NeoForge', 'Cleanroom', 'LabyMod'].includes(loader)) return 'OptiFine'
+  if (loader === 'OptiFine' && active && ['NeoForge', 'Cleanroom', 'LabyMod'].includes(active))
+    return active
+  if (
+    loader === 'OptiFine' &&
+    selected.Forge &&
+    compareVersions(version, '1.13') >= 0 &&
+    compareVersions(version, '1.14.3') <= 0
+  )
+    return 'Forge'
+  if (
+    loader === 'Forge' &&
+    selected.OptiFine &&
+    compareVersions(version, '1.13') >= 0 &&
+    compareVersions(version, '1.14.3') <= 0
+  )
+    return 'OptiFine'
+  if (loader === 'Fabric' && selected.OptiFine && compareVersions(version, '1.20.5') >= 0)
+    return 'OptiFine'
+  if (loader === 'OptiFine' && selected.Fabric && compareVersions(version, '1.20.5') >= 0)
+    return 'Fabric'
+  return undefined
 }
 
 // Mirrors PageDownloadInstall.SelectModLoader, including loader-specific add-ons.

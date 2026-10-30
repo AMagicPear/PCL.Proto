@@ -7,6 +7,7 @@ pub(crate) mod isolation;
 pub(crate) mod java;
 pub(crate) mod launch_arguments;
 pub(crate) mod launch_session;
+pub(crate) mod loader_export;
 pub(crate) mod launcher;
 pub(crate) mod mcmod;
 pub(crate) mod memory;

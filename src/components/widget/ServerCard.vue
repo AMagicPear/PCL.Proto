@@ -31,13 +31,14 @@ const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
       :subtitle="`${latency == null ? '—' : `${latency} ms`} · ${players || '—'}`"
       :icon="icon || fallback"
       ><template #actions
-        ><p class="motd">{{ motd }}</p>
-        <PButton inline @click="() => emit('connect')" :title="name"
-          ><PSvgIcon name="lucide/play" :size="18"
-        /></PButton>
+        ><p class="motd">{{ motd }}</p></template>
+      <template #icon-actions>
+        <button class="pcl-icon-button" type="button" @click="() => emit('connect')" :title="name" :aria-label="name"
+          ><PSvgIcon name="lucide/play" :size="15"
+        /></button>
         <details>
-          <summary :aria-label="pclText('Instance.Server.Card.Edit')">
-            <PSvgIcon name="lucide/settings" :size="18" />
+          <summary class="pcl-icon-button" :title="pclText('Instance.Server.Card.Edit')" :aria-label="pclText('Instance.Server.Card.Edit')">
+            <PSvgIcon name="lucide/settings" :size="15" />
           </summary>
           <div class="server-menu">
             <PButton inline @click="() => emit('refresh')">{{
@@ -64,7 +65,6 @@ const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
   --list-min-height: 44px;
   --list-icon-size: 34px;
   --list-icon-radius: 6px;
-  --list-actions-gap: 4px;
 }
 .motd {
   width: min(350px, 30vw);
@@ -74,12 +74,8 @@ const fallback = `${import.meta.env.BASE_URL}pcl/images/Icons/NoIcon.png`
 details {
   position: relative;
 }
-summary {
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  padding: 6px;
-}
+summary { list-style: none; }
+summary::-webkit-details-marker { display: none; }
 .server-menu {
   position: absolute;
   z-index: 3;

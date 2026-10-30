@@ -80,6 +80,14 @@ function handleIcon(sourceRaw: string) {
     'Blocks/Grass.png': 'grass',
     'Blocks/Fabric.png': 'fabric',
     'Blocks/Neoforge.png': 'neoforge',
+    'Blocks/NeoForge.png': 'neoforge',
+    'Blocks/Anvil.png': 'forge',
+    'Blocks/Quilt.png': 'quilt',
+    'Blocks/Cleanroom.png': 'cleanroom',
+    'Blocks/GrassPath.png': 'optifine',
+    'Blocks/Egg.png': 'liteloader',
+    'Blocks/LabyMod.png': 'laby-mod',
+    'Blocks/GoldBlock.png': 'gold',
   }
   if (sourceRaw.startsWith('pack://application:,,,/images/')) {
     let iconPath = sourceRaw.split('/images/')[1] as string

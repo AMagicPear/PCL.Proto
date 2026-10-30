@@ -3,7 +3,7 @@ import { pclText } from '@/api/pclLocale'
 import PButton from './PButton.vue'
 import PCard from './PCard.vue'
 import PSvgIcon from './PSvgIcon.vue'
-defineProps<{ placeholder?: string }>()
+defineProps<{ placeholder?: string; autoSearch?: boolean }>()
 const emit = defineEmits(['search'])
 const query = defineModel<string>({ default: '' })
 </script>
@@ -21,9 +21,13 @@ const query = defineModel<string>({ default: '' })
         v-model="query"
         v-on:keydown.enter="emit('search', query)"
       />
-      <PButton type="tint" class="search-button" @click="emit('search', query)">{{
-        pclText('Common.Action.Search')
-      }}</PButton>
+      <PButton
+        v-if="!autoSearch"
+        type="tint"
+        class="search-button"
+        @click="emit('search', query)"
+        >{{ pclText('Common.Action.Search') }}</PButton
+      >
     </section>
   </PCard>
 </template>

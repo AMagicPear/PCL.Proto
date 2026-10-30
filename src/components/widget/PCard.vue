@@ -10,6 +10,7 @@ const props = withDefaults(
     defaultFoldStatus?: FoldStatus
     overflowVisible?: boolean
     title?: string
+    disabled?: boolean
   }>(),
   {
     hideTitle: false,
@@ -28,6 +29,7 @@ const shouldSpring = ref<boolean>(true)
 let observer: ResizeObserver | null = null
 
 function toggleFold() {
+  if (props.disabled) return
   switch (foldState.value) {
     case 'unfold':
       foldState.value = 'fold'
@@ -43,6 +45,20 @@ function toggleFold() {
       break
   }
 }
+
+watch(
+  () => props.disabled,
+  (disabled) => {
+    if (disabled) collapse()
+  },
+)
+function collapse() {
+  if (foldState.value !== 'unfold') return
+  shouldSpring.value = cardHeight.value < 500
+  foldState.value = 'fold'
+  cardHeight.value = 40
+}
+defineExpose({ collapse })
 
 watch(
   [mycardInnerRef, contentMounted],
@@ -69,7 +85,11 @@ onUnmounted(() => observer?.disconnect())
 
 <template>
   <div
-    :class="['mycard-container', foldState, { 'overflow-visible': overflowVisible }]"
+    :class="[
+      'mycard-container',
+      foldState,
+      { 'overflow-visible': overflowVisible, 'fold-disabled': disabled },
+    ]"
     :style="
       foldState === 'unfoldable'
         ? undefined
@@ -83,11 +103,11 @@ onUnmounted(() => observer?.disconnect())
       <header
         class="mycard-title"
         v-if="!hideTitle"
-        :role="foldState !== 'unfoldable' ? 'button' : undefined"
-        :tabindex="foldState !== 'unfoldable' ? 0 : undefined"
-        :aria-expanded="foldState !== 'fold'"
-        @keydown.enter="toggleFold"
-        @keydown.space.prevent="toggleFold"
+        :role="foldState !== 'unfoldable' && !disabled ? 'button' : undefined"
+        :tabindex="foldState !== 'unfoldable' && !disabled ? 0 : undefined"
+        :aria-expanded="foldState !== 'unfoldable' && !disabled ? foldState !== 'fold' : undefined"
+        @keydown.enter.self="toggleFold"
+        @keydown.space.self.prevent="toggleFold"
         @click="toggleFold"
       >
         <!-- 此处为兼容性设计：title插槽被设置时显示插槽内容，否则默认显示props中的title属性 -->
@@ -97,7 +117,8 @@ onUnmounted(() => observer?.disconnect())
         <div class="description" v-if="$slots.description">
           <slot name="description"></slot>
         </div>
-        <i><IconUnfold /></i>
+        <slot name="header-actions" />
+        <i v-if="!disabled"><IconUnfold /></i>
       </header>
       <Transition name="card-content">
         <section
@@ -149,7 +170,7 @@ onUnmounted(() => observer?.disconnect())
   box-shadow: 0px 0px 6px var(--color-tint-shadow);
 }
 
-.mycard-container:not(.unfoldable) .mycard-title {
+.mycard-container:not(.unfoldable):not(.fold-disabled) .mycard-title {
   cursor: pointer;
 }
 
@@ -177,7 +198,7 @@ onUnmounted(() => observer?.disconnect())
 
 .mycard > .mycard-title > i {
   color: var(--color-text);
-  transition: transform 0.4s ease;
+  transition: transform 0.4s ease, color 0.4s;
   flex: 0;
 }
 

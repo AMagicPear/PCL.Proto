@@ -184,7 +184,10 @@ mod tests {
         system.refresh_memory();
         assert!(system.total_memory() > 0);
         let available = system.available_memory().min(system.total_memory());
-        assert!(available > 0, "System reported no available physical memory");
+        assert!(
+            available > 0,
+            "System reported no available physical memory"
+        );
         assert!(automatic(available, true, false, 0).is_ok());
     }
     #[test]

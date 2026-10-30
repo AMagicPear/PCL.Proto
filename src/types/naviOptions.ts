@@ -2,6 +2,7 @@ import type { Component } from 'vue'
 
 export interface INavItem {
   text: string
+  subtitle?: string
   icon?: Component
   linkto?: string
   clickCallback?: (payload: PointerEvent) => any

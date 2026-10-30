@@ -30,13 +30,26 @@ pub struct GameSession {
 
 #[derive(Clone, Copy, serde::Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-enum SessionPhase { Starting, Running, Exited, Failed }
+enum SessionPhase {
+    Starting,
+    Running,
+    Exited,
+    Failed,
+}
 
 #[derive(Clone, Copy, Debug)]
-pub enum SessionEvent { Spawned, Ready, Finished { safe_exit: bool } }
+pub enum SessionEvent {
+    Spawned,
+    Ready,
+    Finished { safe_exit: bool },
+}
 
 #[derive(Clone, Copy)]
-enum Signal { Ready, Crash, ReaderDone(bool) }
+enum Signal {
+    Ready,
+    Crash,
+    ReaderDone(bool),
+}
 
 struct Entry {
     snapshot: GameSession,
@@ -60,7 +73,12 @@ fn append(id: &str, line: String) {
     }
 }
 
-fn read_output(mut input: impl Read, id: &str, secret: Option<&str>, signals: Option<&mpsc::Sender<Signal>>) -> io::Result<()> {
+fn read_output(
+    mut input: impl Read,
+    id: &str,
+    secret: Option<&str>,
+    signals: Option<&mpsc::Sender<Signal>>,
+) -> io::Result<()> {
     let mut buffer = [0; 4096];
     let mut line = Vec::new();
     let mut oversized = false;
@@ -77,14 +95,29 @@ fn read_output(mut input: impl Read, id: &str, secret: Option<&str>, signals: Op
             }
         };
         if !value.contains("[CHAT]") {
-            let signal = if value.contains("OpenAL initialized") || value.contains("Starting up SoundSystem")
-                || (value.contains("Created") && value.contains("textures") && value.contains("-atlas"))
-                || value.contains("Found animation info") { Some(Signal::Ready) }
-            else if value.contains("Crash report saved to") || value.contains("This crash report has been saved to:")
-                || value.contains("Could not save crash report to") || value.contains("/ERROR]: Unable to launch")
-                || value.contains("An exception was thrown, the game will display an error screen and halt.") { Some(Signal::Crash) }
-            else { None };
-            if let (Some(signals), Some(signal)) = (signals, signal) { let _ = signals.send(signal); }
+            let signal = if value.contains("OpenAL initialized")
+                || value.contains("Starting up SoundSystem")
+                || (value.contains("Created")
+                    && value.contains("textures")
+                    && value.contains("-atlas"))
+                || value.contains("Found animation info")
+            {
+                Some(Signal::Ready)
+            } else if value.contains("Crash report saved to")
+                || value.contains("This crash report has been saved to:")
+                || value.contains("Could not save crash report to")
+                || value.contains("/ERROR]: Unable to launch")
+                || value.contains(
+                    "An exception was thrown, the game will display an error screen and halt.",
+                )
+            {
+                Some(Signal::Crash)
+            } else {
+                None
+            };
+            if let (Some(signals), Some(signal)) = (signals, signal) {
+                let _ = signals.send(signal);
+            }
         }
         append(id, value);
         line.clear();
@@ -172,7 +205,9 @@ pub fn track(
         let sender = sender.clone();
         std::thread::spawn(move || {
             let result = read_output(pipe, &id, secret.as_deref(), Some(&sender));
-            if let Err(error) = &result { log::warn!("Cannot read game output: {error}"); }
+            if let Err(error) = &result {
+                log::warn!("Cannot read game output: {error}");
+            }
             let _ = sender.send(Signal::ReaderDone(result.is_ok()));
         });
     }
@@ -194,43 +229,65 @@ pub fn track(
             }
             match child.try_wait() {
                 Ok(Some(status)) => break Ok(status.code()),
-                Ok(None) => {
-                    match receiver.recv_timeout(Duration::from_millis(100)) {
-                        Ok(Signal::Ready) if !ready && !crashed && !stopped => {
-                            if matches!(child.try_wait(), Ok(None)) {
-                                ready = true;
-                                if let Some(entry) = SESSIONS.lock().unwrap().iter_mut().find(|entry| entry.snapshot.id == id) {
-                                    entry.snapshot.phase = SessionPhase::Running;
-                                }
-                                on_event(&id, SessionEvent::Ready);
+                Ok(None) => match receiver.recv_timeout(Duration::from_millis(100)) {
+                    Ok(Signal::Ready) if !ready && !crashed && !stopped => {
+                        if matches!(child.try_wait(), Ok(None)) {
+                            ready = true;
+                            if let Some(entry) = SESSIONS
+                                .lock()
+                                .unwrap()
+                                .iter_mut()
+                                .find(|entry| entry.snapshot.id == id)
+                            {
+                                entry.snapshot.phase = SessionPhase::Running;
                             }
+                            on_event(&id, SessionEvent::Ready);
                         }
-                        Ok(Signal::Crash) => crashed = true,
-                        Ok(Signal::ReaderDone(ok)) => { readers_done += 1; output_incomplete |= !ok; },
-                        Err(mpsc::RecvTimeoutError::Disconnected) => std::thread::sleep(Duration::from_millis(100)),
-                        _ => {}
                     }
-                }
+                    Ok(Signal::Crash) => crashed = true,
+                    Ok(Signal::ReaderDone(ok)) => {
+                        readers_done += 1;
+                        output_incomplete |= !ok;
+                    }
+                    Err(mpsc::RecvTimeoutError::Disconnected) => {
+                        std::thread::sleep(Duration::from_millis(100))
+                    }
+                    _ => {}
+                },
                 Err(error) => break Err(error.to_string()),
             }
         };
         let deadline = std::time::Instant::now() + Duration::from_secs(1);
         while readers_done < reader_count {
             let remaining = deadline.saturating_duration_since(std::time::Instant::now());
-            if remaining.is_zero() { break; }
+            if remaining.is_zero() {
+                break;
+            }
             match receiver.recv_timeout(remaining) {
                 Ok(Signal::Crash) => crashed = true,
-                Ok(Signal::ReaderDone(ok)) => { readers_done += 1; output_incomplete |= !ok; },
-                Ok(Signal::Ready) => {},
+                Ok(Signal::ReaderDone(ok)) => {
+                    readers_done += 1;
+                    output_incomplete |= !ok;
+                }
+                Ok(Signal::Ready) => {}
                 Err(_) => break,
             }
         }
         cleanup();
-        let safe_exit = matches!(result, Ok(Some(0))) && ready && !crashed && !stopped && !output_incomplete && readers_done == reader_count;
+        let safe_exit = matches!(result, Ok(Some(0)))
+            && ready
+            && !crashed
+            && !stopped
+            && !output_incomplete
+            && readers_done == reader_count;
         let mut sessions = SESSIONS.lock().unwrap();
         if let Some(entry) = sessions.iter_mut().find(|entry| entry.snapshot.id == id) {
             entry.snapshot.running = false;
-            entry.snapshot.phase = if matches!(result, Ok(Some(0))) && !crashed && !stopped { SessionPhase::Exited } else { SessionPhase::Failed };
+            entry.snapshot.phase = if matches!(result, Ok(Some(0))) && !crashed && !stopped {
+                SessionPhase::Exited
+            } else {
+                SessionPhase::Failed
+            };
             match result {
                 Ok(code) => entry.snapshot.exit_code = code,
                 Err(error) => entry.snapshot.error = Some(error),
@@ -409,11 +466,22 @@ mod tests {
             PathBuf::from("/test/ready"),
             None,
             || {},
-            move |_, event| { sender.send(event).unwrap(); },
+            move |_, event| {
+                sender.send(event).unwrap();
+            },
         );
-        assert!(matches!(receiver.recv_timeout(Duration::from_secs(5)).unwrap(), SessionEvent::Spawned));
-        assert!(matches!(receiver.recv_timeout(Duration::from_secs(5)).unwrap(), SessionEvent::Ready));
-        assert!(matches!(receiver.recv_timeout(Duration::from_secs(5)).unwrap(), SessionEvent::Finished { safe_exit: true }));
+        assert!(matches!(
+            receiver.recv_timeout(Duration::from_secs(5)).unwrap(),
+            SessionEvent::Spawned
+        ));
+        assert!(matches!(
+            receiver.recv_timeout(Duration::from_secs(5)).unwrap(),
+            SessionEvent::Ready
+        ));
+        assert!(matches!(
+            receiver.recv_timeout(Duration::from_secs(5)).unwrap(),
+            SessionEvent::Finished { safe_exit: true }
+        ));
         wait_for(&id, |session| !session.running);
     }
 }

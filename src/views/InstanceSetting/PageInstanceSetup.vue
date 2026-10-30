@@ -13,6 +13,7 @@ import { usePageSettings } from '@/composables/usePageSettings'
 import { memorySettingKeys, memoryTickToMib } from '@/api/memorySettings'
 import { memoryGiB, useMemorySettings } from '@/composables/useMemorySettings'
 import PButton from '@/components/widget/PButton.vue'
+import PPrimaryAction from '@/components/widget/PPrimaryAction.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
@@ -766,14 +767,12 @@ const text = pclText
               </div>
             </div>
           </PCard>
-          <PButton
+          <PPrimaryAction
             data-control="BtnSwitch"
-            style="margin: -5px 0px 0px 0px"
             @click="() => router.push('/setup/launch')"
-            inline
-            ><PSvgIcon name="lucide/arrow-right" :size="18" />{{
+            ><PSvgIcon name="lucide/arrow-right" :size="16" />{{
               text('Instance.Setup.OpenGlobalSettings')
-            }}</PButton
+            }}</PPrimaryAction
           >
         </div>
       </div>

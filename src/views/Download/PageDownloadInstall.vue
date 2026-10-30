@@ -6,19 +6,21 @@ import PCard from '@/components/widget/PCard.vue'
 import PVirtualList from '@/components/widget/PVirtualList.vue'
 import PListItem from '@/components/widget/PListItem.vue'
 import PVersionActions from '@/components/widget/PVersionActions.vue'
+import PLoaderVersionActions from '@/components/widget/PLoaderVersionActions.vue'
 import PButton from '@/components/widget/PButton.vue'
+import PPrimaryAction from '@/components/widget/PPrimaryAction.vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { getMinecraftVersions, type IVersionShow } from '@/api/gameVersions'
-import { pclText } from '@/api/pclLocale'
+import { pclLocale, pclText } from '@/api/pclLocale'
 import { useTaskManager } from '@/stores/task'
 import sideTip from '@/composables/sideTip'
 import { useSelectedInstance } from '@/stores/gameLaunch'
-import { showIconPath } from '@/types/gameInfo'
+import { showIconPath, loaderIcon, instanceIcon, type pluginType } from '@/types/gameInfo'
 import type { McPluginReport } from '@/types/mcPlugin'
-import { fabricInstanceName, installWarnings, loaderVisible, selectLoader } from '@/api/installSelection'
+import { instanceDefaultName, installWarnings, loaderConflict, loaderVisible, selectLoader } from '@/api/installSelection'
 import { saveMinecraftVersion } from '@/api/versionActions'
 import { FloatButtonType, useFloatButton } from '@/composables/useFloatButton'
 
@@ -41,13 +43,23 @@ const plugins = reactive<
   Record<string, { loading: boolean; versions: McPluginReport[]; error: string }>
 >({})
 const selected = reactive<Record<string, string>>({})
-const loaderRevision = reactive<Record<string, number>>({})
+const selectedPlugins = computed(() => Object.fromEntries(
+  Object.entries(selected).map(([key, value]) => [key === 'LabyMod' ? 'laby-mod' : key.toLowerCase(), value]),
+) as Partial<Record<pluginType, string>>)
+const loaderCards: Record<string, InstanceType<typeof PCard> | null> = {}
 function chooseLoader(loader: string, version: string) {
   selectLoader(selected, loader, version)
-  loaderRevision[loader] = (loaderRevision[loader] || 0) + 1
-  if (!instanceNameEdited.value) instanceName.value = fabricInstanceName(versionId.value, selected)
+  loaderCards[loader]?.collapse()
+  if (!instanceNameEdited.value) instanceName.value = instanceDefaultName(versionId.value, selected)
 }
 const warnings = computed(() => installWarnings(selected, versionId.value))
+function loaderSubtitle(version: McPluginReport) {
+  if (version.release_time) {
+    const date = new Date(version.release_time)
+    if (!Number.isNaN(date.getTime())) return text('Download.Version.ReleaseDate', [date.toLocaleString(pclLocale.value)])
+  }
+  return version.stable == null ? undefined : text(version.stable ? 'Download.Version.Type.Stable' : 'Download.Version.Type.Preview')
+}
 const loaders = [
   'Forge',
   'Cleanroom',
@@ -174,16 +186,18 @@ onMounted(() => {
       floatButtonState.visible = true
     } else if (floatButtonState.action === install) {
       floatButtonState.action = undefined
-      setFloatButton(FloatButtonType.TaskManage)
-      floatButtonState.visible = useTaskManager().activeTaskCount > 0
+      const hasTasks = useTaskManager().activeTaskCount > 0
+      if (hasTasks) setFloatButton(FloatButtonType.TaskManage)
+      floatButtonState.visible = hasTasks
     }
   }, { immediate: true })
 })
 onUnmounted(() => {
   if (floatButtonState.action === install) {
     floatButtonState.action = undefined
-    setFloatButton(FloatButtonType.TaskManage)
-    floatButtonState.visible = useTaskManager().activeTaskCount > 0
+    const hasTasks = useTaskManager().activeTaskCount > 0
+    if (hasTasks) setFloatButton(FloatButtonType.TaskManage)
+    floatButtonState.visible = hasTasks
   }
 })
 watch(versionId, (id) => {
@@ -212,7 +226,7 @@ watch(versionId, (id) => {
               :subtitle="text(`Download.Version.Latest.${version.label}`, [version.releaseTime])"
               clickable
               @click="() => choose(version.id, version.type)"
-              ><template #actions
+              ><template #icon-actions
                 ><PVersionActions :version-id="version.id" :manual="manual" /></template
             ></PListItem>
           </div>
@@ -236,7 +250,7 @@ watch(versionId, (id) => {
                   :subtitle="version.releaseTime"
                   clickable
                   @click="() => choose(version.id, category.key)"
-                  ><template #actions
+                  ><template #icon-actions
                     ><PVersionActions :version-id="version.id" :manual="manual" /></template
                 ></PListItem>
               </PVirtualList>
@@ -256,7 +270,7 @@ watch(versionId, (id) => {
           >
             <PSvgIcon name="lucide/arrow-left" :size="16" />
           </button>
-          <img :src="selected.Fabric || selected.LegacyFabric ? showIconPath.fabric : showIconPath.grass" alt="" />
+          <img :src="instanceIcon(versionId, selectedPlugins, typeof route.query.version_type === 'string' ? route.query.version_type : undefined)" alt="" />
           <PTextBox :model-value="instanceName" @update:model-value="(value) => { instanceName = value || ''; instanceNameEdited = true }" :aria-label="pclText('Proto.Label.InstanceName')" />
           <span v-if="modify">{{ text('Instance.Install.Action.ModifyLabel') }}</span>
         </div>
@@ -271,30 +285,31 @@ watch(versionId, (id) => {
       </PCard>
       <PCard
         v-for="loader in visibleLoaders"
-        :key="`${versionId}-${loader}-${loaderRevision[loader] || 0}`"
+        class="loader-card"
+        :key="`${versionId}-${loader}`"
+        :ref="(card) => { loaderCards[loader] = card as InstanceType<typeof PCard> | null }"
         :title="text(`Common.Installation.${loader}`)"
+        :disabled="!!loaderConflict(loader, selected, versionId)"
         default-fold-status="fold"
       >
         <template #description
-          ><span class="loader-status">{{
-            selected[loader] ||
+          ><span class="loader-status" :class="{ 'is-selected': selected[loader] }"><img v-if="selected[loader]" :src="loaderIcon(loader)" alt="" />{{
+            selected[loader] || (loaderConflict(loader, selected, versionId)
+              ? text('Download.Install.Compat.IncompatibleWithLoader', [loaderConflict(loader, selected, versionId)!]) : '') ||
             (plugins[loader]?.loading
               ? pclText('Proto.Download.Loading')
               : pclText('Proto.Download.SelectVersion'))
           }}</span></template
         >
+        <template #header-actions>
+          <button v-if="selected[loader]" class="loader-clear" type="button" :title="pclText('Proto.Action.ClearSelection')" :aria-label="pclText('Proto.Action.ClearSelection')" @click.stop="chooseLoader(loader, '')"><PSvgIcon name="lucide/x" :size="15" /></button>
+        </template>
         <div class="version-list">
           <PLoading v-if="plugins[loader]?.loading" :card="false" />
           <PHint v-else-if="plugins[loader]?.error" severity="error">{{
             plugins[loader]?.error
           }} <PButton inline @click="loadLoader(loader, versionId, request)">{{ text('Launch.Homepage.LoadFailed.Retry') }}</PButton></PHint>
           <template v-else-if="plugins[loader]?.versions.length">
-            <PButton
-              v-if="selected[loader]"
-              inline
-              @click="() => chooseLoader(loader, '')"
-              >{{ pclText('Proto.Action.ClearSelection') }}</PButton
-            >
             <PVirtualList
               :items="plugins[loader]!.versions"
               :item-key="(version) => version.version"
@@ -303,10 +318,11 @@ watch(versionId, (id) => {
               <PListItem
                 :key="version.version"
                 :title="version.version"
-                :subtitle="version.stable ? text('Download.Version.Type.Stable') : undefined"
+                :icon="loaderIcon(loader)"
+                :subtitle="loaderSubtitle(version)"
                 clickable
                 @click="() => chooseLoader(loader, version.version)"
-              />
+              ><template #icon-actions><PLoaderVersionActions :loader="loader" :game="versionId" :version="version.version" /></template></PListItem>
             </PVirtualList>
           </template>
           <p v-else class="pcl-empty">
@@ -318,10 +334,10 @@ watch(versionId, (id) => {
           </p>
         </div>
       </PCard>
-      <PButton v-if="modify" type="tint" class="install-start" :disabled="installing" @click="install"
-        ><PSvgIcon name="lucide/download" />{{
+      <PPrimaryAction v-if="modify" class="install-start" :disabled="installing" @click="install"
+        ><PSvgIcon name="lucide/download" :size="16" />{{
           text(modify ? 'Instance.Install.Action.StartModify' : 'Download.Install.StartDownload')
-        }}</PButton
+        }}</PPrimaryAction
       >
     </template>
   </section>
@@ -388,10 +404,41 @@ watch(versionId, (id) => {
 .instance-name-row > :last-child {
   flex: 1;
 }
+.loader-card :deep(.mycard-title > p) {
+  flex: 0 0 min(117px, 30%);
+}
+.loader-card :deep(.mycard-title > .description) {
+  flex: 1;
+  min-width: 0;
+}
 .loader-status {
   color: var(--color-text-grey);
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
+.loader-status.is-selected { color: var(--color-text); }
+.loader-status img { width: 18px; height: 18px; }
+.loader-card :deep(.mycard-title > i) { color: var(--color-text-grey); }
+.loader-card.fold :deep(.mycard-title > i) { transform: rotate(-90deg); }
+.loader-card.unfold :deep(.mycard-title > i) { transform: rotate(-180deg); }
+.loader-card:hover :deep(.mycard-title > i),
+.loader-card:hover .loader-clear { color: var(--color-tint); }
+.loader-clear {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  margin-right: 10px;
+  padding: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-grey);
+  cursor: pointer;
+  transition: color 0.4s;
+}
+.loader-clear:focus-visible { outline: 2px solid var(--color-text-grey); }
 .install-warnings {
   padding: 0 16px 15px;
   display: flex;

@@ -12,6 +12,7 @@ import PLoading from '@/components/widget/PLoading.vue'
 import PHint from '@/components/widget/PHint.vue'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
+import { loaderIcon } from '@/types/gameInfo'
 const props = defineProps<{ loader: string; website: string; supported?: boolean }>()
 const localeName = computed(() => (props.loader === 'OptiFine' ? 'Optifine' : props.loader))
 const text = pclText
@@ -98,6 +99,7 @@ watch(minecraft, load)
             <PListItem
               :key="version.version"
               :title="version.version"
+              :icon="loaderIcon(loader)"
               :subtitle="version.stable ? text('Download.Version.Type.Stable') : undefined"
               clickable
               @click="() => sideTip.show(pclText('Proto.NotImplemented.Installer'))"

@@ -379,9 +379,13 @@ pub async fn launch_game(
         let visibility = state.launcher_visibility;
         let child = option.launch_checked().map_err(|e| e.to_string())?;
         drop(state);
-        crate::core::launch_session::track(child, expected, option.access_token(), move || {
-            drop(natives)
-        }, move |id, event| crate::core::visibility::handle(&window, id, visibility, event));
+        crate::core::launch_session::track(
+            child,
+            expected,
+            option.access_token(),
+            move || drop(natives),
+            move |id, event| crate::core::visibility::handle(&window, id, visibility, event),
+        );
         Ok(())
     })
     .await
@@ -757,6 +761,65 @@ pub async fn get_instances_in_repository(
     tauri::async_runtime::spawn_blocking(move || repo.game_instances())
         .await
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn instance_folder_action(
+    repository_index: usize,
+    instance_name: String,
+    instance_directory: std::path::PathBuf,
+    delete: bool,
+) -> Result<(), String> {
+    crate::util::file::validate_file_name(&instance_name).map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let manager = ConfigManager::instance();
+        let repo = manager
+            .app_state
+            .blocking_lock()
+            .repositories
+            .get(repository_index)
+            .cloned()
+            .ok_or("Minecraft folder index is out of range")?;
+        let instance = repo
+            .game_instance_named(&instance_name)
+            .ok_or("Minecraft instance was not found")?;
+        if instance.directory != instance_directory {
+            return Err("Minecraft folder changed; try again".into());
+        }
+        let versions = repo
+            .path
+            .join("versions")
+            .canonicalize()
+            .map_err(|e| e.to_string())?;
+        let path = instance
+            .directory
+            .canonicalize()
+            .map_err(|e| e.to_string())?;
+        if path.parent() != Some(versions.as_path())
+            || std::fs::symlink_metadata(&instance.directory)
+                .map_err(|e| e.to_string())?
+                .file_type()
+                .is_symlink()
+        {
+            return Err("Instance directory is not a direct, canonical child of versions".into());
+        }
+        if !delete {
+            return open_directory(&path);
+        }
+        trash::delete(&path).map_err(|e| e.to_string())?;
+        manager.update(|state| {
+            if state
+                .active_game_instance
+                .as_ref()
+                .is_some_and(|active| active.directory == instance.directory)
+            {
+                state.active_game_instance = None;
+            }
+            Ok(())
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command(rename_all = "snake_case")]

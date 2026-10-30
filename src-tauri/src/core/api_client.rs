@@ -190,6 +190,7 @@ pub mod plugins {
     pub struct McPluginReport {
         pub version: String,
         pub stable: Option<bool>,
+        pub release_time: Option<String>,
     }
 
     pub mod forge_xml {
@@ -221,6 +222,7 @@ pub mod plugins {
                         versions.push(McPluginReport {
                             version: forge_version.to_string(),
                             stable: None,
+                            release_time: None,
                         });
                     }
                 }
@@ -233,7 +235,7 @@ pub mod plugins {
         #[derive(serde::Deserialize, serde::Serialize)]
         pub struct ForgeVersion {
             mcversion: String,
-            modified: String,
+            pub modified: String,
             pub version: String,
             files: Vec<File>,
         }
@@ -488,6 +490,7 @@ impl MinecraftApiClient {
                     .map(|info| McPluginReport {
                         version: info.version.clone(),
                         stable: None,
+                        release_time: Some(info.modified.clone()),
                     })
                     .collect());
             }
@@ -510,12 +513,19 @@ impl MinecraftApiClient {
         let official = "https://meta.fabricmc.net/v2/versions/loader";
         let mirror = "https://bmclapi2.bangbang93.com/fabric-meta/v2/versions/loader";
         let sources = if base == official || base == mirror {
-            if matches!(super::downloader::resources::DOWNLOAD_RESOURCES.settings().version_source, super::downloader::resources::SourcePreference::Official) {
+            if matches!(
+                super::downloader::resources::DOWNLOAD_RESOURCES
+                    .settings()
+                    .version_source,
+                super::downloader::resources::SourcePreference::Official
+            ) {
                 vec![official, mirror]
             } else {
                 vec![mirror, official]
             }
-        } else { vec![base] };
+        } else {
+            vec![base]
+        };
         let mut last_error = None;
         let mut fabric_versions = None;
         for source in sources {
@@ -526,12 +536,23 @@ impl MinecraftApiClient {
                 .pop_if_empty()
                 .push(version_id);
             match self.get::<serde_json::Value>(url.as_str(), true).await {
-                Ok(value) if value.is_array() => { fabric_versions = Some(value); break; }
-                Ok(_) => last_error = Some(McApiError::InvalidMetadata("Invalid Fabric version list".into())),
+                Ok(value) if value.is_array() => {
+                    fabric_versions = Some(value);
+                    break;
+                }
+                Ok(_) => {
+                    last_error = Some(McApiError::InvalidMetadata(
+                        "Invalid Fabric version list".into(),
+                    ))
+                }
                 Err(error) => last_error = Some(error),
             }
         }
-        let fabric_versions = fabric_versions.ok_or_else(|| last_error.unwrap_or_else(|| McApiError::InvalidMetadata("No Fabric metadata source available".into())))?;
+        let fabric_versions = fabric_versions.ok_or_else(|| {
+            last_error.unwrap_or_else(|| {
+                McApiError::InvalidMetadata("No Fabric metadata source available".into())
+            })
+        })?;
         let loaders = fabric_versions
             .as_array()
             .ok_or_else(|| serde_json::Error::custom("fabric list failed to parse"))?
@@ -544,6 +565,7 @@ impl MinecraftApiClient {
                 Some(McPluginReport {
                     version: version.to_string(),
                     stable,
+                    release_time: None,
                 })
             })
             .collect();

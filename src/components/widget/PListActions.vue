@@ -6,6 +6,8 @@
 .list-actions {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+  gap: 0;
   opacity: 0;
   pointer-events: none;
   transition: opacity 72ms;
@@ -16,6 +18,10 @@
   pointer-events: auto;
   transition-duration: 84ms;
   transition-delay: 36ms;
+}
+:global(.gameinfo-container .list-actions:has(details[open])) {
+  opacity: 1;
+  pointer-events: auto;
 }
 :global(.comp-item:hover .list-actions),
 :global(.comp-item:focus-within .list-actions) {

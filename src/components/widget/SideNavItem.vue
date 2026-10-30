@@ -18,7 +18,10 @@ defineProps<INavItem>()
       <PSelectionIndicator v-if="linkto" />
 
       <i class="side-nav-icon" v-if="icon"><icon /></i>
-      <p>{{ text }}</p>
+      <div class="side-nav-text">
+        <p>{{ text }}</p>
+        <p v-if="subtitle" class="side-nav-subtitle" :title="subtitle">{{ subtitle }}</p>
+      </div>
     </component>
     <button
       v-if="action"
@@ -64,6 +67,19 @@ a.custom {
 
 .sidenav-line {
   position: relative;
+}
+.side-nav-text {
+  min-width: 0;
+}
+.side-nav-subtitle {
+  max-width: 155px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--color-text-grey);
+}
+a:has(.side-nav-subtitle) {
+  height: 40px;
 }
 .refresh-icon {
   position: absolute;

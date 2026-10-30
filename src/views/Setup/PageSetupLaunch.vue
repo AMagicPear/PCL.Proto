@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router'
 import { pclText } from '@/api/pclLocale'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
+import PPrimaryAction from '@/components/widget/PPrimaryAction.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
@@ -658,14 +659,13 @@ const text = pclText
               >
             </div>
           </PCard>
-          <PButton
+          <PPrimaryAction
             data-control="BtnSwitch"
-            style="margin: -5px 0px 15px 0px"
+            style="margin: 0 0 15px"
             @click="() => router.push('/instance_setting/setting')"
-            inline
-            ><PSvgIcon name="lucide/arrow-right" :size="18" />{{
+            ><PSvgIcon name="lucide/arrow-right" :size="16" />{{
               text('Setup.Launch.SwitchToInstanceSetup')
-            }}</PButton
+            }}</PPrimaryAction
           >
         </div>
       </div>

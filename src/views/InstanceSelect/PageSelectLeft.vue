@@ -24,6 +24,7 @@ const groups = computed(() => [
     content:
       repo.repositories?.map((item, index) => ({
         text: item.name,
+        subtitle: item.path,
         linkto: `/instance_select/instance_select_sub/${index}`,
       })) || [],
   },

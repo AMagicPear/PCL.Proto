@@ -127,7 +127,7 @@ async function download() {
         :aria-label="pclText('Download.Comp.QuickDownload.Btn.ToolTip')"
         @click="download"
       >
-        <PSvgIcon name="lucide/download" :size="16" />
+        <PSvgIcon name="lucide/download" :size="15" />
       </button>
       <button
         class="pcl-icon-button"
@@ -151,7 +151,7 @@ async function download() {
       >
         <PSvgIcon
           :name="favorites.has(data.project_id) ? 'lucide/heart-filled' : 'lucide/heart'"
-          :size="16"
+          :size="15"
         />
       </button>
     </PListActions>
@@ -252,7 +252,6 @@ async function download() {
 }
 .comp-actions {
   position: relative;
-  gap: 4px;
   flex-shrink: 0;
 }
 @media (max-width: 600px) {

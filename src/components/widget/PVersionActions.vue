@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import PSvgIcon from './PSvgIcon.vue'
-import PListActions from './PListActions.vue'
 import { pclText } from '@/api/pclLocale'
 import { openMinecraftChangelog, saveMinecraftVersion } from '@/api/versionActions'
 
@@ -8,7 +7,6 @@ defineProps<{ versionId: string; manual?: boolean }>()
 </script>
 
 <template>
-  <PListActions>
     <button
       class="pcl-icon-button"
       v-if="!manual"
@@ -37,5 +35,4 @@ defineProps<{ versionId: string; manual?: boolean }>()
     >
       <PSvgIcon name="lucide/server" :size="15" />
     </button>
-  </PListActions>
 </template>

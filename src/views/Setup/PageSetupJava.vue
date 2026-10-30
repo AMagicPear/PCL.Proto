@@ -4,7 +4,6 @@ import PCard from '@/components/widget/PCard.vue'
 import PListItem from '@/components/widget/PListItem.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PIconTextButton from '@/components/widget/PIconTextButton.vue'
-import PListActions from '@/components/widget/PListActions.vue'
 import { type IJavaRuntimeInfo } from '@/api/javaReq'
 import { onMounted, ref } from 'vue'
 import { invoke, isTauri } from '@tauri-apps/api/core'
@@ -143,9 +142,9 @@ onMounted(() => load())
               :selected="java.globalJava === runtime.java_exe"
               @click="select(runtime)"
             >
-              <template #actions>
-                <PListActions>
+              <template #icon-actions>
                   <button
+                    class="pcl-icon-button"
                     type="button"
                     :title="text('Common.Action.Open')"
                     :aria-label="text('Common.Action.Open')"
@@ -157,6 +156,7 @@ onMounted(() => load())
                     <PSvgIcon name="lucide/folder-open" :size="15" />
                   </button>
                   <button
+                    class="pcl-icon-button"
                     type="button"
                     :title="text('Setup.Java.Detail.ToolTip')"
                     :aria-label="text('Setup.Java.Detail.ToolTip')"
@@ -165,6 +165,7 @@ onMounted(() => load())
                     <PSvgIcon name="lucide/info" :size="15" />
                   </button>
                   <button
+                    class="pcl-icon-button"
                     type="button"
                     :title="text(runtime.is_enabled ? 'Setup.Java.Disable' : 'Setup.Java.Enable')"
                     :aria-label="
@@ -178,7 +179,6 @@ onMounted(() => load())
                       :size="15"
                     />
                   </button>
-                </PListActions>
               </template>
             </PListItem>
             <PHint v-if="!loading && !java.runtimes.length && !error" severity="info">{{

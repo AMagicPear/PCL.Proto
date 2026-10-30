@@ -6,6 +6,7 @@ import exportOptions from '@/assets/export-options.json'
 import { useSelectedInstance } from '@/stores/gameLaunch'
 import { usePageSettings } from '@/composables/usePageSettings'
 import PButton from '@/components/widget/PButton.vue'
+import PPrimaryAction from '@/components/widget/PPrimaryAction.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PHint from '@/components/widget/PHint.vue'
@@ -189,7 +190,7 @@ const text = pclText
             </PCard>
           </div>
         </div>
-        <PButton
+        <PPrimaryAction
           data-control="BtnExport"
           style="
             grid-row: 1 / span 1;
@@ -198,10 +199,9 @@ const text = pclText
             align-self: end;
           "
           @click="showUnavailable"
-          inline
-          ><PSvgIcon name="lucide/package" :size="18" />{{
+          ><PSvgIcon name="lucide/package" :size="16" />{{
             text('Instance.Export.StartExport')
-          }}</PButton
+          }}</PPrimaryAction
         >
       </div>
     </div>

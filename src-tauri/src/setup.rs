@@ -142,17 +142,25 @@ pub async fn get_window_settings() -> Option<WindowSettings> {
 
 #[tauri::command]
 pub async fn get_launcher_visibility() -> crate::core::visibility::VisibilityMode {
-    ConfigManager::instance().app_state.lock().await.launcher_visibility
+    ConfigManager::instance()
+        .app_state
+        .lock()
+        .await
+        .launcher_visibility
 }
 
 #[tauri::command]
-pub async fn set_launcher_visibility(mode: crate::core::visibility::VisibilityMode) -> Result<(), String> {
+pub async fn set_launcher_visibility(
+    mode: crate::core::visibility::VisibilityMode,
+) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         ConfigManager::instance().update(|state| {
             state.launcher_visibility = mode;
             Ok(())
         })
-    }).await.map_err(|error| error.to_string())?
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
