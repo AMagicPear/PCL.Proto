@@ -60,6 +60,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::begin_launch,
+            commands::cancel_launch,
             commands::launch_game,
             core::launch_session::get_game_sessions,
             core::launch_session::stop_game_session,

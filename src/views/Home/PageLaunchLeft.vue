@@ -10,12 +10,13 @@ import { useSelectedInstance } from '@/stores/gameLaunch'
 import { useRouter } from 'vue-router'
 import type { ProfileView } from '@/types/profile'
 import { Channel, invoke } from '@tauri-apps/api/core'
-import { prepareGameJava, downloadGameJava, type JavaInstallProgress } from '@/api/javaReq'
+import { prepareGameJava, downloadGameJava } from '@/api/javaReq'
 import { useModal } from '@/composables/useModal'
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { pclText } from '@/api/pclLocale'
-import type { DownloadStats } from '@/api/downloadSettings'
 import sideTip from '@/composables/sideTip'
+import { useLaunchState, type LaunchProgress } from '@/stores/launchState'
+import { storeToRefs } from 'pinia'
 
 defineProps<{ loadingInstances?: boolean }>()
 
@@ -32,24 +33,8 @@ const accountViews = {
 }
 const accountView = computed(() => accountViews[profileView.value])
 const modal = useModal()
-const preparing = ref(false)
-const javaCancelled = ref(false)
-const javaProgress = ref<JavaInstallProgress | null>(null)
-
-type Launching = {
-  name: string
-  progress: number
-  stage: string
-  method: string
-  downloading: boolean
-}
-type LaunchProgress = Pick<Launching, 'progress' | 'stage' | 'downloading'>
-
-const launching = ref<Launching | null>(null)
-const downloadSpeed = ref<string | null>(null)
-let speedTimer: ReturnType<typeof setTimeout> | undefined
-const leavingLaunch = ref(false)
-let launchLeaveTimer: ReturnType<typeof setTimeout> | undefined
+const launchState = useLaunchState()
+const { preparing, launching, downloadSpeed, leavingLaunch } = storeToRefs(launchState)
 
 async function getLaunchMethod() {
   try {
@@ -64,54 +49,37 @@ async function getLaunchMethod() {
     return text('Launch.Account.Type.Offline')
   }
 }
-function updateLaunching(update: LaunchProgress) {
-  if (launching.value) launching.value = { ...launching.value, ...update }
-}
-function formatSpeed(speed: number) {
-  if (speed < 1024) return `${speed.toFixed(0)} B/s`
-  if (speed < 1048576) return `${(speed / 1024).toFixed(1)} KiB/s`
-  return `${(speed / 1048576).toFixed(1)} MiB/s`
-}
-async function refreshSpeed() {
-  if (!launching.value?.downloading) {
-    downloadSpeed.value = null
-    return
-  }
-  try {
-    const stats = await invoke<DownloadStats>('get_download_stats')
-    if (launching.value?.downloading) downloadSpeed.value = formatSpeed(stats.speed)
-  } catch {
-    downloadSpeed.value = null
-  } finally {
-    if (launching.value?.downloading) speedTimer = setTimeout(refreshSpeed, 300)
-  }
-}
 function startLaunching() {
-  clearTimeout(speedTimer)
-  downloadSpeed.value = null
-  launching.value = {
-    name: instance.instance_info?.name || '',
-    progress: 0,
-    stage: 'Common.Action.Initialize',
-    method: text('Launch.Account.Type.Offline'),
-    downloading: false,
-  }
+  const attempt = launchState.start(
+    instance.instance_info?.name || '',
+    text('Launch.Account.Type.Offline'),
+  )
   void getLaunchMethod().then((method) => {
-    if (launching.value) launching.value = { ...launching.value, method }
+    launchState.setMethod(attempt, method)
   })
+  return attempt
 }
-function stopLaunching() {
-  clearTimeout(launchLeaveTimer)
-  clearTimeout(speedTimer)
-  downloadSpeed.value = null
-  leavingLaunch.value = false
-  launching.value = null
+function returnToHome(attempt: number) {
+  launchState.returnToHome(attempt)
 }
-function finishLaunching() {
-  if (!launching.value || leavingLaunch.value) return
-  leavingLaunch.value = true
-  clearTimeout(speedTimer)
-  launchLeaveTimer = setTimeout(stopLaunching, 360)
+async function abandonLaunch(attempt: number) {
+  if (!launchState.isCurrent(attempt)) return
+  try {
+    await invoke('cancel_launch')
+  } catch {
+    // The Rust side may already have cleared a failed pre-launch request.
+  }
+}
+async function cancelLaunch() {
+  const attempt = launchState.requestCancel()
+  if (attempt === null) return
+  try {
+    await invoke('cancel_launch')
+    sideTip.show(text('Minecraft.Launch.Cancelled'))
+  } catch (error) {
+    sideTip.show(text('Proto.Error.Launch', [String(error)]), 'warn')
+  }
+  returnToHome(attempt)
 }
 async function launch() {
   if (preparing.value) return
@@ -120,12 +88,18 @@ async function launch() {
     return
   }
   const instanceDirectory = instance.instance_info.directory
-  preparing.value = true
-  javaCancelled.value = false
-  startLaunching()
+  let attempt: number | undefined
   try {
-    updateLaunching({ stage: 'Minecraft.Launch.Stage.GetJava', progress: 0.05, downloading: false })
+    await invoke('begin_launch')
+    attempt = startLaunching()
+    launchState.setPreparing(attempt, true)
+    launchState.update(attempt, {
+      stage: 'Minecraft.Launch.Stage.GetJava',
+      progress: 0.05,
+      downloading: false,
+    })
     let info = await prepareGameJava(instanceDirectory)
+    if (launchState.isCancelled(attempt)) return
     if (!info.runtime) {
       if (!info.download_major) {
         await modal.open({
@@ -137,7 +111,8 @@ async function launch() {
           plainText: true,
           buttons: [{ content: text('Common.Action.Close'), operation: () => modal.close() }],
         })
-        stopLaunching()
+        await abandonLaunch(attempt)
+        returnToHome(attempt)
         return
       }
       const answer = await modal.open({
@@ -154,61 +129,52 @@ async function launch() {
           { content: text('Common.Action.Cancel'), operation: () => modal.close(false) },
         ],
       })
-      if (!answer.confirmed || instance.instance_info?.directory !== instanceDirectory) {
-        stopLaunching()
+      if (
+        launchState.isCancelled(attempt) ||
+        !answer.confirmed ||
+        instance.instance_info?.directory !== instanceDirectory
+      ) {
+        await abandonLaunch(attempt)
+        returnToHome(attempt)
         return
       }
-      javaProgress.value = { completed: 0, total: 0 }
       await downloadGameJava(instanceDirectory, (progress) => {
-        javaProgress.value = {
-          completed: Math.max(javaProgress.value?.completed || 0, progress.completed),
-          total: progress.total,
-        }
-        updateLaunching({
+        launchState.update(attempt!, {
           stage: 'Minecraft.Launch.Stage.GetJava',
           progress: progress.total ? 0.05 + (progress.completed / progress.total) * 0.15 : 0.05,
           downloading: true,
         })
-        if (!speedTimer) void refreshSpeed()
       })
-      if (javaCancelled.value) {
-        stopLaunching()
-        return
-      }
-      javaProgress.value = null
+      if (launchState.isCancelled(attempt)) return
       info = await prepareGameJava(instanceDirectory)
+      if (launchState.isCancelled(attempt)) return
       if (!info.runtime) throw new Error(text('Proto.Java.ReadFailed'))
     }
+    if (launchState.isCancelled(attempt)) return
     for (const warning of info.warnings)
       sideTip.show(text(warning.key, [warning.version, warning.min, warning.max]), 'warn')
     const progress = new Channel<LaunchProgress>()
     progress.onmessage = (message) => {
-      updateLaunching(message)
-      if (message.downloading && !speedTimer) void refreshSpeed()
-      if (message.progress === 1) finishLaunching()
+      if (!launchState.update(attempt!, message)) return
+      if (message.progress === 1) returnToHome(attempt!)
     }
     await invoke('launch_game', { instanceDirectory, progress })
   } catch (err) {
-    if (!javaCancelled.value) sideTip.show(text('Proto.Error.Launch', [String(err)]), 'warn')
-    stopLaunching()
+    if (attempt !== undefined && launchState.isCurrent(attempt)) {
+      await abandonLaunch(attempt)
+      if (!launchState.isCancelled(attempt))
+        sideTip.show(text('Proto.Error.Launch', [String(err)]), 'warn')
+      returnToHome(attempt)
+    } else if (attempt === undefined)
+      sideTip.show(text('Proto.Error.Launch', [String(err)]), 'warn')
   } finally {
-    javaProgress.value = null
-    preparing.value = false
+    if (attempt !== undefined) launchState.setPreparing(attempt, false)
   }
-}
-async function cancelJava() {
-  javaCancelled.value = true
-  await invoke('cancel_java_download')
 }
 function settings() {
   if (instance.instance_info) void router.push('/instance_setting')
   else sideTip.show(pclText('Proto.Instance.SelectFirstHint'))
 }
-
-onUnmounted(() => {
-  clearTimeout(speedTimer)
-  clearTimeout(launchLeaveTimer)
-})
 </script>
 
 <template>
@@ -273,7 +239,9 @@ onUnmounted(() => {
         <span>{{ text('Launch.Status.Trivia') }}</span>
         <p>{{ text('Launch.Status.Trivia.Placeholder') }}</p>
       </div>
-      <PButton v-if="javaProgress" @click="cancelJava">{{ text('Common.Action.Cancel') }}</PButton>
+      <PButton v-if="launching.progress < 1" class="launch-cancel" @click="cancelLaunch">{{
+        text('Common.Action.Cancel')
+      }}</PButton>
     </section>
   </aside>
 </template>
@@ -285,6 +253,9 @@ onUnmounted(() => {
   flex: 0 0 300px;
   padding: 0 20px 20px;
   overflow: hidden;
+  animation:
+    launch-left-enter 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    launch-left-fade-in 100ms ease-out;
 }
 .launch-input {
   width: 100%;
@@ -355,6 +326,13 @@ onUnmounted(() => {
 .is-returning .launch-status {
   pointer-events: none;
   animation: launch-status-leave 150ms ease-in forwards;
+}
+.launch-cancel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 35px;
 }
 .launching-loader :deep(.loading-container) {
   min-height: 0;
@@ -436,6 +414,22 @@ onUnmounted(() => {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+@keyframes launch-left-enter {
+  from {
+    transform: scale(0.96);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes launch-left-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 @keyframes launch-status-leave {

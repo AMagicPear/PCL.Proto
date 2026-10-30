@@ -183,7 +183,7 @@ try {
       'left and right start together',
     )
     assert.ok(
-      current.at(-1).frames[1].transform.includes(launch ? 'scale(0.9)' : 'translateX(-6px)'),
+      current.at(-1).frames[1].transform.includes(launch ? 'scale(0.95)' : 'translateX(-6px)'),
     )
     finish()
     await leaving

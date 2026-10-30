@@ -45,7 +45,7 @@ export function usePageTransition(page: Ref<HTMLElement | null>) {
         const end =
           element === aside
             ? element.classList.contains('launch-left')
-              ? 'scale(0.9)'
+              ? 'scale(0.95)'
               : 'translateX(-6px)'
             : 'translateY(-6px)'
         return [
