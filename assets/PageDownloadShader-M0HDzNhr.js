@@ -1,0 +1,1 @@
+import{At as e,It as a,Ut as t}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t as r}from"./PageComp-DKaLpj4i.js";var o=a({__name:"PageDownloadShader",setup(_){return(p,d)=>(t(),e(r,{"project-type":"shader"}))}}),s=o;export{s as default};

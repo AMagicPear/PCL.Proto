@@ -1,1 +1,0 @@
-import{Q as e,it as a,ut as t}from"./index-AfYNj-VM.js";import{t as o}from"./PageDownloadVersionList-C4TWYoME.js";var r=a({__name:"PageDownloadLiteLoader",setup(_){return(d,l)=>(t(),e(o,{loader:"LiteLoader",website:"https://www.liteloader.com"}))}}),s=r;export{s as default};

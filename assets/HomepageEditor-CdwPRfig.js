@@ -1,1 +1,0 @@
-import{Tt as e,et as t,it as r,ut as o}from"./index-AfYNj-VM.js";var a="/PCL.Proto/pcl-home-zx/index.html",_=["src"],p=r({__name:"HomepageEditor",setup(l){return(n,u)=>(o(),t("iframe",{src:e(a),width:"100%",height:"100%",frameborder:"0",style:{border:"none"}},null,8,_))}}),m=p;export{m as default};

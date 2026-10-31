@@ -1,0 +1,1 @@
+import{At as e,It as t,Ut as o}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t as a}from"./PageDownloadVersionList-CY5VhCtv.js";var r=t({__name:"PageDownloadForge",setup(_){return(n,p)=>(o(),e(a,{loader:"Forge",website:"https://files.minecraftforge.net",supported:""}))}}),d=r;export{d as default};

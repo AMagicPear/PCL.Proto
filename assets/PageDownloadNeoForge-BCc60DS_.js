@@ -1,1 +1,0 @@
-import{Q as e,it as o,ut as t}from"./index-AfYNj-VM.js";import{t as a}from"./PageDownloadVersionList-C4TWYoME.js";var r=o({__name:"PageDownloadNeoForge",setup(_){return(n,s)=>(t(),e(a,{loader:"NeoForge",website:"https://neoforged.net"}))}}),u=r;export{u as default};

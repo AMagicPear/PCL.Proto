@@ -1,0 +1,1 @@
+import{At as e,It as o,Ut as t}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t as a}from"./PageComp-DKaLpj4i.js";var r=o({__name:"PageDownloadWorld",setup(_){return(p,l)=>(t(),e(a,{"project-type":"world"}))}}),s=r;export{s as default};

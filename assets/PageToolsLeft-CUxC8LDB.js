@@ -1,1 +1,0 @@
-import{_ as e,at as a,g as o,it as t}from"./index-AfYNj-VM.js";var i=t({setup(){return()=>a(e,{sideNavGroups:o("PageToolsLeft",{ItemGameLink:"/tools/lobby",ItemTest:"/tools/wonderbox"})})}});export{i as default};

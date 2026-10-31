@@ -1,1 +1,0 @@
-import{Q as e,it as t,ut as a}from"./index-AfYNj-VM.js";import{t as o}from"./PageToolsGameLink-BQJMn5Y7.js";var n=t({__name:"PageToolsGameLinkConnected",setup(_){return(r,s)=>(a(),e(o,{connected:""}))}}),l=n;export{l as default};

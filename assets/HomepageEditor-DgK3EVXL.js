@@ -1,0 +1,1 @@
+import{It as e,Mt as t,Ut as r,on as o}from"./index-CewH6nDJ.js";var a="/PCL.Proto/pcl-home-zx/index.html",_=["src"],n=e({__name:"HomepageEditor",setup(p){return(l,d)=>(r(),t("iframe",{src:o(a),width:"100%",height:"100%",frameborder:"0",style:{border:"none"}},null,8,_))}}),s=n;export{s as default};

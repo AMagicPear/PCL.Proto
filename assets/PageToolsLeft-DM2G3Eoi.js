@@ -1,0 +1,1 @@
+import{It as e,Rt as o,v as t,y as a}from"./index-CewH6nDJ.js";var l=e({setup(){return()=>o(a,{sideNavGroups:t("PageToolsLeft",{ItemGameLink:"/tools/lobby",ItemTest:"/tools/wonderbox"})})}});export{l as default};

@@ -1,0 +1,1 @@
+import{dn as t}from"./index-CewH6nDJ.js";const a=["off","modded","non_release","modded_or_non_release","all"],e=()=>t("get_isolation_default"),i=o=>t("set_isolation_default",{value:o}),l=o=>t("get_instance_isolation",{instanceDirectory:o}),_=(o,s)=>t("set_instance_isolation",{instanceDirectory:o,value:s});export{i as a,_ as i,e as n,a as r,l as t};

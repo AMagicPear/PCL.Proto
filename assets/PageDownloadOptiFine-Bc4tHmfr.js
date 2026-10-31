@@ -1,0 +1,1 @@
+import{At as e,It as t,Ut as a}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t as o}from"./PageDownloadVersionList-CY5VhCtv.js";var n=t({__name:"PageDownloadOptiFine",setup(i){return(p,r)=>(a(),e(o,{loader:"OptiFine",website:"https://www.optifine.net/"}))}}),u=n;export{u as default};

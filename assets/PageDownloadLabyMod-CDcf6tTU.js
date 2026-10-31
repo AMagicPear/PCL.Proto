@@ -1,0 +1,1 @@
+import{At as e,It as a,Ut as o}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t}from"./PageDownloadVersionList-CY5VhCtv.js";var r=a({__name:"PageDownloadLabyMod",setup(_){return(d,n)=>(o(),e(t,{loader:"LabyMod",website:"https://labymod.net"}))}}),u=r;export{u as default};

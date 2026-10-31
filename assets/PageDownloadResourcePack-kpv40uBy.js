@@ -1,0 +1,1 @@
+import{At as e,It as a,Ut as o}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t}from"./PageComp-DKaLpj4i.js";var r=a({__name:"PageDownloadResourcePack",setup(c){return(p,_)=>(o(),e(t,{"project-type":"resourcepack"}))}}),l=r;export{l as default};

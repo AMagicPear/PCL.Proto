@@ -1,1 +1,0 @@
-import{Q as a,it as e,ut as t}from"./index-AfYNj-VM.js";import{t as o}from"./PageComp-D83_29Mi.js";var r=e({__name:"PageDownloadDataPack",setup(_){return(p,c)=>(t(),a(o,{"project-type":"datapack"}))}}),l=r;export{l as default};

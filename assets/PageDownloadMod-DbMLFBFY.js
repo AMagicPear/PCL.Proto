@@ -1,0 +1,1 @@
+import{At as e,It as o,Ut as t}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t as a}from"./PageComp-DKaLpj4i.js";var r=o({__name:"PageDownloadMod",setup(_){return(p,d)=>(t(),e(a,{"project-type":"mod"}))}}),m=r;export{m as default};

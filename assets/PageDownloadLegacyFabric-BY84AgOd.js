@@ -1,0 +1,1 @@
+import{At as e,It as a,Ut as t}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t as r}from"./PageDownloadVersionList-CY5VhCtv.js";var o=a({__name:"PageDownloadLegacyFabric",setup(c){return(_,n)=>(t(),e(r,{loader:"LegacyFabric",website:"https://legacyfabric.net/"}))}}),s=o;export{s as default};

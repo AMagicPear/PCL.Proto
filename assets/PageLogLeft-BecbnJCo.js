@@ -1,1 +1,0 @@
-import{Q as e,_ as t,it as a,ut as o}from"./index-AfYNj-VM.js";var _=a({__name:"PageLogLeft",setup(r){return(u,n)=>(o(),e(t,{"side-nav-groups":[{content:[{text:"PCL.Proto",linkto:"/logs/view"}]}]}))}}),p=_;export{p as default};

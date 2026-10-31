@@ -1,0 +1,1 @@
+import{At as e,It as a,Ut as t}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t as r}from"./PageDownloadVersionList-CY5VhCtv.js";var o=a({__name:"PageDownloadFabric",setup(_){return(p,n)=>(t(),e(r,{loader:"Fabric",website:"https://www.fabricmc.net",supported:""}))}}),l=o;export{l as default};

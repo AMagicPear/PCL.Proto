@@ -1,0 +1,1 @@
+import{At as e,It as t,Ut as a,y as o}from"./index-CewH6nDJ.js";var _=t({__name:"PageLogLeft",setup(r){return(u,n)=>(a(),e(o,{"side-nav-groups":[{content:[{text:"PCL.Proto",linkto:"/logs/view"}]}]}))}}),p=_;export{p as default};

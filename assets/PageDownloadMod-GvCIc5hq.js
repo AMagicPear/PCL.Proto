@@ -1,1 +1,0 @@
-import{Q as e,it as o,ut as a}from"./index-AfYNj-VM.js";import{t}from"./PageComp-D83_29Mi.js";var r=o({__name:"PageDownloadMod",setup(_){return(p,d)=>(a(),e(t,{"project-type":"mod"}))}}),l=r;export{l as default};

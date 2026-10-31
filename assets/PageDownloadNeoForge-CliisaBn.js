@@ -1,0 +1,1 @@
+import{At as e,It as o,Ut as t}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t as a}from"./PageDownloadVersionList-CY5VhCtv.js";var r=o({__name:"PageDownloadNeoForge",setup(_){return(n,p)=>(t(),e(a,{loader:"NeoForge",website:"https://neoforged.net"}))}}),u=r;export{u as default};

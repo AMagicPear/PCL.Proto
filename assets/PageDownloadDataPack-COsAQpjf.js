@@ -1,0 +1,1 @@
+import{At as a,It as t,Ut as e}from"./index-CewH6nDJ.js";import"./PComboBox-DjpZUv7a.js";import{t as o}from"./PageComp-DKaLpj4i.js";var r=t({__name:"PageDownloadDataPack",setup(p){return(_,c)=>(e(),a(o,{"project-type":"datapack"}))}}),d=r;export{d as default};
