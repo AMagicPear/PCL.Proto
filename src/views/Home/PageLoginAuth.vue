@@ -7,12 +7,10 @@ import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 import PPath from '@/components/widget/PPath.vue'
 import paths from '@/assets/vector-paths.json'
+import { openExternal } from '@/util/externalLink'
 const loginShape = paths.a734eac303dcf223.data
-const props = defineProps<{ website?: string; registerUrl?: string }>()
+defineProps<{ website?: string; registerUrl?: string }>()
 const oauthMode = ref(false)
-function open(url: string | undefined) {
-  if (url && /^https?:\/\//i.test(url)) window.open(url, '_blank', 'noopener,noreferrer')
-}
 const emit = defineEmits<{ view: [view: ProfileView] }>()
 const text = pclText
 const server = ref('')
@@ -41,7 +39,7 @@ function login() {
         >{{ text('Launch.Account.Auth.Password')
         }}<input type="password" v-model="password" autocomplete="off"
       /></label>
-      <PButton v-if="registerUrl" inline @click="() => open(registerUrl)">{{
+      <PButton v-if="registerUrl" inline @click="() => openExternal(registerUrl)">{{
         text('Launch.Account.Auth.Register')
       }}</PButton>
       <PButton inline @click="() => (oauthMode = true)">{{
@@ -56,7 +54,7 @@ function login() {
         text('Launch.Account.Auth.UsePassword')
       }}</PButton>
     </div>
-    <PButton v-if="website" inline @click="() => open(website)">{{
+    <PButton v-if="website" inline @click="() => openExternal(website)">{{
       text('Launch.Account.Microsoft.Website')
     }}</PButton>
     <div>

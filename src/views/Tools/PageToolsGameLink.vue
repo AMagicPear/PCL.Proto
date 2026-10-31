@@ -15,6 +15,7 @@ import { isTauri } from '@tauri-apps/api/core'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAccountInfo } from '@/stores/account'
+import { openExternal } from '@/util/externalLink'
 const props = defineProps<{
   connected?: boolean
   connectionType?: string
@@ -140,7 +141,7 @@ async function leave() {
 }
 function openWebsite(url: string) {
   error.value = ''
-  window.open(url, '_blank', 'noopener,noreferrer')
+  void openExternal(url)
 }
 function disableLobby() {
   error.value = ''

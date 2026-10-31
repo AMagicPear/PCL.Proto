@@ -21,12 +21,14 @@ const query = defineModel<string>({ default: '' })
         v-model="query"
         v-on:keydown.enter="emit('search', query)"
       />
-      <!-- 有输入时才出现清除按钮，对齐 CE 的 MySearchBox -->
+      <!-- 清除按钮始终占位，仅按 CE 的 90 ms 淡入淡出，避免输入时布局抖动 -->
       <button
-        v-if="query"
         type="button"
         class="pcl-icon-button search-clear"
+        :class="{ 'is-visible': query }"
         :aria-label="pclText('Common.Action.Clear')"
+        :aria-hidden="query ? undefined : 'true'"
+        :tabindex="query ? undefined : -1"
         :title="pclText('Common.Action.Clear')"
         @click="
           () => {
@@ -80,6 +82,17 @@ const query = defineModel<string>({ default: '' })
   flex-shrink: 0;
   margin-right: 6px;
   color: var(--color-text-grey);
+  opacity: 0;
+  pointer-events: none;
+  /* CE MySearchBox：清除按钮 90 ms 线性淡入淡出。 */
+  transition:
+    opacity 90ms linear,
+    color 150ms linear,
+    transform 250ms cubic-bezier(0.34, 2, 0.64, 1);
+}
+.search-clear.is-visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 .search-clear:not(:disabled):hover {
   color: var(--color-text-black);

@@ -73,11 +73,13 @@ button.button-animated {
 button.button-animated {
   scale: 0.8;
   color: var(--light-blue);
-  transition: 0.4s;
+  /* CE MyIconButton：移出 150 ms、指向 120 ms。 */
+  transition: color 150ms linear;
 }
 
 button.button-animated:hover {
   color: var(--color-titlebar);
+  transition-duration: 120ms;
 }
 
 .pcl-page .hint-container {

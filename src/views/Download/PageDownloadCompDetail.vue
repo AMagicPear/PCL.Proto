@@ -11,14 +11,16 @@ import {
 import PCompItem from '@/components/widget/PCompItem.vue'
 import PListItem from '@/components/widget/PListItem.vue'
 import PButton from '@/components/widget/PButton.vue'
+import PIconTextButton from '@/components/widget/PIconTextButton.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import PHint from '@/components/widget/PHint.vue'
-import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { useRoute } from 'vue-router'
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
+import { isTauri } from '@tauri-apps/api/core'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 import { useCompFavorites } from '@/stores/compFavorites'
+import { openExternal } from '@/util/externalLink'
 const favorites = useCompFavorites()
 
 const route = useRoute()
@@ -102,11 +104,21 @@ async function copy(value: string) {
     sideTip.show(pclText('Proto.Clipboard.Unavailable'), 'warn')
   }
 }
-function openUrl(url: string) {
-  if (safeUrl(url)) window.open(url, '_blank', 'noopener,noreferrer')
-}
-function openProject() {
-  if (projectUrl.value) window.open(projectUrl.value, '_blank', 'noopener,noreferrer')
+function download(file: IVersion['files'][number]) {
+  if (!safeUrl(file.url)) return
+  // The Tauri WebView cannot save remote files itself; hand the link to the system browser.
+  if (isTauri()) {
+    void openExternal(file.url)
+    return
+  }
+  const link = document.createElement('a')
+  link.href = file.url
+  link.download = file.filename
+  link.target = '_blank'
+  link.rel = 'noopener noreferrer'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
 }
 watch(
   () => route.query.id,
@@ -133,41 +145,49 @@ watch(
         <div class="intro">
           <PCompItem :data="item" />
           <div class="actions">
-            <PButton inline @click="openProject"><PSvgIcon name="lucide/globe" />Modrinth</PButton>
-            <PButton
-              inline
-              @click="
-                () => openUrl(`https://search.mcmod.cn/s?key=${encodeURIComponent(project!.title)}`)
-              "
-              >{{ text('Download.Comp.Detail.McMod') }}</PButton
+            <PIconTextButton bordered icon="lucide/globe" @click="() => openExternal(projectUrl)"
+              >Modrinth</PIconTextButton
             >
-            <PButton
-              inline
+            <PIconTextButton
+              bordered
+              icon="lucide/globe"
               @click="
                 () =>
-                  openUrl(
+                  openExternal(
+                    `https://search.mcmod.cn/s?key=${encodeURIComponent(project!.title)}`,
+                  )
+              "
+              >{{ text('Download.Comp.Detail.McMod') }}</PIconTextButton
+            >
+            <PIconTextButton
+              bordered
+              icon="lucide/earth"
+              @click="
+                () =>
+                  openExternal(
                     `https://translate.google.com/?sl=auto&amp;tl=zh-CN&amp;text=${encodeURIComponent(project!.description)}`,
                   )
               "
-              >{{ text('Download.Comp.Detail.TranslateDescription') }}</PButton
+              >{{ text('Download.Comp.Detail.TranslateDescription') }}</PIconTextButton
             >
-            <PButton inline @click="() => copy(project!.title)">{{
+            <PIconTextButton bordered icon="lucide/copy" @click="() => copy(project!.title)">{{
               text('Download.Comp.Detail.CopyName')
-            }}</PButton>
-            <PButton inline @click="() => favorites.toggle(item!)"
-              ><PSvgIcon
-                :name="favorites.has(project.id) ? 'lucide/heart-filled' : 'lucide/heart'"
-              />{{
+            }}</PIconTextButton>
+            <PIconTextButton
+              bordered
+              :icon="favorites.has(project.id) ? 'lucide/heart-filled' : 'lucide/heart'"
+              @click="() => favorites.toggle(item!)"
+              >{{
                 text(
                   favorites.has(project.id)
                     ? 'Download.Comp.Detail.Unfavorite'
                     : 'Download.Comp.Detail.Favorite',
                 )
-              }}</PButton
+              }}</PIconTextButton
             >
-            <PButton inline @click="() => copy(projectUrl)">{{
+            <PIconTextButton bordered icon="lucide/copy" @click="() => copy(projectUrl)">{{
               text('Download.Comp.Detail.CopyLink')
-            }}</PButton>
+            }}</PIconTextButton>
           </div>
         </div>
       </PCard>
@@ -236,20 +256,9 @@ watch(
             <PListItem
               :title="version.name"
               :subtitle="`${file.filename} · ${version.loaders.join(', ')} · ${new Date(version.date_published).toLocaleString()}`"
-            >
-              <template #actions>
-                <a
-                  v-if="safeUrl(file.url)"
-                  :href="safeUrl(file.url)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  :download="file.filename"
-                  class="file-download"
-                >
-                  <PSvgIcon name="lucide/download" />{{ pclText('Common.Action.Download') }}
-                </a>
-              </template>
-            </PListItem>
+              clickable
+              @click="() => download(file)"
+            />
           </PVirtualList>
         </div>
       </PCard>
@@ -271,14 +280,9 @@ watch(
 }
 .actions {
   display: flex;
-  gap: 6px;
+  gap: 3px;
   flex-wrap: wrap;
   padding-top: 10px;
-}
-.actions :deep(button) {
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 .filters {
   display: flex;
@@ -297,11 +301,5 @@ watch(
 }
 .version-files {
   padding: 0 20px 15px;
-}
-.file-download {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  color: var(--color-tint);
 }
 </style>

@@ -7,6 +7,7 @@ import PCard from '@/components/widget/PCard.vue'
 import type { Severity } from '@/components/widget/PHint.vue'
 import PHint from '@/components/widget/PHint.vue'
 import sideTip from '@/composables/sideTip'
+import { openExternal } from '@/util/externalLink'
 import { useModal } from '@/composables/useModal'
 import router from '@/router'
 import { showIconPath, type showIconType } from '@/types/gameInfo'
@@ -39,7 +40,7 @@ function handleEvent(eventType: string, eventData: string) {
   switch (eventType) {
     case '打开网页':
       onClick = () => {
-        window.open(eventData as string)
+        void openExternal(eventData)
       }
       break
     case '弹出窗口':

@@ -87,6 +87,7 @@
   "Proto.Error.AddFolder": "Cannot add folder: {0}",
   "Proto.Error.Folders": "Cannot read folders: {0}",
   "Proto.Error.OpenFolder": "Unable to open folder: {0}",
+  "Proto.Error.OpenUrl": "Cannot open the link. Check your default browser settings and try again.",
   "Proto.Java.ReadFailed": "Cannot read Java information. Retry in the desktop app.",
   "Proto.Java.AddFailed": "Cannot add Java to the list: {0}",
   "Proto.Folder.NotSelected": "No folder selected!",

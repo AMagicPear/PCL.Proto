@@ -265,25 +265,9 @@ pub async fn open_minecraft_wiki(url: String) -> Result<(), String> {
     {
         return Err("Invalid Minecraft Wiki URL".into());
     }
-    tauri::async_runtime::spawn_blocking(move || {
-        #[cfg(target_os = "windows")]
-        let program = "explorer.exe";
-        #[cfg(target_os = "macos")]
-        let program = "open";
-        #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-        let program = "xdg-open";
-        let status = std::process::Command::new(program)
-            .arg(parsed.as_str())
-            .status()
-            .map_err(|error| error.to_string())?;
-        if status.success() {
-            Ok(())
-        } else {
-            Err(format!("Cannot open Minecraft Wiki: {status}"))
-        }
-    })
-    .await
-    .map_err(|error| error.to_string())?
+    tauri::async_runtime::spawn_blocking(move || crate::utils::external::open(parsed.as_str()))
+        .await
+        .map_err(|error| error.to_string())?
 }
 
 #[cfg(test)]

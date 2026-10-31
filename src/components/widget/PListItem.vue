@@ -60,7 +60,8 @@ const emit = defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
   padding: 6px;
   border-radius: 4px;
   gap: 6px;
-  transition: background-color 0.4s ease;
+  /* CE MyListItem：移出 180 ms、指向 120 ms；按下缩放 108 ms，松开 144/540 ms。 */
+  transition: background-color 180ms linear;
 
   &.selectable {
     position: relative;
@@ -75,17 +76,23 @@ const emit = defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
 
   &.clickable {
     transition:
-      scale 0.2s,
-      background-color 0.4s ease;
+      scale 540ms cubic-bezier(0.33, 1, 0.68, 1),
+      background-color 180ms linear;
   }
 
   &.hover-effect:hover {
     background-color: var(--color-tint-lighter);
+    transition-duration: 120ms;
+  }
+
+  &.clickable:hover {
+    transition-duration: 144ms, 120ms;
   }
 
   &.clickable:active:not(:has(.right:active)) {
     scale: 0.98;
     background-color: var(--half-transparent-blue);
+    transition-duration: 108ms, 120ms;
   }
 
   > .right {
@@ -94,11 +101,12 @@ const emit = defineEmits<{ click: [event: MouseEvent | KeyboardEvent] }>()
     gap: var(--list-actions-gap, 6px);
     > a {
       > i {
-        transition: color 0.4s;
+        transition: color 150ms linear;
         color: var(--color-tint-light);
 
         &:hover {
           color: var(--color-tint);
+          transition-duration: 120ms;
         }
       }
 

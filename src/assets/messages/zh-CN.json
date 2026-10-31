@@ -87,6 +87,7 @@
   "Proto.Error.AddFolder": "添加文件夹失败：{0}",
   "Proto.Error.Folders": "读取文件夹列表失败：{0}",
   "Proto.Error.OpenFolder": "无法打开文件夹：{0}",
+  "Proto.Error.OpenUrl": "无法打开链接，请检查默认浏览器设置后重试。",
   "Proto.Java.ReadFailed": "未能获取 Java 信息，请在桌面客户端中重试。",
   "Proto.Java.AddFailed": "未能成功将 Java 加入列表中：{0}",
   "Proto.Folder.NotSelected": "未选择任何文件夹！",

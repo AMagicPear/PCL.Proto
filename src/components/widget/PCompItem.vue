@@ -4,6 +4,8 @@ import { compLoaders, compTags, compVersions, latestCompFile } from '@/api/compR
 import modrinthApi, { type ISearchHit } from '@/api/modrinthApi'
 import { useCompFavorites } from '@/stores/compFavorites'
 import sideTip from '@/composables/sideTip'
+import { isTauri } from '@tauri-apps/api/core'
+import { openExternal } from '@/util/externalLink'
 import { computed, ref } from 'vue'
 import PSvgIcon from './PSvgIcon.vue'
 import PListActions from './PListActions.vue'
@@ -68,6 +70,11 @@ async function download() {
     const file = latestCompFile(versions, props.gameVersion, props.loader)
     if (!file) {
       sideTip.show(pclText('Download.Comp.QuickDownload.Hint.NoFile'), 'warn')
+      return
+    }
+    // The Tauri WebView cannot save remote files itself; hand the link to the system browser.
+    if (isTauri()) {
+      await openExternal(file.url)
       return
     }
     const link = document.createElement('a')
@@ -168,12 +175,14 @@ async function download() {
   padding: 5px 5px 5px 7px;
   align-items: center;
   color: var(--color-text-grey);
-  transition: background-color 0.4s;
+  /* CE MyListItem：移出 180 ms、指向 120 ms。 */
+  transition: background-color 180ms linear;
   min-width: 0;
 }
 .comp-item.clickable:hover,
 .comp-item.clickable:focus-within {
   background-color: var(--color-tint-lighter);
+  transition-duration: 120ms;
 }
 .project-link {
   position: absolute;

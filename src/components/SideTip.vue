@@ -29,7 +29,6 @@ const tips = sideTip.tips
   padding: 2px 8px 2px 16px;
   font-size: 12px;
   border-radius: 0 6px 6px 0;
-  transition: all 0.4s ease;
   margin-block: 8px;
   display: table;
 }
@@ -46,12 +45,22 @@ const tips = sideTip.tips
   background-color: var(--success-green);
 }
 
-.fade-move,
-.fade-enter-active,
-.fade-leave-active {
+.fade-move {
+  transition: transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fade-enter-active {
+  /* CE MyToast：进入位移 400 ms、透明 100 ms。 */
   transition:
-    transform 0.4s cubic-bezier(0.4, 2, 0.4, 1),
-    opacity 0.4s;
+    transform 400ms cubic-bezier(0.33, 1, 0.68, 1),
+    opacity 100ms linear;
+}
+
+.fade-leave-active {
+  /* CE MyToast：退出位移 200 ms、透明 150 ms。 */
+  transition:
+    transform 200ms cubic-bezier(0.55, 0, 1, 0.45),
+    opacity 150ms linear;
 }
 
 .fade-enter-from,

@@ -7,14 +7,12 @@ const loginShape = paths['05803c336117c503'].data
 import type { ProfileView } from '@/types/profile'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
+import { openExternal } from '@/util/externalLink'
 const emit = defineEmits<{ view: [view: ProfileView] }>()
 const text = pclText
 defineExpose({ showLoginDialog: PMsgLogin })
 function login() {
   sideTip.show(pclText('Proto.NotImplemented.Microsoft'))
-}
-function open(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer')
 }
 </script>
 <template>
@@ -22,12 +20,14 @@ function open(url: string) {
     <PPath :data="loginShape" class="login-avatar" /><PButton type="tint" @click="login">{{
       text('Launch.Account.Microsoft.Start')
     }}</PButton
-    ><PButton inline @click="() => open('https://www.minecraft.net')">{{
+    ><PButton inline @click="() => openExternal('https://www.minecraft.net')">{{
       text('Launch.Account.Microsoft.Website')
     }}</PButton
     ><PButton
       inline
-      @click="() => open('https://www.minecraft.net/store/minecraft-java-bedrock-edition-pc')"
+      @click="
+        () => openExternal('https://www.minecraft.net/store/minecraft-java-bedrock-edition-pc')
+      "
       >{{ text('Launch.Account.Microsoft.Purchase') }}</PButton
     ><PButton inline @click="() => emit('view', 'profiles')">{{
       text('Launch.Account.Back')

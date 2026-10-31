@@ -376,7 +376,7 @@ watch(versionId, (id) => {
   color: rgba(0, 0, 0, 0.62745);
   opacity: 0.6;
   cursor: pointer;
-  transition: color 150ms;
+  transition: color 150ms linear;
 }
 .install-back:hover,
 .install-back:focus-visible {
@@ -388,10 +388,11 @@ watch(versionId, (id) => {
   outline-offset: 2px;
 }
 .install-back :deep(.pcl-icon) {
-  transition: transform 250ms;
+  transition: transform 250ms cubic-bezier(0.34, 2, 0.64, 1);
 }
 .install-back:active :deep(.pcl-icon) {
   transform: scale(0.8);
+  transition: transform 400ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 @media (prefers-color-scheme: dark) {
   .install-back {
@@ -422,8 +423,8 @@ watch(versionId, (id) => {
 .loader-status.is-selected { color: var(--color-text); }
 .loader-status img { width: 18px; height: 18px; }
 .loader-card :deep(.mycard-title-actions > i) { color: var(--color-text-grey); }
-.loader-card:hover :deep(.mycard-title-actions > i),
-.loader-card:hover .loader-clear { color: var(--color-tint); }
+.loader-card:hover :deep(.mycard-title-actions > i) { color: var(--color-tint); }
+.loader-card:hover .loader-clear { color: var(--color-tint); transition-duration: 120ms; }
 .loader-clear {
   display: grid;
   place-items: center;
@@ -434,7 +435,8 @@ watch(versionId, (id) => {
   background: transparent;
   color: var(--color-text-grey);
   cursor: pointer;
-  transition: color 0.4s;
+  /* CE MyIconButton：移出 150 ms、指向 120 ms。 */
+  transition: color 150ms linear;
 }
 .loader-clear:focus-visible { outline: 2px solid var(--color-text-grey); }
 .install-warnings {

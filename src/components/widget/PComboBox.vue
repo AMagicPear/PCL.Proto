@@ -76,7 +76,8 @@ select {
   padding: 0.3rem 0.8rem;
   border-radius: 4px;
   border: 1px solid var(--color-tint-lightist);
-  transition: background-color 0.3s ease;
+  /* CE MyComboBox：常规 100 ms、展开 10 ms、不可用 200 ms。 */
+  transition: background-color 100ms linear;
   color: var(--color-text-black);
   appearance: none;
   -webkit-appearance: none;
@@ -84,6 +85,12 @@ select {
   width: 100%;
   &:hover {
     background-color: var(--color-tint-lighter);
+  }
+  &:focus {
+    transition-duration: 10ms;
+  }
+  &:disabled {
+    transition-duration: 200ms;
   }
 
   &::-ms-expand {

@@ -90,14 +90,21 @@ a:has(.side-nav-subtitle) {
   padding: 3px;
   opacity: 0;
   transition:
-    opacity 0.4s,
-    color 150ms,
-    transform 250ms;
+    opacity 400ms linear,
+    color 150ms linear,
+    transform 250ms cubic-bezier(0.34, 2, 0.64, 1);
 }
 
 .sidenav-line:has(a.router-link-active):hover .refresh-icon,
-.refresh-icon:focus-visible {
+.sidenav-line .refresh-icon:not(:disabled):focus-visible {
   opacity: 1;
+  transition-duration: 400ms, 120ms, 250ms;
+}
+
+.sidenav-line .refresh-icon:not(:disabled):active {
+  transform: scale(0.8);
+  transition-duration: 400ms, 150ms, 400ms;
+  transition-timing-function: linear, linear, cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .side-nav-icon {

@@ -48,6 +48,7 @@ trust-dns-resolver = "0.23.2"
 base64 = "0.22.1"
 sysinfo = { version = "0.39.6", default-features = false, features = ["system"] }
 trash = "5.2.9"
+open = { version = "5.3.3", features = ["shellexecute-on-windows"] }
 # tauri-invoke-http = "0.1.0"
 
 

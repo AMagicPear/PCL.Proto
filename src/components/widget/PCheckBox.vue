@@ -52,14 +52,16 @@ const model = defineModel<boolean>({ default: false })
 .checkbox-shape svg {
   width: 12px;
   height: 12px;
-  opacity: 0;
-  transition: opacity 0.2s;
+  transform: scale(0);
+  /* CE MyCheckBox：勾选 300 ms（延迟 105 ms），取消 135 ms。 */
+  transition: transform 135ms cubic-bezier(0.55, 0, 1, 0.45);
 }
 input:checked + .checkbox-shape {
   color: var(--color-tint);
 }
 input:checked + .checkbox-shape svg {
-  opacity: 1;
+  transform: scale(1);
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1) 105ms;
 }
 input:focus-visible + .checkbox-shape {
   outline: 2px solid var(--color-tint);

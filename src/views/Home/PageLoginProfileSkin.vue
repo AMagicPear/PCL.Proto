@@ -115,7 +115,8 @@ async function openMenu(event: MouseEvent, actions: readonly string[]) {
   justify-content: center;
   padding-top: 8px;
   opacity: 0;
-  transition: opacity 0.15s;
+  /* CE PageLoginProfileSkin.ShowPanel/HidePanel: 120 ms linear fade. */
+  transition: opacity 120ms linear;
 }
 .profile-skin:hover .profile-actions-reveal,
 .profile-skin:focus-within .profile-actions-reveal {
@@ -136,15 +137,19 @@ async function openMenu(event: MouseEvent, actions: readonly string[]) {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* CE MyIconButton：悬停颜色 120/150 ms，按下 400 ms，松开回弹 250 ms。 */
   transition:
-    color 0.15s,
-    transform 0.25s;
+    color 150ms linear,
+    transform 250ms cubic-bezier(0.34, 2, 0.64, 1);
 }
 .profile-action:hover,
 .profile-action:focus-visible {
   color: var(--color-tint-dark);
+  transition-duration: 120ms, 250ms;
 }
 .profile-action:active {
   transform: scale(0.8);
+  transition-duration: 150ms, 400ms;
+  transition-timing-function: linear, cubic-bezier(0.25, 1, 0.5, 1);
 }
 </style>

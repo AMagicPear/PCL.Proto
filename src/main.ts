@@ -25,6 +25,7 @@ import router from '@/router/index'
 import { useAccountInfo } from './stores/account'
 import { attachConsole } from '@tauri-apps/plugin-log'
 import { useSelectedInstance } from './stores/gameLaunch'
+import { installExternalLinkHandler } from './util/externalLink'
 
 const pinia = createPinia()
 
@@ -45,6 +46,8 @@ if (import.meta.env.DEV) {
 
 document.documentElement.classList.add('theme-blue')
 document.documentElement.classList.toggle('website', !isTauri())
+const removeExternalLinkHandler = installExternalLinkHandler()
+import.meta.hot?.dispose(removeExternalLinkHandler)
 
 void initializePclLocale().then(async () => {
   let pendingJava: string[] = []

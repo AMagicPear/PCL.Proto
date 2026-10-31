@@ -7,6 +7,7 @@ import PCard from '@/components/widget/PCard.vue'
 import PListItem from '@/components/widget/PListItem.vue'
 import PLoading from '@/components/widget/PLoading.vue'
 import PHint from '@/components/widget/PHint.vue'
+import { openExternal } from '@/util/externalLink'
 
 const repository = 'https://github.com/PCL-Community/PCL.Proto'
 const statuses = [
@@ -96,9 +97,6 @@ async function load() {
     if (!request.signal.aborted) loading.value = false
   }
 }
-function open(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
 onMounted(load)
 onUnmounted(() => controller?.abort())
 
@@ -110,7 +108,7 @@ const image = (value: string) => pclImagePath(value, import.meta.env.BASE_URL)
     <PCard :title="text('Setup.Feedback.Submit.Title')"
       ><div class="submit-content">
         <p>{{ text('Setup.Feedback.Submit.Description') }}</p>
-        <PButton type="tint" @click="() => open(`${repository}/issues`)">{{
+        <PButton type="tint" @click="() => openExternal(`${repository}/issues`)">{{
           text('Setup.Feedback.Submit.Open')
         }}</PButton>
       </div></PCard
@@ -141,7 +139,7 @@ const image = (value: string) => pclImagePath(value, import.meta.env.BASE_URL)
             :subtitle="`${issue.author} | ${issue.date}`"
             :icon="image(`Blocks/${group.icon}.png`)"
             clickable
-            @click="() => open(issue.url)"
+            @click="() => openExternal(issue.url)"
           />
         </div>
       </PCard>

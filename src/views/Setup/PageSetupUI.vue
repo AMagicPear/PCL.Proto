@@ -9,6 +9,7 @@ import PCheckBox from '@/components/widget/PCheckBox.vue'
 import PComboBox from '@/components/widget/PComboBox.vue'
 import PHint from '@/components/widget/PHint.vue'
 import PTextBox from '@/components/widget/PTextBox.vue'
+import { openExternal } from '@/util/externalLink'
 withDefaults(defineProps<{ hasBackground?: boolean; hasMusic?: boolean }>(), {
   hasBackground: false,
   hasMusic: false,
@@ -24,9 +25,6 @@ const { values } = usePageSettings('PageSetupUI', {
 
 const router = useRouter()
 const text = pclText
-function openWebsite(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
 </script>
 <template>
   <div class="pcl-page">
@@ -714,7 +712,9 @@ function openWebsite(url: string) {
                     grid-column: 2 / span 1;
                     justify-self: start;
                   "
-                  @click="() => openWebsite('https://github.com/Hex-Dragon/PCL2/wiki/自定义主页')"
+                  @click="
+                    () => openExternal('https://github.com/Hex-Dragon/PCL2/wiki/自定义主页')
+                  "
                   >{{ text('Setup.Ui.Homepage.Tutorial') }}</PButton
                 >
               </div>

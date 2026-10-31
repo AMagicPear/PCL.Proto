@@ -216,7 +216,11 @@ function settings() {
     :class="{ 'is-launching': launching && !leavingLaunch, 'is-returning': leavingLaunch }"
   >
     <div class="launch-input">
-      <div class="login-panel"><component :is="accountView" @view="profileView = $event" /></div>
+      <div class="login-panel">
+        <Transition name="login-page" mode="out-in">
+          <component :is="accountView" @view="profileView = $event" />
+        </Transition>
+      </div>
       <div class="launch-actions">
         <PButton
           class="launch"
@@ -320,6 +324,42 @@ function settings() {
   overflow-y: auto;
   padding: 15px 0;
 }
+/* CE PageLaunchLeft.PageChange: 100 ms fade-out, swap, 20 ms pause, 100 ms fade-in. */
+.login-page-leave-active {
+  animation: login-page-leave 100ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
+}
+.login-page-enter-active {
+  animation: login-page-enter 100ms cubic-bezier(0.32, 0, 0.67, 0) 20ms both;
+}
+.login-page-enter-from,
+.login-page-leave-to {
+  opacity: 0;
+}
+@keyframes login-page-leave {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes login-page-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-page-leave-active,
+  .login-page-enter-active {
+    animation: none;
+  }
+  .login-page-enter-from {
+    opacity: 1;
+  }
+}
 .launch-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -349,12 +389,18 @@ function settings() {
   gap: 0;
   opacity: 0;
   transform: scale(0.8);
-  animation: launch-status-enter 500ms 100ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  /* CE PageLaunchLeft：缩放 500 ms 回弹、不透明度 150 ms（均延迟 100 ms）。 */
+  animation:
+    launch-status-enter 500ms 100ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    launch-status-fade-in 150ms 100ms linear forwards;
   text-align: center;
 }
 .is-returning .launch-status {
   pointer-events: none;
-  animation: launch-status-leave 150ms ease-in forwards;
+  /* CE PageChangeToLogin：缩放 150 ms 缓出、不透明度 150 ms 线性。 */
+  animation:
+    launch-status-leave 150ms cubic-bezier(0.33, 1, 0.68, 1) forwards,
+    launch-status-fade-out 150ms linear forwards;
 }
 .launch-cancel {
   position: absolute;
@@ -400,7 +446,8 @@ function settings() {
   display: block;
   height: 100%;
   background: linear-gradient(90deg, var(--color-tint-light), var(--color-tint));
-  transition: width 180ms ease-out;
+  /* CE PageLaunchLeft：进度条 260 ms 线性。 */
+  transition: width 260ms linear;
 }
 .launch-status dl {
   display: grid;
@@ -441,8 +488,12 @@ function settings() {
 }
 @keyframes launch-status-enter {
   to {
-    opacity: 1;
     transform: scale(1);
+  }
+}
+@keyframes launch-status-fade-in {
+  to {
+    opacity: 1;
   }
 }
 @keyframes launch-left-enter {
@@ -463,8 +514,12 @@ function settings() {
 }
 @keyframes launch-status-leave {
   to {
-    opacity: 0;
     transform: scale(0.8);
+  }
+}
+@keyframes launch-status-fade-out {
+  to {
+    opacity: 0;
   }
 }
 </style>

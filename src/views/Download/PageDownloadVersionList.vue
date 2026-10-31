@@ -13,6 +13,7 @@ import PHint from '@/components/widget/PHint.vue'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
 import { loaderIcon } from '@/types/gameInfo'
+import { openExternal } from '@/util/externalLink'
 const props = defineProps<{ loader: string; website: string; supported?: boolean }>()
 const localeName = computed(() => (props.loader === 'OptiFine' ? 'Optifine' : props.loader))
 const text = pclText
@@ -39,9 +40,6 @@ async function load() {
   } finally {
     if (current === request) loading.value = false
   }
-}
-function openWebsite() {
-  window.open(props.website, '_blank', 'noopener,noreferrer')
 }
 async function initialize() {
   if (!props.supported) return
@@ -70,7 +68,7 @@ watch(minecraft, load)
     <PCard :title="text(`Download.Version.${localeName}.Intro.Title`)"
       ><div class="intro">
         <p>{{ text(`Download.Version.${localeName}.Intro.Description`) }}</p>
-        <PButton type="tint" @click="openWebsite">{{
+        <PButton type="tint" @click="() => openExternal(website)">{{
           text('Download.Version.OpenWebsite')
         }}</PButton>
       </div></PCard

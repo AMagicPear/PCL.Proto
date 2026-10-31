@@ -180,15 +180,19 @@ async function createProfile() {
   background: transparent;
   color: var(--color-tint-light);
   cursor: pointer;
+  /* CE MyIconButton：悬停颜色 120/150 ms，按下 400 ms，松开回弹 250 ms。 */
   transition:
-    color 0.15s ease,
-    transform 0.25s ease;
+    color 150ms linear,
+    transform 250ms cubic-bezier(0.34, 2, 0.64, 1);
 }
 .create-profile:hover,
 .create-profile:focus-visible {
   color: var(--color-tint-dark);
+  transition-duration: 120ms, 250ms;
 }
 .create-profile:active {
   transform: scale(0.8);
+  transition-duration: 150ms, 400ms;
+  transition-timing-function: linear, cubic-bezier(0.25, 1, 0.5, 1);
 }
 </style>

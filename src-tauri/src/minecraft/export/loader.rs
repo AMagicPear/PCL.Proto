@@ -102,26 +102,9 @@ pub async fn open_loader_changelog(
     version: String,
 ) -> Result<(), String> {
     let (_, url) = urls(&loader, &game, &version).map_err(|e| e.to_string())?;
-    tauri::async_runtime::spawn_blocking(move || {
-        let program = if cfg!(windows) {
-            "explorer"
-        } else if cfg!(target_os = "macos") {
-            "open"
-        } else {
-            "xdg-open"
-        };
-        let status = std::process::Command::new(program)
-            .arg(url)
-            .status()
-            .map_err(|e| e.to_string())?;
-        if status.success() {
-            Ok(())
-        } else {
-            Err(format!("Cannot open changelog: {status}"))
-        }
-    })
-    .await
-    .map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || crate::utils::external::open(&url))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 #[cfg(test)]

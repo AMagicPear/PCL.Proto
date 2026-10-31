@@ -158,7 +158,7 @@ onUnmounted(() => observer?.disconnect())
   flex-shrink: 0;
   transition:
     height 0.4s var(--card-height-easing, ease),
-    box-shadow 0.4s;
+    box-shadow 90ms linear;
   border-radius: 6px;
   background: var(--color-background-soft);
   box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.1);
@@ -218,9 +218,10 @@ onUnmounted(() => observer?.disconnect())
   justify-content: center;
   line-height: 0;
   color: var(--color-text);
+  /* CE MyCard：箭头旋转 250 ms，悬停配色 90 ms。 */
   transition:
-    transform 0.4s ease,
-    color 0.4s;
+    transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 90ms linear;
   flex: 0;
 }
 
@@ -244,7 +245,7 @@ onUnmounted(() => observer?.disconnect())
   line-height: 14.06px;
   text-align: left;
   vertical-align: top;
-  transition: color 0.4s;
+  transition: color 90ms linear;
   flex: 1;
 }
 
@@ -274,7 +275,7 @@ onUnmounted(() => observer?.disconnect())
 
 @media (prefers-reduced-motion: reduce) {
   .mycard-container {
-    transition: box-shadow 0.4s;
+    transition: box-shadow 90ms linear;
   }
 }
 </style>

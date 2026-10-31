@@ -4,6 +4,7 @@ import { pclLocale, pclText } from './pclLocale'
 import { getMinecraftChangelogUrl } from './gameVersions'
 import { useTaskManager } from '@/stores/task'
 import sideTip from '@/composables/sideTip'
+import { openExternal } from '@/util/externalLink'
 
 export async function saveMinecraftVersion(versionId: string, server = false) {
   if (!isTauri()) {
@@ -26,7 +27,7 @@ export async function openMinecraftChangelog(versionId: string) {
   const url = getMinecraftChangelogUrl(versionId, pclLocale.value)
   try {
     if (isTauri()) await invoke('open_minecraft_wiki', { url })
-    else window.open(url, '_blank', 'noopener,noreferrer')
+    else void openExternal(url)
   } catch (error) {
     sideTip.show(
       `${pclText('Instance.Resource.Item.OpenChangelogFailed')}: ${String(error)}`,

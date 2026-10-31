@@ -5,6 +5,7 @@ import PButton from '@/components/widget/PButton.vue'
 import PCard from '@/components/widget/PCard.vue'
 import PHint from '@/components/widget/PHint.vue'
 import appIcon from '/PCL.Proto.svg?url'
+import { openExternal } from '@/util/externalLink'
 const appVersion = __APP_VERSION__
 
 const repository = 'https://github.com/PCL-Community/PCL.Proto'
@@ -56,9 +57,6 @@ async function check() {
     if (!request.signal.aborted) loading.value = false
   }
 }
-function open(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
 onUnmounted(() => controller?.abort())
 
 const text = pclText
@@ -77,7 +75,7 @@ const text = pclText
         }}</PButton
         ><PButton
           data-control="BtnChangelog"
-          @click="() => open(latest?.url || `${repository}/releases`)"
+          @click="() => openExternal(latest?.url || `${repository}/releases`)"
           >{{ text('Setup.Update.Changelog.View') }}</PButton
         >
       </div></PCard
@@ -92,10 +90,10 @@ const text = pclText
               : pclText('Proto.Update.NotesPlaceholder')
           }}
         </p>
-        <PButton inline @click="() => open(latest?.url || `${repository}/releases`)">{{
+        <PButton inline @click="() => openExternal(latest?.url || `${repository}/releases`)">{{
           text('Setup.Update.Changelog.MoreInfo')
         }}</PButton
-        ><PButton v-if="latest" type="tint" @click="() => open(latest!.url)">{{
+        ><PButton v-if="latest" type="tint" @click="() => openExternal(latest?.url)">{{
           pclText('Proto.Update.Download')
         }}</PButton>
       </div></PCard

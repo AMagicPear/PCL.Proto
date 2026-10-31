@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import PSvgIcon from './PSvgIcon.vue'
 
-defineProps<{ icon: string; disabled?: boolean }>()
+withDefaults(defineProps<{ icon: string; disabled?: boolean; bordered?: boolean }>(), {
+  bordered: false,
+})
 </script>
 
 <template>
-  <button type="button" class="icon-text-button" :disabled="disabled">
+  <button type="button" :class="['icon-text-button', bordered && 'bordered']" :disabled="disabled">
     <PSvgIcon :name="icon" :size="16" /><slot />
   </button>
 </template>
@@ -24,13 +26,19 @@ defineProps<{ icon: string; disabled?: boolean }>()
   color: var(--color-text-black);
   font: inherit;
   cursor: pointer;
+  /* CE MyIconTextButton：移出 150 ms，指向 100 ms。 */
   transition:
-    color 150ms,
-    background-color 150ms;
+    color 150ms linear,
+    background-color 150ms linear;
 }
 .icon-text-button:not(:disabled):is(:hover, :focus-visible) {
   background: var(--color-tint-lighter);
   color: var(--color-tint);
+  transition-duration: 100ms;
+}
+/* CE 资源详情顶部的按钮额外绘制了 1px 边框（ColorBrush6），按钮本身已经是胶囊圆角。 */
+.icon-text-button.bordered {
+  border: 1px solid color-mix(in srgb, var(--color-tint) 18%, transparent);
 }
 .icon-text-button:not(:disabled):active {
   background: var(--half-transparent-blue);

@@ -1,6 +1,7 @@
 import { useModal } from '@/composables/useModal'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
+import { openExternal } from '@/util/externalLink'
 
 // Device-code login uses the existing application modal.
 export function PMsgLogin(code: string, verificationUrl: string, caption: string) {
@@ -12,10 +13,7 @@ export function PMsgLogin(code: string, verificationUrl: string, caption: string
     buttons: [
       {
         content: pclText('Launch.Account.LoginDialog.ReopenWebpage'),
-        operation: () => {
-          if (/^https:\/\//i.test(verificationUrl))
-            window.open(verificationUrl, '_blank', 'noopener,noreferrer')
-        },
+        operation: () => void openExternal(verificationUrl),
       },
       {
         content: pclText('Launch.Account.LoginDialog.CopyCode'),

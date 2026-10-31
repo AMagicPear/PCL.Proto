@@ -37,11 +37,31 @@ const hoverBg = {
       cursor: disabled ? 'not-allowed' : 'pointer',
     }"
     @click="!disabled && emit('click', $event)"
-    :while-hover="!disabled ? { backgroundColor: hoverBg[type ?? 'default'] } : undefined"
-    :while-press="!disabled ? { scale: 0.95 } : undefined"
+    :while-hover="
+      !disabled
+        ? {
+            backgroundColor: hoverBg[type ?? 'default'],
+            transition: {
+              backgroundColor: { type: 'tween', duration: 0.1, ease: 'linear' },
+              scale: { type: 'tween', duration: 0.3, delay: 0.01, ease: [0.33, 1, 0.68, 1] },
+            },
+          }
+        : undefined
+    "
+    :while-press="
+      !disabled
+        ? {
+            scale: 0.955,
+            transition: {
+              scale: { type: 'tween', duration: 0.08, ease: [0.22, 1, 0.36, 1] },
+              backgroundColor: { type: 'tween', duration: 0.1, ease: 'linear' },
+            },
+          }
+        : undefined
+    "
     :transition="{
-      default: { type: 'tween', duration: 0.4 },
-      scale: { ease: 'easeOut', duration: 0.2 },
+      backgroundColor: { type: 'tween', duration: 0.2, ease: 'linear' },
+      scale: { type: 'tween', duration: 0.3, delay: 0.01, ease: [0.33, 1, 0.68, 1] },
     }"
   >
     <slot />

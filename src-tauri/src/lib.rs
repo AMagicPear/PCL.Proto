@@ -107,6 +107,7 @@ pub fn run() {
             commands::delete_instance_resources,
             commands::import_instance_resources,
             utils::toys::get_lucky_today,
+            utils::external::open_external_url,
             commands::add_java,
             commands::get_java_list,
             commands::refresh_java_list,

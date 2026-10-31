@@ -60,7 +60,8 @@ textarea {
   padding: 0.3rem 0.8rem;
   border-radius: 4px;
   border: 1px solid var(--color-tint-lightist);
-  transition: background-color 0.3s ease;
+  /* CE MyTextBox：常规 100 ms、聚焦 10 ms、不可用 200 ms。 */
+  transition: background-color 100ms linear;
   color: var(--color-text-black);
   appearance: none;
   -webkit-appearance: none;
@@ -82,6 +83,12 @@ textarea:hover {
 input:focus,
 textarea:focus {
   background-color: var(--color-tint-lighter);
+  transition-duration: 10ms;
+}
+
+input:disabled,
+textarea:disabled {
+  transition-duration: 200ms;
 }
 
 .pcl-page .input-wrapper {

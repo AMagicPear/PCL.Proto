@@ -3,6 +3,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
 import { pclText } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
+import { openExternal } from '@/util/externalLink'
 import PSvgIcon from './PSvgIcon.vue'
 import { ref } from 'vue'
 
@@ -47,12 +48,10 @@ async function changelog() {
       })
     else {
       const id = `${encodeURIComponent(props.game)}-${encodeURIComponent(props.version)}`
-      window.open(
+      void openExternal(
         family() === 'forge'
           ? `https://files.minecraftforge.net/maven/net/minecraftforge/forge/${id}/forge-${id}-changelog.txt`
           : 'https://fabricmc.net/blog',
-        '_blank',
-        'noopener,noreferrer',
       )
     }
   } catch (error) {

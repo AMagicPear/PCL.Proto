@@ -6,6 +6,7 @@ import PComboBox from '@/components/widget/PComboBox.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { pclLocale as locale, pclLanguages, pclText, setPclLocale } from '@/api/pclLocale'
 import sideTip from '@/composables/sideTip'
+import { openExternal } from '@/util/externalLink'
 const languageOptions = pclLanguages.map((key) => ({
   key,
   text: new Intl.DisplayNames([key], { type: 'language' }).of(key) || key,
@@ -24,9 +25,6 @@ const { values } = usePageSettings('PageSetupLauncherLanguage', {
 })
 
 const text = pclText
-function openWebsite(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
 </script>
 <template>
   <div class="pcl-page">
@@ -175,7 +173,7 @@ function openWebsite(url: string) {
                 <PButton
                   data-control="BtnTranslateWebsite"
                   style="margin: 0px 7px 0px 0px"
-                  @click="() => openWebsite('https://translate.pclc.cc/projects/pcl-ce/')"
+                  @click="() => openExternal('https://translate.pclc.cc/projects/pcl-ce/')"
                   inline
                   type="tint"
                   ><PSvgIcon name="lucide/globe" :size="18" />{{
@@ -185,7 +183,7 @@ function openWebsite(url: string) {
                 <PButton
                   data-control="BtnSubmitPullRequest"
                   style="margin: 0px 7px 0px 0px"
-                  @click="() => openWebsite('https://github.com/PCL-Community/PCL.Proto/pulls')"
+                  @click="() => openExternal('https://github.com/PCL-Community/PCL.Proto/pulls')"
                   inline
                   ><PSvgIcon name="lucide/git-pull-request-arrow" :size="18" />{{
                     text('Setup.Language.Banner.SubmitPullRequest')
