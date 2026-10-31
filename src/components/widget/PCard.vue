@@ -3,11 +3,13 @@ import { onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import IconUnfold from '../icons/control/IconUnfold.vue'
 
 export type FoldStatus = 'unfold' | 'fold' | 'unfoldable'
+export type FoldArrow = 'down' | 'right'
 
 const props = withDefaults(
   defineProps<{
     hideTitle?: boolean
     defaultFoldStatus?: FoldStatus
+    foldArrow?: FoldArrow
     overflowVisible?: boolean
     title?: string
     disabled?: boolean
@@ -15,6 +17,7 @@ const props = withDefaults(
   {
     hideTitle: false,
     defaultFoldStatus: 'unfoldable',
+    foldArrow: 'down',
     overflowVisible: false,
   },
 )
@@ -88,7 +91,11 @@ onUnmounted(() => observer?.disconnect())
     :class="[
       'mycard-container',
       foldState,
-      { 'overflow-visible': overflowVisible, 'fold-disabled': disabled },
+      {
+        'overflow-visible': overflowVisible,
+        'fold-disabled': disabled,
+        'fold-arrow-right': foldArrow === 'right',
+      },
     ]"
     :style="
       foldState === 'unfoldable'
@@ -117,8 +124,10 @@ onUnmounted(() => observer?.disconnect())
         <div class="description" v-if="$slots.description">
           <slot name="description"></slot>
         </div>
-        <slot name="header-actions" />
-        <i v-if="!disabled"><IconUnfold /></i>
+        <div class="mycard-title-actions">
+          <slot name="header-actions" />
+          <i v-if="!disabled"><IconUnfold /></i>
+        </div>
       </header>
       <Transition name="card-content">
         <section
@@ -174,7 +183,7 @@ onUnmounted(() => observer?.disconnect())
   cursor: pointer;
 }
 
-.mycard-container.unfoldable .mycard-title > i {
+.mycard-container.unfoldable .mycard-title-actions > i {
   visibility: hidden;
 }
 
@@ -196,14 +205,35 @@ onUnmounted(() => observer?.disconnect())
   padding: 0 15px;
 }
 
-.mycard > .mycard-title > i {
+.mycard-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.mycard-title-actions > i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
   color: var(--color-text);
-  transition: transform 0.4s ease, color 0.4s;
+  transition:
+    transform 0.4s ease,
+    color 0.4s;
   flex: 0;
 }
 
-.mycard-container.unfold .mycard-title > i {
+.mycard-container.unfold .mycard-title-actions > i {
   transform: rotate(180deg);
+}
+
+.mycard-container.fold.fold-arrow-right .mycard-title-actions > i {
+  transform: rotate(-90deg);
+}
+
+.mycard-container.unfold.fold-arrow-right .mycard-title-actions > i {
+  transform: rotate(-180deg);
 }
 
 .mycard > .mycard-title > p *,

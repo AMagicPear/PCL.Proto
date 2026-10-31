@@ -291,6 +291,7 @@ watch(versionId, (id) => {
         :title="text(`Common.Installation.${loader}`)"
         :disabled="!!loaderConflict(loader, selected, versionId)"
         default-fold-status="fold"
+        fold-arrow="right"
       >
         <template #description
           ><span class="loader-status" :class="{ 'is-selected': selected[loader] }"><img v-if="selected[loader]" :src="loaderIcon(loader)" alt="" />{{
@@ -420,17 +421,14 @@ watch(versionId, (id) => {
 }
 .loader-status.is-selected { color: var(--color-text); }
 .loader-status img { width: 18px; height: 18px; }
-.loader-card :deep(.mycard-title > i) { color: var(--color-text-grey); }
-.loader-card.fold :deep(.mycard-title > i) { transform: rotate(-90deg); }
-.loader-card.unfold :deep(.mycard-title > i) { transform: rotate(-180deg); }
-.loader-card:hover :deep(.mycard-title > i),
+.loader-card :deep(.mycard-title-actions > i) { color: var(--color-text-grey); }
+.loader-card:hover :deep(.mycard-title-actions > i),
 .loader-card:hover .loader-clear { color: var(--color-tint); }
 .loader-clear {
   display: grid;
   place-items: center;
   width: 25px;
   height: 25px;
-  margin-right: 10px;
   padding: 5px;
   border: 0;
   background: transparent;

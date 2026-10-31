@@ -1,59 +1,66 @@
 <script setup lang="ts">
 import { showUnavailable } from '@/util/showUnavailable'
 import PSkin from '@/components/widget/PSkin.vue'
-import PButton from '@/components/widget/PButton.vue'
 import PSvgIcon from '@/components/widget/PSvgIcon.vue'
 import { useAccountInfo } from '@/stores/account'
 import type { ProfileView } from '@/types/profile'
 import { pclText } from '@/api/pclLocale'
 import PCard from '@/components/widget/PCard.vue'
+import { popupNativeMenu, type NativeMenuItem } from '@/util/nativeMenu'
+import { getProfileTypeLabel } from '@/util/profile'
+import { computed } from 'vue'
 
 const account = useAccountInfo()
 const emit = defineEmits<{ view: [view: ProfileView] }>()
 const text = pclText
+const profileTypeLabel = computed(() => getProfileTypeLabel(account.profile))
+const skinActions = ['ChangeSkin', 'SaveSkin', 'RefreshSkin', 'ChangeCape'] as const
+const editActions = ['EditPassword', 'EditUsername'] as const
+
+function runAction(action: string) {
+  if (action === 'EditUsername') emit('view', 'offline')
+  else void showUnavailable()
+}
+
+async function openMenu(event: MouseEvent, actions: readonly string[]) {
+  const items: NativeMenuItem[] = actions.map((action) => ({
+    text: text(`Launch.Account.ProfileSkin.${action}`),
+    action: () => runAction(action),
+  }))
+  try {
+    await popupNativeMenu(event.currentTarget as Element, items)
+  } catch (error) {
+    console.error('Failed to open native menu', error)
+  }
+}
 </script>
 <template>
   <div class="profile-skin">
-    <PSkin class="profile-avatar" /><strong>{{ account.username || 'Player' }}</strong
-    ><span>{{ text('Launch.Account.Type.Offline') }}</span>
+    <PSkin class="profile-avatar" :skin-url="account.skinUrl" /><strong>{{
+      account.username || 'Player'
+    }}</strong
+    ><span>{{ profileTypeLabel }}</span>
     <div class="profile-actions-reveal">
-      <PCard hide-title class="profile-actions-card" overflow-visible
+      <PCard hide-title class="profile-actions-card"
         ><div class="profile-actions">
-          <details>
-            <summary
-              class="profile-action"
-              :aria-label="text('Launch.Account.ProfileSkin.SkinsAndCapes')"
-              :title="text('Launch.Account.ProfileSkin.SkinsAndCapes')"
-            >
-              <PSvgIcon name="lucide/shirt" :size="14" />
-            </summary>
-            <div class="profile-menu">
-              <PButton
-                v-for="action in ['ChangeSkin', 'SaveSkin', 'RefreshSkin', 'ChangeCape']"
-                :key="action"
-                inline
-                @click="showUnavailable"
-                >{{ text(`Launch.Account.ProfileSkin.${action}`) }}</PButton
-              >
-            </div>
-          </details>
-          <details>
-            <summary
-              class="profile-action"
-              :aria-label="text('Launch.Account.ProfileSkin.EditProfile')"
-              :title="text('Launch.Account.ProfileSkin.EditProfile')"
-            >
-              <PSvgIcon name="lucide/pencil" :size="14" />
-            </summary>
-            <div class="profile-menu">
-              <PButton inline @click="showUnavailable">{{
-                text('Launch.Account.ProfileSkin.EditPassword')
-              }}</PButton
-              ><PButton inline @click="() => emit('view', 'offline')">{{
-                text('Launch.Account.ProfileSkin.EditUsername')
-              }}</PButton>
-            </div>
-          </details>
+          <button
+            type="button"
+            class="profile-action"
+            :aria-label="text('Launch.Account.ProfileSkin.SkinsAndCapes')"
+            :title="text('Launch.Account.ProfileSkin.SkinsAndCapes')"
+            @click="openMenu($event, skinActions)"
+          >
+            <PSvgIcon name="lucide/shirt" :size="14" />
+          </button>
+          <button
+            type="button"
+            class="profile-action"
+            :aria-label="text('Launch.Account.ProfileSkin.EditProfile')"
+            :title="text('Launch.Account.ProfileSkin.EditProfile')"
+            @click="openMenu($event, editActions)"
+          >
+            <PSvgIcon name="lucide/pencil" :size="14" />
+          </button>
           <button
             type="button"
             class="profile-action"
@@ -111,8 +118,7 @@ const text = pclText
   transition: opacity 0.15s;
 }
 .profile-skin:hover .profile-actions-reveal,
-.profile-skin:focus-within .profile-actions-reveal,
-.profile-skin:has(details[open]) .profile-actions-reveal {
+.profile-skin:focus-within .profile-actions-reveal {
   opacity: 1;
 }
 .profile-actions-card {
@@ -127,7 +133,6 @@ const text = pclText
   background: transparent;
   color: var(--color-tint-light, var(--color-tint));
   cursor: pointer;
-  list-style: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -135,28 +140,11 @@ const text = pclText
     color 0.15s,
     transform 0.25s;
 }
-.profile-action::-webkit-details-marker {
-  display: none;
-}
 .profile-action:hover,
 .profile-action:focus-visible {
-  color: var(--color-tint);
+  color: var(--color-tint-dark);
 }
 .profile-action:active {
   transform: scale(0.8);
-}
-.profile-menu {
-  position: absolute;
-  z-index: 3;
-  left: 0;
-  top: 100%;
-  min-width: 150px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px;
-  background: var(--color-background-soft);
-  border-radius: 6px;
-  box-shadow: var(--box-shadow);
 }
 </style>

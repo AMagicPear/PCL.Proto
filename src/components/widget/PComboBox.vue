@@ -50,13 +50,15 @@ const model = defineModel<string>()
 <style lang="scss" scoped>
 .dropdown-wrapper {
   position: relative;
+  --pcl-unfold-icon-width: 8px;
+  --pcl-unfold-icon-height: 5px;
 }
 
 i {
   position: absolute;
   right: 0.5rem;
-  top: 30%;
-  transform: rotate(0deg);
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
   pointer-events: none;
   display: flex;
   place-items: center;
@@ -65,7 +67,7 @@ i {
 }
 
 select:focus + i {
-  transform: rotate(180deg);
+  transform: translateY(-50%) rotate(180deg);
 }
 
 select {

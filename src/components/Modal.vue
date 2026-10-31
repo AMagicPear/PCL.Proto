@@ -2,9 +2,11 @@
 import { pclText } from '@/api/pclLocale'
 import { useModal } from '@/composables/useModal'
 import PButton from './widget/PButton.vue'
+import PListItem from './widget/PListItem.vue'
+import PSvgIcon from './widget/PSvgIcon.vue'
 import type { ModalButtonOption } from '@/types/modal'
 
-const { isOpen, options, close, inputValue } = useModal()
+const { isOpen, options, close, inputValue, selectedValue } = useModal()
 const handleButtonClick = async (btn: ModalButtonOption) => {
   if (btn.operation) await btn.operation()
   else close(false)
@@ -29,8 +31,27 @@ const handleButtonClick = async (btn: ModalButtonOption) => {
             v-model="inputValue"
           )
 
+          .modal-select(v-if="options.selectOptions")
+            PListItem(
+              v-for="option in options.selectOptions"
+              :key="option.value"
+              :title="option.label"
+              clickable
+              :selected="selectedValue === option.value"
+              @click="selectedValue = option.value"
+            )
+              template(#icon)
+                PSvgIcon(v-if="option.icon" :name="option.icon" :size="24")
+
         .modal-footer
-          template(v-if="options.buttons && options.buttons.length")
+          template(v-if="options.selectOptions")
+            PButton(
+              type="tint"
+              :disabled="!selectedValue"
+              @click="() => close(true)"
+            ) {{ options.confirmText ?? pclText('Common.Action.Confirm') }}
+            PButton(@click="() => close(false)" type="warn") {{ options.cancelText ?? pclText('Common.Action.Cancel') }}
+          template(v-else-if="options.buttons && options.buttons.length")
             PButton(
               v-for="(btn, idx) in options.buttons"
               :key="idx"
@@ -96,6 +117,22 @@ const handleButtonClick = async (btn: ModalButtonOption) => {
 .modal-input {
   width: 100%;
   font-size: 13px;
+}
+
+.modal-select {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  --list-min-height: 42px;
+}
+
+.modal-select :deep(.gameinfo-container) {
+  color: var(--color-text-black);
+  transition: color 0.2s ease;
+}
+
+.modal-select :deep(.gameinfo-container[aria-pressed='true']) {
+  color: var(--color-tint);
 }
 
 /*
