@@ -26,7 +26,7 @@ pub async fn get_window_settings() -> Option<WindowSettings> {
         .clone()
 }
 
-pub async fn get_launcher_visibility() -> pcl_core::app::visibility::LauncherVisibility {
+pub async fn get_launcher_visibility() -> crate::window::LauncherVisibility {
     ConfigManager::instance()
         .app_state
         .lock()
@@ -35,7 +35,7 @@ pub async fn get_launcher_visibility() -> pcl_core::app::visibility::LauncherVis
 }
 
 pub async fn set_launcher_visibility(
-    mode: pcl_core::app::visibility::LauncherVisibility,
+    mode: crate::window::LauncherVisibility,
 ) -> Result<(), String> {
     tokio::task::spawn_blocking(move || {
         ConfigManager::instance().update(|state| {

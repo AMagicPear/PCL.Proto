@@ -115,7 +115,7 @@ pub struct AppState {
     pub instance_launch_arguments:
         HashMap<PathBuf, pcl_core::minecraft::launch::arguments::LaunchArguments>,
     #[serde(default)]
-    pub launcher_visibility: pcl_core::app::visibility::LauncherVisibility,
+    pub launcher_visibility: crate::window::LauncherVisibility,
     #[serde(default)]
     pub instance_launch_settings:
         HashMap<PathBuf, pcl_core::minecraft::launch::settings::InstanceLaunchSettings>,

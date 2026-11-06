@@ -2,7 +2,7 @@
 
 use crate::config::WindowSettings;
 use crate::config::manager as settings;
-use pcl_core::app::visibility::LauncherVisibility;
+use crate::window::LauncherVisibility;
 
 #[tauri::command]
 pub async fn get_window_settings() -> Option<WindowSettings> {

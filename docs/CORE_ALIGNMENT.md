@@ -17,7 +17,6 @@
 ```text
 crates/pcl-core/src/    启动器核心，不依赖 Tauri
   app/
-    visibility.rs      启动器可见性策略与会话联动（窗口动作由宿主实现）
     resources.rs       启动器自带资源的定位（开发用 crate 目录，打包用 .app）
     secrets.rs         宿主注入的 CurseForge / 微软 OAuth 凭据
   io/
@@ -97,7 +96,7 @@ crates/pcl-core/src/    启动器核心，不依赖 Tauri
 | `Utils.Result`                                  | Rust 原生 `Result`                                                | 不重复造 `Result` 类型。                                                                              |
 | `Utils.Secret.Identify`                         | `utils::secret::Identify`                                         | 设备序列号与启动器标识派生；保留 Proto 的平台实现。                                                   |
 | `Link.McPing.Model.McPing*`                     | `link::mcping::model::{McPingResult, McPingPlayerResult, ...}`    | 服务器状态 JSON 的类型化结果；`description` 保留原始 chat component。                                 |
-| `App.ConfigEnums.LauncherVisibility`            | `app::visibility::LauncherVisibility`                             | 保留现有隐藏/最小化/保持不变行为，不启用未实现的全屏/立即退出分支。                                   |
+| `App.ConfigEnums.LauncherVisibility`            | `src-tauri/src/window.rs`（`window::LauncherVisibility`）        | 桌面窗口交互，保留隐藏/最小化/保持不变行为，不启用未实现的全屏/立即退出分支。                        |
 | `Utils.SemVer` / `VersionRange`                 | 暂未引入                                                          | 当前版本比较由 `JavaVersion`、Maven/加载器逻辑覆盖；待有调用方时再补。                                |
 | `Minecraft.Saves.SaveInfo`                      | 暂未引入                                                          | 存档 NBT 尚未实现，留待后续 `minecraft/saves`。                                                       |
 | `IO.Storage.Cache`、`App.Tasks`、`App.EventBus` | 暂未引入                                                          | 属于后续缺失子系统，不在本轮“现有功能对齐”范围内。                                                    |
