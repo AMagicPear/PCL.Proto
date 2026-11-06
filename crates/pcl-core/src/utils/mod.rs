@@ -1,4 +1,3 @@
-pub mod external;
+pub mod hash;
 pub mod platform;
-pub mod secret;
-pub mod toys;
+pub mod url;

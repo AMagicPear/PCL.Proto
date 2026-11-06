@@ -926,9 +926,20 @@ pub async fn install_version(
     on_event: &EventSink<TaskItemReport>,
     java: &crate::minecraft::java::JavaState,
     paths: &crate::runtime::RuntimePaths,
+    forge_installer: &Path,
 ) -> anyhow::Result<InstallOutcome> {
     install_version_with_modpack(
-        client, repo, version_id, name, loader, None, task_id, on_event, java, paths,
+        client,
+        repo,
+        version_id,
+        name,
+        loader,
+        None,
+        task_id,
+        on_event,
+        java,
+        paths,
+        forge_installer,
     )
     .await
 }
@@ -946,6 +957,7 @@ async fn install_version_with_modpack(
     on_event: &EventSink<TaskItemReport>,
     java: &crate::minecraft::java::JavaState,
     paths: &crate::runtime::RuntimePaths,
+    forge_installer: &Path,
 ) -> anyhow::Result<InstallOutcome> {
     validate_file_name(version_id)?;
     ensure!(
@@ -1106,7 +1118,7 @@ async fn install_version_with_modpack(
                 &directory.path.join(format!("{name}.jar")),
                 task_id,
                 on_event,
-                paths,
+                forge_installer,
             )
             .await?
         } else {
@@ -1190,6 +1202,7 @@ pub async fn download_minecraft_version(
     loader: Option<LoaderInstall>,
     java: &crate::minecraft::java::JavaState,
     paths: &crate::runtime::RuntimePaths,
+    forge_installer: &Path,
 ) -> Result<InstallOutcome, String> {
     crate::io::download::tasks::run(task_id, async {
         install_version(
@@ -1202,6 +1215,7 @@ pub async fn download_minecraft_version(
             &on_event,
             java,
             paths,
+            forge_installer,
         )
         .await
         .map_err(|error| format!("{error:#}"))
@@ -1223,6 +1237,7 @@ pub(crate) async fn install_version_for_test(
         config_dir: std::env::temp_dir().join("pcl-test-config"),
         java_runtime_dir: std::env::temp_dir().join("pcl-test-jre"),
     };
+    let forge_installer = std::env::temp_dir().join("forge-installer.jar");
     install_version(
         client,
         repo,
@@ -1233,6 +1248,7 @@ pub(crate) async fn install_version_for_test(
         on_event,
         &crate::minecraft::java::JavaState::default(),
         &paths,
+        &forge_installer,
     )
     .await
 }

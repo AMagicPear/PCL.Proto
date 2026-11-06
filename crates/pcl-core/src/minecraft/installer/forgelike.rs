@@ -471,7 +471,7 @@ pub(super) async fn run_processors(
     vanilla_jar: &Path,
     task_id: i32,
     on_event: &EventSink<super::TaskItemReport>,
-    paths: &crate::runtime::RuntimePaths,
+    forge_installer: &Path,
 ) -> anyhow::Result<Value> {
     let root = prepared.directory.path();
     let vanilla_dir = root.join("versions").join(game);
@@ -482,7 +482,7 @@ pub(super) async fn run_processors(
         serde_json::to_vec(metadata)?,
     )?;
     fs::write(root.join("launcher_profiles.json"), b"{\"profiles\":{}}")?;
-    let bridge = crate::minecraft::launch::settings::forge_installer(paths)?;
+    let bridge = forge_installer.to_owned();
     let classpath = std::env::join_paths([bridge.as_path(), prepared.archive.as_path()])?;
     let stdout = root.join("installer.stdout.log");
     let stderr = root.join("installer.stderr.log");
@@ -1072,6 +1072,9 @@ mod tests {
             java_runtime_dir: std::env::temp_dir().join("pcl-forge-smoke-jre"),
         };
         let java_state = crate::minecraft::java::JavaState::default();
+        // 忽略的网络冒烟测试直接使用应用打包的安装器桥接文件。
+        let installer = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../src-tauri/resources/forge-installer.jar");
         let prepared = prepare(&client, &downloader, game, &loader, 0, &events)
             .await
             .unwrap();
@@ -1089,9 +1092,11 @@ mod tests {
                 .await
                 .unwrap()
                 .unwrap();
-            run_processors(&prepared, &java, &metadata, game, &jar, 0, &events, &paths)
-                .await
-                .unwrap()
+            run_processors(
+                &prepared, &java, &metadata, game, &jar, 0, &events, &installer,
+            )
+            .await
+            .unwrap()
         } else {
             prepared.profile.version.clone()
         };
@@ -1152,6 +1157,7 @@ mod tests {
                 &events,
                 &java_state,
                 &paths,
+                &installer,
             )
             .await
             .unwrap();

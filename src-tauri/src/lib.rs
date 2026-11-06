@@ -9,8 +9,11 @@ use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_log::{Target, TargetKind};
 
+mod assets;
 mod commands;
 mod config;
+mod external;
+mod identity;
 mod login;
 mod protocol;
 mod resources;

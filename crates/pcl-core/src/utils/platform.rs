@@ -111,7 +111,7 @@ pub(crate) fn assert_compatibility(arch: &Architecture) -> Compatibility {
 }
 
 /// The host can differ from the launcher process when Rosetta or Windows emulation is in use.
-pub(crate) fn host_architecture() -> &'static str {
+pub fn host_architecture() -> &'static str {
     static ARCH: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
         #[cfg(windows)]
         for key in ["PROCESSOR_ARCHITEW6432", "PROCESSOR_ARCHITECTURE"] {

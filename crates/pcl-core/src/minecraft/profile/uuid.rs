@@ -12,7 +12,7 @@ pub fn offline(user_name: &str) -> String {
 pub fn legacy(user_name: &str) -> String {
     let length = fill(&format!("{:X}", user_name.chars().count()), '0', 16);
     let hash = fill(
-        &format!("{:X}", crate::utils::secret::get_pcl_hash(user_name)),
+        &format!("{:X}", crate::utils::hash::get_pcl_hash(user_name)),
         '0',
         16,
     );

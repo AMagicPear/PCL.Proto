@@ -30,7 +30,6 @@ tokio = { workspace = true, features = [
 log = "0.4.35"
 shlex = "2.0"
 goblin = "0.10.7"
-directories = "6.0.0"
 reqwest = { workspace = true, features = ["json", "stream", "form", "multipart"] }
 thiserror = "2.0.21"
 futures-util = "0.3.34"
@@ -52,7 +51,6 @@ sha1-legacy = { package = "sha1", version = "0.10", features = ["oid"] }
 jsonwebtoken = "9"
 sysinfo = { version = "0.40.1", default-features = false, features = ["system"] }
 trash = "5.2.9"
-open = { version = "5.4.5", features = ["shellexecute-on-windows"] }
 fastnbt = "2.6.3"
 flate2 = "1.1.10"
 tempfile = "3.27.0"

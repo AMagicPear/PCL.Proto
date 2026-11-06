@@ -1,6 +1,6 @@
-//! Open external links in the system browser instead of navigating the app WebView.
+//! 外部链接的安全性校验；打开浏览器是宿主应用的事。
 
-/// Validate and normalize an http(s) URL that is safe to hand to the system browser.
+/// 校验并归一化一个可以交给系统浏览器的 http(s) 地址。
 pub fn validate(url: &str) -> Result<String, String> {
     let parsed = reqwest::Url::parse(url).map_err(|error| error.to_string())?;
     if !matches!(parsed.scheme(), "http" | "https")
@@ -11,23 +11,6 @@ pub fn validate(url: &str) -> Result<String, String> {
         return Err("Invalid external URL".into());
     }
     Ok(parsed.into())
-}
-
-/// Open a validated external URL with the platform's default browser.
-pub fn open(url: &str) -> Result<(), String> {
-    let url = validate(url)?;
-    // ShellExecute avoids cmd.exe URL expansion; Unix launchers are waited on and reaped.
-    #[cfg(windows)]
-    let result = open::that_detached(url);
-    #[cfg(not(windows))]
-    let result = open::that(url);
-    result.map_err(|error| error.to_string())
-}
-
-pub async fn open_external_url(url: String) -> Result<(), String> {
-    tokio::task::spawn_blocking(move || open(&url))
-        .await
-        .map_err(|error| error.to_string())?
 }
 
 #[cfg(test)]

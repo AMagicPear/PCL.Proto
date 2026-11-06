@@ -834,8 +834,8 @@ impl MinecraftApiClient {
         &self,
         endpoint: &str,
     ) -> McApiResult<T> {
-        let api_key = crate::app::secrets::curseforge_api_key()
-            .ok_or(McApiError::MissingApiKey("CurseForge"))?;
+        let api_key =
+            crate::secrets::curseforge_api_key().ok_or(McApiError::MissingApiKey("CurseForge"))?;
         let curseforge_base = self.api_bases.read().await.curseforge_base;
         let url = format!("{curseforge_base}/{endpoint}");
         let now = Instant::now();
@@ -883,7 +883,7 @@ pub async fn fetch_with_curseforge(
 
 /// 未配置密钥时界面需要隐藏 CurseForge 选项（对照 CE 的 SupportCurseForge）。
 pub fn curseforge_available() -> bool {
-    crate::app::secrets::curseforge_available()
+    crate::secrets::curseforge_available()
 }
 
 #[cfg(test)]

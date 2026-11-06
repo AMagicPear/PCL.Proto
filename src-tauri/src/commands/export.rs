@@ -39,7 +39,18 @@ pub async fn export_minecraft_version(
 
 #[tauri::command]
 pub async fn open_minecraft_wiki(url: String) -> Result<(), String> {
-    version::open_minecraft_wiki(url).await
+    let parsed = reqwest::Url::parse(&url).map_err(|error| error.to_string())?;
+    if parsed.scheme() != "https"
+        || !parsed
+            .host_str()
+            .is_some_and(|host| host == "minecraft.wiki" || host.ends_with(".minecraft.wiki"))
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || parsed.port().is_some()
+    {
+        return Err("Invalid Minecraft Wiki URL".into());
+    }
+    crate::external::open_async(parsed.to_string()).await
 }
 
 #[tauri::command]
@@ -58,7 +69,8 @@ pub async fn open_loader_changelog(
     game: String,
     version: String,
 ) -> Result<(), String> {
-    loader::open_loader_changelog(loader, game, version).await
+    let url = loader::changelog_url(&loader, &game, &version)?;
+    crate::external::open_async(url).await
 }
 
 #[cfg(test)]

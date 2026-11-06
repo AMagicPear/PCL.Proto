@@ -7,7 +7,7 @@ use pcl_core::{
     io::net::http::api_client::{ApiProvider, MinecraftApiClient},
     minecraft::instance::{
         McInstance,
-        folder::{self, McFolder, McFolderType},
+        folder::{McFolder, McFolderType},
     },
 };
 use std::{
@@ -168,7 +168,7 @@ impl ConfigManager {
             fs::read_to_string(identifier_path)
                 .map_err(|_| ConfigManagerError::IdentifierFailure)?
         } else {
-            let pcl_identifier = pcl_core::utils::secret::Identify::launcher_id()
+            let pcl_identifier = crate::identity::Identify::launcher_id()
                 .map_err(|_| ConfigManagerError::IdentifierFailure)?;
             fs::write(identifier_path, pcl_identifier.clone())
                 .map_err(|_| ConfigManagerError::IdentifierFailure)?;
@@ -188,8 +188,8 @@ impl ConfigManager {
             pcl_identifier,
         };
         instance.load_or_init(
-            folder::launcher_minecraft_directory().as_deref(),
-            folder::official_minecraft_directory().as_deref(),
+            super::paths::launcher_minecraft_directory().as_deref(),
+            super::paths::official_minecraft_directory().as_deref(),
         )?;
         // The API client is built before the proxy policy is loaded.
         instance
@@ -254,7 +254,7 @@ impl ConfigManager {
             }
             Err(error) => Err(error),
         }?;
-        let discovered = folder::discover_repositories(
+        let discovered = pcl_core::minecraft::instance::folder::discover_repositories(
             &self.app_state.blocking_lock().repositories,
             portable,
             official,
@@ -271,7 +271,7 @@ impl ConfigManager {
 
     /// initialize the config file, for those who never use this launcher
     fn init(&self, portable: Option<&Path>) -> Result<(), ConfigManagerError> {
-        let game_dir = folder::create_default_directory(&self.config_dir, portable)
+        let game_dir = super::paths::create_default_directory(&self.config_dir, portable)
             .map_err(|_| ConfigManagerError::ConfigDirNotFound)?;
         let mut state = self.app_state.blocking_lock();
         state.version_info = crate::config::metadata::default_version_info();
@@ -742,7 +742,7 @@ mod java_config_tests {
         let blocked = root.join("blocked");
         fs::write(&blocked, b"file").unwrap();
         assert_eq!(
-            folder::create_default_directory(&root, Some(&blocked)).unwrap(),
+            crate::config::paths::create_default_directory(&root, Some(&blocked)).unwrap(),
             root.join(".minecraft").canonicalize().unwrap()
         );
         fs::remove_dir_all(root).unwrap();

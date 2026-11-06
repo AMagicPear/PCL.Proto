@@ -380,6 +380,7 @@ async fn install_pack(
     on_event: &EventSink<TaskItemReport>,
     java: &crate::minecraft::java::JavaState,
     paths: &crate::runtime::RuntimePaths,
+    forge_installer: &Path,
 ) -> anyhow::Result<()> {
     let available: HashSet<_> = pack.info().optional_files.into_iter().collect();
     ensure_optional(&available, &optional_files)?;
@@ -396,6 +397,7 @@ async fn install_pack(
         on_event,
         java,
         paths,
+        forge_installer,
     )
     .await?;
     Ok(())
@@ -413,6 +415,7 @@ pub async fn install_modpack(
     on_event: EventSink<TaskItemReport>,
     java: &crate::minecraft::java::JavaState,
     paths: &crate::runtime::RuntimePaths,
+    forge_installer: &Path,
 ) -> Result<(), String> {
     crate::io::download::tasks::run(task_id, async {
         let pack = crate::io::download::tasks::blocking(task_id, move || Modpack::open(&path))
@@ -430,6 +433,7 @@ pub async fn install_modpack(
             &on_event,
             java,
             paths,
+            forge_installer,
         )
         .await
         .map_err(|error| format!("{error:#}"))
@@ -449,6 +453,7 @@ pub async fn install_online_modpack(
     on_event: EventSink<TaskItemReport>,
     java: &crate::minecraft::java::JavaState,
     paths: &crate::runtime::RuntimePaths,
+    forge_installer: &Path,
 ) -> Result<(), String> {
     let prepared = PREPARED
         .lock()
@@ -468,6 +473,7 @@ pub async fn install_online_modpack(
             &on_event,
             java,
             paths,
+            forge_installer,
         )
         .await
         .map_err(|e| format!("{e:#}"))
@@ -636,6 +642,7 @@ mod tests {
                 config_dir: root.clone(),
                 java_runtime_dir: root.join("jre"),
             },
+            &std::env::temp_dir().join("forge-installer.jar"),
         )
         .await
         .unwrap();

@@ -3,7 +3,7 @@
 //! 核心库不决定密钥来源：发布构建在编译期把值烧进二进制（对照 CE 的 Source Generator），
 //! 开发构建回退到运行环境变量；第三方启动器可以完全换一套读取方式。
 
-use pcl_core::app::secrets::{self, Secrets};
+use pcl_core::secrets::{self, Secrets};
 
 /// 空白值按未配置处理。
 fn usable(value: Option<String>) -> Option<String> {

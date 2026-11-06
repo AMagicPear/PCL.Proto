@@ -9,6 +9,7 @@ pub mod launch;
 pub mod launch_settings;
 pub mod manager;
 pub mod metadata;
+pub mod paths;
 pub mod profiles;
 pub mod states;
 

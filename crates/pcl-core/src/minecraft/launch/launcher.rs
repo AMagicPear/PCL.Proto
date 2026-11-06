@@ -23,10 +23,23 @@ pub struct LauncherBrand {
     pub version: String,
 }
 
+/// 宿主提供的启动辅助文件；核心库只在需要时使用，缺省即跳过对应功能。
+#[derive(Clone, Debug, Default)]
+pub struct LaunchHelpers {
+    pub java_wrapper: Option<std::path::PathBuf>,
+    pub legacy_fix: Option<std::path::PathBuf>,
+    pub lwjgl_unsafe_agent: Option<std::path::PathBuf>,
+    pub log4j2_debug: Option<std::path::PathBuf>,
+    pub log4j2_legacy_debug: Option<std::path::PathBuf>,
+    pub macos_arm_libraries: Option<String>,
+    pub mesa_loader: Option<std::path::PathBuf>,
+}
+
 /// 启动一次游戏所需的全部输入；由宿主应用从自己的配置组装。
 pub struct LaunchRequest {
     pub paths: RuntimePaths,
     pub brand: LauncherBrand,
+    pub helpers: LaunchHelpers,
     pub instance: Arc<McInstance>,
     pub profile: McProfile,
     pub java: Arc<JavaEntry>,
@@ -44,6 +57,7 @@ pub struct LaunchRequest {
 pub struct LaunchOption {
     paths: RuntimePaths,
     brand: LauncherBrand,
+    helpers: LaunchHelpers,
     account: Arc<McProfile>,
     java_runtime: Arc<JavaEntry>,
     game_instance: Arc<McInstance>,
@@ -276,10 +290,9 @@ impl LaunchOption {
         {
             return Ok(None);
         }
-        let path =
-            crate::minecraft::launch::settings::java_wrapper(&self.paths).map_err(|error| {
-                GameLaunchError::Resource(format!("Cannot extract Java wrapper: {error}"))
-            })?;
+        let Some(path) = self.helpers.java_wrapper.clone() else {
+            return Ok(None);
+        };
         let mut args = Vec::new();
         if self.java_runtime.major_version() >= 9 {
             args.push("--add-exports".into());
@@ -355,11 +368,6 @@ impl LaunchOption {
     /// Java agents and JVM switches from the instance settings (CE order: agents last).
     fn agent_arguments(&self) -> Result<Vec<String>, GameLaunchError> {
         let mut args = Vec::new();
-        let resource = |result: std::io::Result<std::path::PathBuf>, name: &str| {
-            result.map_err(|error| {
-                GameLaunchError::Resource(format!("Cannot extract {name}: {error}"))
-            })
-        };
         if let Some((host, port)) = &self.extras.proxy {
             for scheme in ["http", "https"] {
                 args.push(format!("-D{scheme}.proxyHost={host}"));
@@ -368,24 +376,25 @@ impl LaunchOption {
         }
         if self.extras.debug_log4j2 {
             let legacy = self.release_year().is_some_and(|year| year < 2017);
-            let path = resource(
-                crate::minecraft::launch::settings::log4j2_config(&self.paths, legacy),
-                "log4j2 config",
-            )?;
-            args.push(format!("-Dlog4j.configurationFile={}", path.display()));
+            let path = if legacy {
+                self.helpers.log4j2_legacy_debug.as_ref()
+            } else {
+                self.helpers.log4j2_debug.as_ref()
+            };
+            if let Some(path) = path {
+                args.push(format!("-Dlog4j.configurationFile={}", path.display()));
+            }
         }
-        if self.extras.lwjgl_unsafe_agent && self.lwjgl_version().as_deref() == Some("3.4.1") {
-            let path = resource(
-                crate::minecraft::launch::settings::lwjgl_unsafe_agent(&self.paths),
-                "LWJGL unsafe agent",
-            )?;
+        if self.extras.lwjgl_unsafe_agent
+            && self.lwjgl_version().as_deref() == Some("3.4.1")
+            && let Some(path) = &self.helpers.lwjgl_unsafe_agent
+        {
             args.push(format!("-javaagent:{}", path.display()));
         }
-        if self.extras.legacy_fix && self.needs_legacy_fix() {
-            let path = resource(
-                crate::minecraft::launch::settings::legacy_fix(&self.paths),
-                "LegacyFix",
-            )?;
+        if self.extras.legacy_fix
+            && self.needs_legacy_fix()
+            && let Some(path) = &self.helpers.legacy_fix
+        {
             args.push(format!("-javaagent:{}", path.display()));
             if self
                 .version_details
@@ -398,7 +407,9 @@ impl LaunchOption {
         }
         // CE only ships the renderer agent for Windows.
         if self.extras.renderer != 0 && cfg!(windows) {
-            let path = crate::minecraft::launch::settings::mesa_loader_path(&self.paths);
+            let path = self.helpers.mesa_loader.as_ref().ok_or_else(|| {
+                GameLaunchError::Resource("Renderer agent is not available".into())
+            })?;
             if !path.is_file() {
                 return Err(GameLaunchError::Resource(
                     "Renderer agent is missing; start the game again to download it".into(),
@@ -674,6 +685,7 @@ impl LaunchOption {
         Ok(Self {
             paths: request.paths,
             brand: request.brand,
+            helpers: request.helpers,
             account: Arc::new(request.profile),
             java_runtime: request.java,
             version_details: game_instance.read_version_json()?,
@@ -697,16 +709,12 @@ impl LaunchOption {
         downloader: &crate::io::download::Downloader,
     ) -> anyhow::Result<std::path::PathBuf> {
         let context = McRuleContext::for_java(&self.java_runtime.architecture)?;
-        patch_macos_arm_libraries(&mut self.version_details, &context)?;
+        patch_macos_arm_libraries(
+            &mut self.version_details,
+            &context,
+            self.helpers.macos_arm_libraries.as_deref(),
+        )?;
         patch_macos_jna(&mut self.version_details, &context)?;
-        if self.extras.renderer != 0
-            && cfg!(windows)
-            && !crate::minecraft::launch::settings::mesa_loader_path(&self.paths).is_file()
-        {
-            crate::minecraft::launch::settings::ensure_mesa_loader(&self.paths)
-                .await
-                .map_err(|error| anyhow::anyhow!("Cannot prepare renderer agent: {error}"))?;
-        }
         let natives = crate::minecraft::installer::prepare_launch_libraries(
             &self.version_details,
             &self.game_instance.global_dir,
@@ -796,6 +804,7 @@ fn patch_macos_jna(details: &mut McVersion, context: &McRuleContext) -> anyhow::
 fn patch_macos_arm_libraries(
     details: &mut McVersion,
     context: &McRuleContext,
+    mapping: Option<&str>,
 ) -> anyhow::Result<()> {
     if context.os != "osx"
         || context.arch != "aarch64"
@@ -813,16 +822,13 @@ fn patch_macos_arm_libraries(
         return Ok(());
     }
     // Library coordinates and checksums follow HMCL's macos-arm64 native mappings.
-    #[cfg(target_os = "macos")]
-    let mapping = std::fs::read_to_string(crate::app::resources::launcher(
-        "macos-arm64-libraries.json",
-    )?)?;
-    #[cfg(not(target_os = "macos"))]
-    let mapping = include_str!("../../../resources/macos-arm64-libraries.json");
+    let Some(mapping) = mapping else {
+        return Ok(());
+    };
     let replacements: std::collections::HashMap<
         String,
         Option<crate::minecraft::version::McLibrary>,
-    > = serde_json::from_str(&mapping)?;
+    > = serde_json::from_str(mapping)?;
     let mut libraries = Vec::new();
     for library in &details.libraries {
         if !library.rule_allow(context)? {
@@ -877,6 +883,24 @@ mod macos_arm_patch_tests {
     use super::*;
     use serde_json::json;
 
+    /// 宿主实际传入的映射来自应用资源；这里用等价结构验证替换规则。
+    const MAPPING: &str = r#"{
+        "org.lwjgl:lwjgl:3.2.1": {
+            "name": "org.lwjgl:lwjgl:3.3.1",
+            "downloads": {"artifact": {"sha1": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "size": 1, "url": "https://example.org/lwjgl.jar"}}
+        },
+        "org.lwjgl:lwjgl:3.2.1:natives": {
+            "name": "org.lwjgl:lwjgl:3.3.1:natives-macos-arm64",
+            "downloads": {"classifiers": {"natives-macos-arm64": {"sha1": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "size": 1, "url": "https://example.org/natives.jar"}}}
+        },
+        "org.lwjgl.lwjgl:lwjgl-platform:2.9.1:natives": {
+            "name": "org.glavo.hmcl:lwjgl2-natives:2.9.3-rc1",
+            "downloads": {"classifiers": {"natives-osx": {"sha1": "cccccccccccccccccccccccccccccccccccccccc", "size": 1, "url": "https://example.org/lwjgl2.jar"}}}
+        },
+        "net.java.jinput:jinput-platform:2.0.5": null,
+        "net.java.jinput:jinput-platform:2.0.5:natives": null
+    }"#;
+
     #[test]
     fn patches_legacy_libraries_only_for_arm_java() {
         let mut details: McVersion = serde_json::from_value(json!({
@@ -894,10 +918,10 @@ mod macos_arm_patch_tests {
             version: String::new(),
             features: Default::default(),
         };
-        patch_macos_arm_libraries(&mut details, &context).unwrap();
+        patch_macos_arm_libraries(&mut details, &context, Some(MAPPING)).unwrap();
         assert_eq!(details.libraries[0].name, "org.lwjgl:lwjgl:3.2.1");
         context.arch = "aarch64".into();
-        patch_macos_arm_libraries(&mut details, &context).unwrap();
+        patch_macos_arm_libraries(&mut details, &context, Some(MAPPING)).unwrap();
         let names: Vec<_> = details
             .libraries
             .iter()
@@ -922,7 +946,7 @@ mod macos_arm_patch_tests {
                 }
             }
         }
-        patch_macos_arm_libraries(&mut details, &context).unwrap();
+        patch_macos_arm_libraries(&mut details, &context, Some(MAPPING)).unwrap();
         assert_eq!(details.libraries.len(), 3);
     }
 }
@@ -1030,6 +1054,7 @@ pub(crate) fn test_request(
             name: "PCL.Proto".into(),
             version: "test".into(),
         },
+        helpers: LaunchHelpers::default(),
         instance,
         profile,
         java,
@@ -1129,6 +1154,7 @@ mod tests {
                 name: "PCL.Proto".into(),
                 version: "test".into(),
             },
+            helpers: LaunchHelpers::default(),
             account: Arc::new(McProfile::yggdrasil(
                 "Name With Space",
                 "uuid",

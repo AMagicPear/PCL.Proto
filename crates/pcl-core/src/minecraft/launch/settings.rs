@@ -1,12 +1,7 @@
 //! Per-instance launch settings that CE keeps outside the plain launch arguments.
 #[cfg(not(target_os = "macos"))]
 use std::io::Write;
-use std::{
-    path::{Path, PathBuf},
-    process::Command,
-};
-
-use crate::runtime::RuntimePaths;
+use std::{path::Path, process::Command};
 
 /// 0 follows the global renderer, 1..=4 map to the global numbering 0..=3.
 pub const RENDERER_FOLLOW_GLOBAL: u8 = 0;
@@ -131,117 +126,6 @@ pub fn java_wrapper_supported() -> bool {
     {
         false
     }
-}
-
-fn resource_dir(paths: &RuntimePaths) -> PathBuf {
-    paths.config_dir.join("resources")
-}
-
-#[cfg(not(target_os = "macos"))]
-fn bundled(paths: &RuntimePaths, name: &str, bytes: &[u8]) -> std::io::Result<PathBuf> {
-    let directory = resource_dir(paths);
-    let path = directory.join(name);
-    if std::fs::metadata(&path).is_ok_and(|metadata| metadata.len() == bytes.len() as u64) {
-        return Ok(path);
-    }
-    std::fs::create_dir_all(&directory)?;
-    let temp = path.with_extension(format!("{}.tmp", std::process::id()));
-    let mut file = std::fs::File::create(&temp)?;
-    file.write_all(bytes)?;
-    file.sync_all()?;
-    drop(file);
-    std::fs::rename(&temp, &path)?;
-    Ok(path)
-}
-
-macro_rules! bundled_resource {
-    ($paths:expr, $name:literal) => {{
-        #[cfg(target_os = "macos")]
-        {
-            let _ = $paths;
-            crate::app::resources::launcher($name)
-        }
-        #[cfg(not(target_os = "macos"))]
-        {
-            bundled(
-                $paths,
-                $name,
-                include_bytes!(concat!("../../../resources/", $name)),
-            )
-        }
-    }};
-}
-
-pub fn java_wrapper(paths: &RuntimePaths) -> std::io::Result<PathBuf> {
-    bundled_resource!(paths, "java-wrapper.jar")
-}
-
-pub fn forge_installer(paths: &RuntimePaths) -> std::io::Result<PathBuf> {
-    bundled_resource!(paths, "forge-installer.jar")
-}
-
-pub fn legacy_fix(paths: &RuntimePaths) -> std::io::Result<PathBuf> {
-    bundled_resource!(paths, "legacyfix.jar")
-}
-
-pub fn lwjgl_unsafe_agent(paths: &RuntimePaths) -> std::io::Result<PathBuf> {
-    bundled_resource!(paths, "lwjgl-unsafe-agent.jar")
-}
-
-pub fn log4j2_config(paths: &RuntimePaths, legacy: bool) -> std::io::Result<PathBuf> {
-    if legacy {
-        bundled_resource!(paths, "log4j2-legacy-debug.xml")
-    } else {
-        bundled_resource!(paths, "log4j2-debug.xml")
-    }
-}
-
-pub fn mesa_loader_path(paths: &RuntimePaths) -> PathBuf {
-    resource_dir(paths)
-        .join("mesa-loader-windows")
-        .join(MESA_LOADER_VERSION)
-        .join("Loader.jar")
-}
-
-pub fn mesa_loader_url() -> String {
-    let arch = match crate::utils::platform::host_architecture() {
-        "x86" => "x86",
-        "aarch64" => "arm64",
-        _ => "x64",
-    };
-    format!(
-        "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/org/glavo/mesa-loader-windows/{MESA_LOADER_VERSION}/mesa-loader-windows-{MESA_LOADER_VERSION}-{arch}.jar"
-    )
-}
-
-/// Download the renderer agent CE fetches from its mirror; there is no hash to verify.
-pub async fn ensure_mesa_loader(paths: &RuntimePaths) -> anyhow::Result<PathBuf> {
-    let path = mesa_loader_path(paths);
-    if path.is_file() {
-        return Ok(path);
-    }
-    let parent = path.parent().expect("mesa loader path has a parent");
-    std::fs::create_dir_all(parent)?;
-    let url = mesa_loader_url();
-    log::info!("Downloading renderer agent from {url}");
-    let response = crate::io::download::send_request(
-        crate::io::download::resources::HttpMode::Auto,
-        true,
-        &url,
-        None,
-        Some(std::time::Duration::from_secs(120)),
-    )
-    .await?
-    .error_for_status()?;
-    let bytes = response.bytes().await?;
-    anyhow::ensure!(
-        (1024..=64 * 1024 * 1024).contains(&bytes.len()),
-        "Invalid renderer agent size"
-    );
-    let temp = path.with_extension(format!("{}.tmp", std::process::id()));
-    tokio::fs::write(&temp, &bytes).await?;
-    tokio::fs::rename(&temp, &path).await?;
-    Ok(path)
 }
 
 /// Run the pre-launch command like CE: failures are logged, never fatal.

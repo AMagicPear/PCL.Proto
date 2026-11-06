@@ -16,9 +16,7 @@
 
 ```text
 crates/pcl-core/src/    启动器核心，不依赖 Tauri
-  app/
-    resources.rs       启动器自带资源的定位（开发用 crate 目录，打包用 .app）
-    secrets.rs         宿主注入的 CurseForge / 微软 OAuth 凭据
+  secrets.rs           宿主注入的 CurseForge / 微软 OAuth 凭据
   io/
     files.rs           路径校验、安全拼接、SHA-1、打开目录（对应 IO/Files）
     download/          下载器、Range 分段、全局连接/带宽配额（对应 IO/Download）

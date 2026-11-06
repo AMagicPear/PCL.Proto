@@ -1,11 +1,14 @@
+//! 设备标识；只属于启动器自身，核心库不参与。
+
 use std::process::Command;
 
 #[cfg(target_os = "macos")]
-pub fn get_board_serial() -> anyhow::Result<String> {
+fn get_board_serial() -> Result<String, String> {
     let output = Command::new("system_profiler")
         .arg("SPHardwareDataType")
-        .output()?;
-    let stdout = String::from_utf8(output.stdout)?;
+        .output()
+        .map_err(|e| e.to_string())?;
+    let stdout = String::from_utf8(output.stdout).map_err(|e| e.to_string())?;
 
     match stdout
         .lines()
@@ -13,14 +16,12 @@ pub fn get_board_serial() -> anyhow::Result<String> {
         .and_then(|line| line.split_whitespace().nth(3))
     {
         Some(serial) => Ok(serial.to_string()),
-        None => Err(anyhow::anyhow!(
-            "Failed to extract serial number from system_profiler output"
-        )),
+        None => Err("Failed to extract serial number from system_profiler output".into()),
     }
 }
 
 #[cfg(target_os = "linux")]
-pub fn get_board_serial() -> anyhow::Result<String> {
+fn get_board_serial() -> Result<String, String> {
     // 首先尝试 DMI 路径
     let dmi_paths = [
         "/sys/class/dmi/id/board_serial",
@@ -45,55 +46,47 @@ pub fn get_board_serial() -> anyhow::Result<String> {
     if let Ok(output) = Command::new("dmidecode")
         .args(["-s", "baseboard-serial-number"])
         .output()
+        && output.status.success()
     {
-        if output.status.success() {
-            let serial = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if !serial.is_empty() && serial != "None" {
-                return Ok(serial);
-            }
+        let serial = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        if !serial.is_empty() && serial != "None" {
+            return Ok(serial);
         }
     }
 
-    Err(anyhow::anyhow!("Could not retrieve board serial number"))
+    Err("Could not retrieve board serial number".into())
 }
 
 #[cfg(target_os = "windows")]
-pub fn get_board_serial() -> anyhow::Result<String> {
+fn get_board_serial() -> Result<String, String> {
     use std::os::windows::process::CommandExt;
     let output = Command::new("wmic")
         .args(["baseboard", "get", "serialnumber"])
         .creation_flags(0x08000000) // CREATE_NO_WINDOW
-        .output()?;
+        .output()
+        .map_err(|e| e.to_string())?;
 
-    let output = String::from_utf8(output.stdout)?;
+    let output = String::from_utf8(output.stdout).map_err(|e| e.to_string())?;
     let mut lines = output.lines();
     lines.next();
     let serial = lines.next().map(|x| x.trim().to_string());
-    serial.ok_or_else(|| anyhow::anyhow!("serial number not found in output"))
+    serial.ok_or_else(|| "serial number not found in output".to_owned())
 }
 
-/// Device identity, mirroring `PCL.Core.Utils.Secret.Identify`.
-///
-/// Proto keeps its per-platform serial lookup instead of WMI; the launcher id
-/// derivation stays compatible with existing `pcl_identifier.txt` files.
+/// 设备标识，对照 `PCL.Core.Utils.Secret.Identify`。
 pub struct Identify;
 
 impl Identify {
-    /// Raw hardware identifier used as the hash input.
-    pub fn raw_id() -> anyhow::Result<String> {
+    /// 参与哈希的原始硬件标识。
+    pub fn raw_id() -> Result<String, String> {
         get_board_serial()
     }
 
-    /// Stable launcher identifier persisted in `pcl_identifier.txt`.
-    pub fn launcher_id() -> anyhow::Result<String> {
-        Ok(format!("{:x}", get_pcl_hash(&Self::raw_id()?)))
+    /// 持久化在 `pcl_identifier.txt` 里的启动器标识。
+    pub fn launcher_id() -> Result<String, String> {
+        Ok(format!(
+            "{:x}",
+            pcl_core::utils::hash::get_pcl_hash(&Self::raw_id()?)
+        ))
     }
-}
-
-pub fn get_pcl_hash(str: &str) -> u64 {
-    let mut result = 5381_u64;
-    for c in str.chars() {
-        result = (result << 5) ^ result ^ c as u64;
-    }
-    result ^ 0xA98F501BC684032F_u64
 }

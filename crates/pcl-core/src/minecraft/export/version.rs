@@ -237,23 +237,6 @@ pub async fn export_minecraft_version(
     .await
 }
 
-pub async fn open_minecraft_wiki(url: String) -> Result<(), String> {
-    let parsed = reqwest::Url::parse(&url).map_err(|error| error.to_string())?;
-    if parsed.scheme() != "https"
-        || !parsed
-            .host_str()
-            .is_some_and(|host| host == "minecraft.wiki" || host.ends_with(".minecraft.wiki"))
-        || !parsed.username().is_empty()
-        || parsed.password().is_some()
-        || parsed.port().is_some()
-    {
-        return Err("Invalid Minecraft Wiki URL".into());
-    }
-    tokio::task::spawn_blocking(move || crate::utils::external::open(parsed.as_str()))
-        .await
-        .map_err(|error| error.to_string())?
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -266,19 +249,6 @@ mod tests {
             std::env::temp_dir().join(format!("pcl-export-test-{}", uuid::Uuid::new_v4())),
         )
         .unwrap()
-    }
-
-    #[tokio::test]
-    async fn refuses_external_or_unsafe_wiki_urls() {
-        for url in [
-            "http://minecraft.wiki/w/Test",
-            "https://minecraft.wiki.evil.test",
-            "https://minecraft.wiki:8443/w/Test",
-            "https://user:pass@minecraft.wiki",
-            "file:///tmp/test",
-        ] {
-            assert!(open_minecraft_wiki(url.into()).await.is_err(), "{url}");
-        }
     }
 
     #[tokio::test]

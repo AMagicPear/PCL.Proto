@@ -1,6 +1,6 @@
 //! macOS 应用包内的只读前端资源，通过 Tauri 的资源协议提供。
 //!
-//! 启动器自带的 JAR 辅助程序等资源由 `pcl_core::app::resources` 解析，不在这一层。
+//! 启动器自带的辅助资源由 [`crate::assets`] 解析，这里只处理前端资源。
 
 #[cfg(not(dev))]
 use std::path::{Path, PathBuf};
@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 #[cfg(not(dev))]
 mod frontend {
     use super::*;
-    use pcl_core::app::resources::bundle_root;
+    use crate::assets::bundle_root;
     use std::{borrow::Cow, collections::BTreeMap};
     use tauri::utils::assets::{AssetKey, AssetsIter, CspHash};
 

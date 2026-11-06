@@ -4,58 +4,6 @@ use std::{
 };
 
 use crate::minecraft::instance::McInstance;
-use crate::utils::platform::OS;
-
-pub fn launcher_minecraft_directory() -> Option<PathBuf> {
-    let executable = std::env::current_exe().ok()?.canonicalize().ok()?;
-    let appimage = std::env::var_os("APPIMAGE").map(PathBuf::from);
-    let os = OS::current();
-    if os == OS::macOS {
-        return None;
-    }
-    // An AppImage's executable lives in a temporary, read-only mount.
-    let executable = if os == OS::Linux {
-        appimage
-            .as_deref()
-            .filter(|path| path.is_absolute() && path.is_file())
-            .unwrap_or(&executable)
-    } else {
-        &executable
-    };
-    Some(executable.parent()?.join(".minecraft"))
-}
-
-pub fn official_minecraft_directory() -> Option<PathBuf> {
-    let dirs = directories::BaseDirs::new()?;
-    Some(match OS::current() {
-        OS::Windows => dirs.config_dir().join(".minecraft"),
-        OS::Linux => dirs.home_dir().join(".minecraft"),
-        OS::macOS => dirs
-            .home_dir()
-            .join("Library/Application Support/minecraft"),
-    })
-}
-
-pub fn create_default_directory(
-    config_dir: &Path,
-    portable: Option<&Path>,
-) -> std::io::Result<PathBuf> {
-    let prepare = |path: &Path| -> std::io::Result<PathBuf> {
-        fs::create_dir_all(path.join("versions"))?;
-        tempfile::tempfile_in(path)?;
-        path.canonicalize()
-    };
-    if let Some(path) = portable {
-        match prepare(path) {
-            Ok(path) => return Ok(path),
-            Err(error) => log::warn!(
-                "Cannot use launcher-local Minecraft directory {}: {error}; using config directory",
-                path.display()
-            ),
-        }
-    }
-    prepare(&config_dir.join(".minecraft"))
-}
 
 pub fn discover_repositories(
     known: &[McFolder],

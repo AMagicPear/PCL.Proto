@@ -71,7 +71,7 @@ pub struct MicrosoftProvider {
 impl MicrosoftProvider {
     /// 使用配置的 Client ID，未配置时直接报配置错误（CE 同样不接受空配置）。
     pub fn new() -> AuthResult<Self> {
-        let client_id = crate::app::secrets::ms_oauth_client_id().ok_or_else(|| {
+        let client_id = crate::secrets::ms_oauth_client_id().ok_or_else(|| {
             AuthError::configuration(
                 "未配置微软 OAuth 的 Client ID：请在构建时设置 MS_CLIENT_ID，或通过 .env / 运行环境变量提供",
             )
@@ -418,7 +418,7 @@ mod tests {
 
     #[test]
     fn provider_requires_a_configured_client_id() {
-        if crate::app::secrets::ms_oauth_client_id().is_some() {
+        if crate::secrets::ms_oauth_client_id().is_some() {
             return;
         }
         match MicrosoftProvider::new() {

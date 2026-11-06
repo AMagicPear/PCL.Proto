@@ -105,15 +105,10 @@ pub async fn save_loader_file(
     .map_err(|error| format!("{error:#}"))
 }
 
-pub async fn open_loader_changelog(
-    loader: String,
-    game: String,
-    version: String,
-) -> Result<(), String> {
-    let (_, url) = urls(&loader, &game, &version).map_err(|e| e.to_string())?;
-    tokio::task::spawn_blocking(move || crate::utils::external::open(&url))
-        .await
-        .map_err(|e| e.to_string())?
+/// 加载器更新日志的地址；打开浏览器由宿主完成。
+pub fn changelog_url(loader: &str, game: &str, version: &str) -> Result<String, String> {
+    let (_, url) = urls(loader, game, version).map_err(|e| e.to_string())?;
+    Ok(url)
 }
 
 #[cfg(test)]
