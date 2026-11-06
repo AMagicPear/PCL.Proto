@@ -17,11 +17,9 @@
 ```text
 crates/pcl-core/src/    启动器核心，不依赖 Tauri
   app/
-    config.rs          ConfigManager、配置文件读写、设置迁移
-    metadata.rs        启动器名称、版本、User-Agent 常量（对应 App/Metadata）
-    states.rs          AppState、LauncherSetup、WindowSettings（对应 App/States）
     visibility.rs      启动器可见性策略与会话联动（窗口动作由宿主实现）
     resources.rs       启动器自带资源的定位（开发用 crate 目录，打包用 .app）
+    secrets.rs         宿主注入的 CurseForge / 微软 OAuth 凭据
   io/
     files.rs           路径校验、安全拼接、SHA-1、打开目录（对应 IO/Files）
     download/          下载器、Range 分段、全局连接/带宽配额（对应 IO/Download）
@@ -69,7 +67,8 @@ crates/pcl-core/src/    启动器核心，不依赖 Tauri
     toys.rs            今日人品
 ```
 
-`src-tauri/src/` 是 Tauri 宿主：`commands/` 是 129 个 IPC 适配命令，`secrets.rs` 注入凭据，
+`src-tauri/src/` 是 Tauri 宿主：`config/` 保存配置系统（`ConfigManager`、`AppState`、档案与登录会话），
+`login/` 是交互式登录流程，`commands/` 是 130 个 IPC 适配命令，`secrets.rs` 注入凭据，
 `window.rs` 提供窗口动作，`resources.rs`/`protocol.rs` 负责打包资源与自定义协议。
 
 ## 3. 关键结构映射
@@ -91,7 +90,7 @@ crates/pcl-core/src/    启动器核心，不依赖 Tauri
 | `McInstanceFolder`（CE 快捷目录）               | `minecraft::instance::McInstanceFolder`                           | 实例/存档/模组快捷目录。                                                                              |
 | `Profile.Models.McProfile` / `ProfileType`      | `minecraft::profile::{McProfile, ProfileType}`                    | 统一账户档案；保留 Microsoft/Authlib/Xbox 启动所需字段。                                              |
 | `Profile.Models.SafeProfile`                    | `minecraft::profile::SafeProfile`                                 | `get_profiles` 的 UI 视图，不返回 access/refresh token、xuid 或密码。                                 |
-| `Profile.ProfileService` / `ProfileManagement`  | `minecraft::profile::service`                                     | 档案增删改查与选择，写入走 `ConfigManager::update` 事务。                                             |
+| `Profile.ProfileService` / `ProfileManagement`  | `src-tauri/src/config/profiles.rs`（`config::profiles`）        | 档案增删改查与选择属于宿主配置；写入走 `ConfigManager::update` 事务。                                  |
 | `Profile.Authentication.*Provider`              | `minecraft::profile::auth::{microsoft, authlib, connect}`         | 微软 OAuth+Xbox+Mojang、authlib-injector、Yggdrasil Connect 三种登录方式。                            |
 | `IdentityModel.OAuth` / `Yggdrasil`             | `minecraft::profile::auth::{oauth, yggdrasil}`                    | 设备码/令牌响应校验与传统 Yggdrasil 端点封装。                                                        |
 | `MyMsgLogin` 弹窗轮询                           | `minecraft::profile::auth::session`                               | 登录会话状态机：设备码、角色选择、取消，前端轮询状态。                                                |

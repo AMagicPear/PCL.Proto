@@ -589,14 +589,15 @@ mod inheritance_tests {
         fs::write(version.join("test.jar"), b"jar").unwrap();
         let repo = McFolder::new("test", root.clone());
         let instance = McInstance::from_version_folder(&version, &repo).unwrap();
-        let state = crate::app::config::AppState {
-            active_game_instance: Some(Arc::new(instance.clone())),
-            ..Default::default()
-        };
-        assert!(crate::minecraft::java::preference::current_instance(&state, &version).is_ok());
         assert!(
-            crate::minecraft::java::preference::current_instance(&state, &root.join("other"))
-                .is_err()
+            crate::minecraft::java::preference::current_instance(Some(&instance), &version).is_ok()
+        );
+        assert!(
+            crate::minecraft::java::preference::current_instance(
+                Some(&instance),
+                &root.join("other")
+            )
+            .is_err()
         );
         assert_eq!(
             prepare_shortcut_directory(&instance, &instance.directory, McInstanceFolder::Instance)

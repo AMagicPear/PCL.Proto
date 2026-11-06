@@ -279,18 +279,11 @@ fn downloadable_java(
 pub(super) async fn select_java(
     requirements: crate::minecraft::java::requirements::JavaRequirements,
     task_id: i32,
+    java: &crate::minecraft::java::JavaState,
 ) -> anyhow::Result<Option<crate::minecraft::java::JavaEntry>> {
     use crate::minecraft::java::preference::{self, InstanceJavaSettings};
-    let known = crate::minecraft::java::refresh(false)
-        .await
-        .map_err(anyhow::Error::msg)?;
-    let global = crate::app::config::ConfigManager::instance()
-        .app_state
-        .lock()
-        .await
-        .launcher_setup
-        .selected_java
-        .clone();
+    let known = java.runtimes.clone();
+    let global = java.selected.clone();
     crate::io::download::tasks::blocking(task_id, move || {
         let selected = preference::select(
             &known,
@@ -344,6 +337,7 @@ pub async fn prepare_forgelike_java(
     client: &super::MinecraftApiClient,
     version_id: String,
     loader: super::LoaderInstall,
+    java: &crate::minecraft::java::JavaState,
 ) -> Result<Option<JavaInstallOffer>, String> {
     if !requires_java(&loader, &version_id).map_err(|e| e.to_string())? {
         return Ok(None);
@@ -353,7 +347,7 @@ pub async fn prepare_forgelike_java(
         .await
         .map_err(|e| e.to_string())?;
     let requirements = java_requirements(&metadata, &version_id);
-    if select_java(requirements.clone(), -1)
+    if select_java(requirements.clone(), -1, java)
         .await
         .map_err(|e| e.to_string())?
         .is_some()
@@ -367,15 +361,19 @@ pub async fn prepare_forgelike_java(
     }))
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) async fn ensure_java(
+    client: &super::MinecraftApiClient,
     metadata: &Value,
     game: &str,
     install_java: bool,
     task_id: i32,
     on_event: &EventSink<super::TaskItemReport>,
+    java: &crate::minecraft::java::JavaState,
+    paths: &crate::runtime::RuntimePaths,
 ) -> anyhow::Result<crate::minecraft::java::JavaEntry> {
     let requirements = java_requirements(metadata, game);
-    if let Some(java) = select_java(requirements.clone(), task_id).await? {
+    if let Some(java) = select_java(requirements.clone(), task_id, java).await? {
         if install_java {
             on_event(super::TaskItemReport {
                 task_id,
@@ -394,12 +392,11 @@ pub(super) async fn ensure_java(
     );
     let requirements = downloadable_java(&requirements)
         .context("No compatible Java can be downloaded automatically")?;
-    let config = crate::app::config::ConfigManager::instance();
     let channel = std::sync::Arc::clone(on_event);
     let runtime = crate::minecraft::java::install::install(
         requirements,
-        config.java_runtime_dir(),
-        config.api_client.api_bases_async().await,
+        paths.java_runtime_dir.clone(),
+        client.api_bases_async().await,
         move |progress| {
             channel(super::TaskItemReport {
                 task_id,
@@ -416,16 +413,7 @@ pub(super) async fn ensure_java(
         },
     )
     .await?;
-    let runtime = crate::io::download::tasks::blocking(task_id, move || {
-        config
-            .update(|state| {
-                state.java_runtimes.push(runtime.clone());
-                crate::minecraft::java::sort_list(&mut state.java_runtimes);
-                Ok(runtime)
-            })
-            .map_err(anyhow::Error::msg)
-    })
-    .await??;
+    // 新安装的运行时由宿主写回配置；这里只负责返回它。
     on_event(super::TaskItemReport {
         task_id,
         item_id: 10,
@@ -474,6 +462,7 @@ fn tail(path: &Path) -> anyhow::Result<String> {
     Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) async fn run_processors(
     prepared: &PreparedInstaller,
     java: &crate::minecraft::java::JavaEntry,
@@ -482,6 +471,7 @@ pub(super) async fn run_processors(
     vanilla_jar: &Path,
     task_id: i32,
     on_event: &EventSink<super::TaskItemReport>,
+    paths: &crate::runtime::RuntimePaths,
 ) -> anyhow::Result<Value> {
     let root = prepared.directory.path();
     let vanilla_dir = root.join("versions").join(game);
@@ -492,7 +482,7 @@ pub(super) async fn run_processors(
         serde_json::to_vec(metadata)?,
     )?;
     fs::write(root.join("launcher_profiles.json"), b"{\"profiles\":{}}")?;
-    let bridge = crate::minecraft::launch::settings::forge_installer()?;
+    let bridge = crate::minecraft::launch::settings::forge_installer(paths)?;
     let classpath = std::env::join_paths([bridge.as_path(), prepared.archive.as_path()])?;
     let stdout = root.join("installer.stdout.log");
     let stderr = root.join("installer.stderr.log");
@@ -1046,7 +1036,6 @@ mod tests {
     #[test]
     #[ignore = "Downloads a real installer, Minecraft client and processor dependencies"]
     fn real_installer_processors_smoke() {
-        let _ = crate::app::config::ConfigManager::instance();
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
@@ -1078,6 +1067,11 @@ mod tests {
             install_java: false,
         };
         let events = event_sink(|_| ());
+        let paths = crate::runtime::RuntimePaths {
+            config_dir: std::env::temp_dir().join("pcl-forge-smoke"),
+            java_runtime_dir: std::env::temp_dir().join("pcl-forge-smoke-jre"),
+        };
+        let java_state = crate::minecraft::java::JavaState::default();
         let prepared = prepare(&client, &downloader, game, &loader, 0, &events)
             .await
             .unwrap();
@@ -1091,11 +1085,11 @@ mod tests {
             .await
             .unwrap();
         let profile = if prepared.profile.kind == InstallerKind::Processors {
-            let java = select_java(java_requirements(&metadata, game), 0)
+            let java = select_java(java_requirements(&metadata, game), 0, &java_state)
                 .await
                 .unwrap()
                 .unwrap();
-            run_processors(&prepared, &java, &metadata, game, &jar, 0, &events)
+            run_processors(&prepared, &java, &metadata, game, &jar, 0, &events, &paths)
                 .await
                 .unwrap()
         } else {
@@ -1156,6 +1150,8 @@ mod tests {
                 Some(&loader),
                 0,
                 &events,
+                &java_state,
+                &paths,
             )
             .await
             .unwrap();

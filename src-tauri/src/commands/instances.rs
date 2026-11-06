@@ -1,11 +1,7 @@
+use crate::config::{current_instance, manager::ConfigManager, states::AppState};
 use pcl_core::{
-    AppState,
-    app::config::ConfigManager,
     io::files::open_directory,
-    minecraft::{
-        instance::{McInstance, McInstanceFolder},
-        java::preference::current_instance,
-    },
+    minecraft::instance::{McInstance, McInstanceFolder},
 };
 use std::sync::Arc;
 use tauri::State;
@@ -26,7 +22,7 @@ pub async fn set_isolation_default(
 ) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         ConfigManager::instance()
-            .update(|state| pcl_core::minecraft::instance::isolation::set_default(state, value))
+            .update(|state| crate::config::isolation::set_default(state, value))
     })
     .await
     .map_err(|error| error.to_string())?
@@ -68,7 +64,10 @@ pub async fn open_instance_folder(
         let state = ConfigManager::instance().app_state.blocking_lock();
         let instance =
             current_instance(&state, &instance_directory).map_err(|error| error.to_string())?;
-        let game_directory = pcl_core::minecraft::instance::isolation::directory(&state, instance);
+        let game_directory = pcl_core::minecraft::instance::isolation::directory(
+            &state.instance_isolation,
+            instance,
+        );
         let directory = pcl_core::minecraft::instance::prepare_shortcut_directory(
             instance,
             game_directory,

@@ -10,12 +10,14 @@ use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_log::{Target, TargetKind};
 
 mod commands;
+mod config;
+mod login;
 mod protocol;
 mod resources;
 mod secrets;
 mod window;
 
-pub use pcl_core::app::config::{AppState, CONFIG_MANAGER, ConfigManager};
+pub use config::manager::{AppState, CONFIG_MANAGER, ConfigManager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -49,12 +51,12 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
-            if let Ok(config_manager) = pcl_core::app::config::CONFIG_MANAGER.as_ref() {
+            if let Ok(config_manager) = crate::config::manager::CONFIG_MANAGER.as_ref() {
                 app.manage(Arc::clone(&config_manager.app_state));
                 app.manage(&config_manager.api_client);
                 pcl_core::link::init(config_manager.identifier_path());
             } else {
-                log::error!("Config manager failed: {:?}", pcl_core::app::config::CONFIG_MANAGER.as_ref().err());
+                log::error!("Config manager failed: {:?}", crate::config::manager::CONFIG_MANAGER.as_ref().err());
                 app.dialog()
                     .message("Could not load the launcher configuration. The existing configuration has not been overwritten. Check the logs before restarting.")
                     .title("Fatal Error! 完🥚辣！")
@@ -68,9 +70,9 @@ pub fn run() {
             // let window = app.get_webview_window("main").unwrap();
             // window.on_navigation(move |url| {});
             // search for Java during init
-            if pcl_core::app::config::CONFIG_MANAGER.is_ok() {
+            if crate::config::manager::CONFIG_MANAGER.is_ok() {
                 tauri::async_runtime::spawn(async move {
-                    if let Err(error) = pcl_core::minecraft::java::refresh(false).await {
+                    if let Err(error) = config::java::refresh(false).await {
                         log::error!("Java scan failed: {error}");
                     }
                 });

@@ -96,7 +96,8 @@ pub async fn fetch_profile_skin(
     profile_id: String,
     refresh: bool,
 ) -> Result<ProfileSkin, String> {
-    use pcl_core::minecraft::profile::{ProfileType, service};
+    use crate::config::profiles as service;
+    use pcl_core::minecraft::profile::ProfileType;
 
     let id = profile_id.clone();
     let profile = tauri::async_runtime::spawn_blocking(move || service::find(&id))
@@ -186,7 +187,8 @@ pub async fn change_offline_skin(
     source: Option<std::path::PathBuf>,
     slim: bool,
 ) -> Result<(), pcl_core::minecraft::profile::auth::AuthError> {
-    use pcl_core::minecraft::profile::{OfflineSkin, ProfileType, auth::AuthError, service};
+    use crate::config::profiles as service;
+    use pcl_core::minecraft::profile::{OfflineSkin, ProfileType, auth::AuthError};
 
     let skin = if let Some(source) = source {
         let size = tokio::fs::metadata(&source)
@@ -208,7 +210,7 @@ pub async fn change_offline_skin(
         None
     };
     service::blocking(move || {
-        pcl_core::app::config::ConfigManager::instance()
+        crate::config::manager::ConfigManager::instance()
             .update(|state| {
                 let profile = state
                     .profile
@@ -346,11 +348,11 @@ pub async fn change_microsoft_skin(
     source: std::path::PathBuf,
     slim: bool,
 ) -> Result<(), pcl_core::minecraft::profile::auth::AuthError> {
-    use pcl_core::minecraft::profile::auth::session;
-    use pcl_core::minecraft::profile::service;
+    use crate::config::profiles;
+    use crate::login;
 
     let id = profile_id.clone();
-    let stored = tauri::async_runtime::spawn_blocking(move || service::find(&id))
+    let stored = tauri::async_runtime::spawn_blocking(move || profiles::find(&id))
         .await
         .map_err(|error| {
             pcl_core::minecraft::profile::auth::AuthError::new("profile_store", error.to_string())
@@ -370,12 +372,12 @@ pub async fn change_microsoft_skin(
         .map(|name| name.to_string_lossy().into_owned())
         .unwrap_or_else(|| "skin.png".into());
 
-    let profile = session::login_for_launch(&stored, false).await?;
+    let profile = login::login_for_launch(&stored, false).await?;
     let uploaded = upload_skin(&profile.access_token, &bytes, &file_name, slim).await;
     match uploaded {
         // CE：令牌被拒绝时重新登录一次再上传。
         Err(error) if error.code == "invalid_token" => {
-            let profile = session::refresh_microsoft(&stored).await?;
+            let profile = login::refresh_microsoft(&stored).await?;
             upload_skin(&profile.access_token, &bytes, &file_name, slim).await?;
         }
         result => result?,

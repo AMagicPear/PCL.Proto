@@ -1,10 +1,9 @@
+use crate::config::{current_instance, manager::ConfigManager, states::AppState};
 use pcl_core::{
-    AppState,
-    app::config::ConfigManager,
     io::files::open_directory,
     minecraft::java::{
         self, JavaEntry, JavaSource,
-        preference::{InstanceJavaSettings, JavaLaunchInfo, JavaPreference, current_instance},
+        preference::{InstanceJavaSettings, JavaLaunchInfo, JavaPreference},
     },
 };
 use std::sync::Arc;
@@ -57,7 +56,7 @@ pub async fn get_java_list(
 
 #[tauri::command]
 pub async fn refresh_java_list() -> Result<Vec<JavaEntry>, String> {
-    java::refresh(true).await
+    crate::config::java::refresh(true).await
 }
 
 #[derive(serde::Serialize)]
@@ -226,7 +225,7 @@ pub async fn open_java_folder(java_exe: std::path::PathBuf) -> Result<(), String
 pub async fn prepare_game_java(
     instance_directory: std::path::PathBuf,
 ) -> Result<JavaLaunchInfo, String> {
-    java::preference::prepare(instance_directory).await
+    crate::config::java::prepare(instance_directory).await
 }
 
 static JAVA_INSTALL: Mutex<Option<tokio::task::AbortHandle>> = Mutex::const_new(None);
@@ -239,7 +238,7 @@ pub async fn download_game_java(
     if active.is_some() {
         return Err("A Java download is already running".into());
     }
-    let info = java::preference::prepare(instance_directory).await?;
+    let info = crate::config::java::prepare(instance_directory).await?;
     let config = ConfigManager::instance();
     let bases = config.api_client.api_bases_async().await;
     let task = tauri::async_runtime::spawn(java::install::install(

@@ -1,6 +1,6 @@
 use super::{JavaEntry, launcher_directory, requirements::JavaRequirements};
 
-use crate::{app::config::AppState, minecraft::instance::McInstance};
+use crate::minecraft::instance::McInstance;
 use anyhow::{Context, ensure};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -59,13 +59,10 @@ impl JavaLaunchInfo {
     }
 }
 pub fn current_instance<'a>(
-    state: &'a AppState,
+    active: Option<&'a McInstance>,
     expected: &Path,
 ) -> anyhow::Result<&'a McInstance> {
-    let instance = state
-        .active_game_instance
-        .as_deref()
-        .context("No active Minecraft instance")?;
+    let instance = active.context("No active Minecraft instance")?;
     ensure!(
         instance.directory == expected,
         "The active Minecraft instance changed; try again"
@@ -202,44 +199,4 @@ pub fn validate_preference(preference: &JavaPreference) -> anyhow::Result<()> {
         _ => (),
     }
     Ok(())
-}
-
-pub async fn prepare(expected: PathBuf) -> Result<JavaLaunchInfo, String> {
-    async fn evaluate(expected: PathBuf) -> Result<JavaLaunchInfo, String> {
-        let config = crate::app::config::ConfigManager::instance();
-        let (instance, runtimes, global, settings) = {
-            let state = config.app_state.lock().await;
-            let instance = current_instance(&state, &expected)
-                .map_err(|e| e.to_string())?
-                .clone();
-            let settings = state
-                .java_preferences
-                .get(&instance.directory)
-                .cloned()
-                .unwrap_or_default();
-            (
-                instance,
-                state.java_runtimes.clone(),
-                state.launcher_setup.selected_java.clone(),
-                settings,
-            )
-        };
-        let result = tokio::task::spawn_blocking(move || {
-            let instance = instance
-                .refresh()
-                .map_err(|e| format!("Cannot refresh Minecraft instance: {e:?}"))?;
-            JavaLaunchInfo::for_instance(&instance, &runtimes, global.as_deref(), &settings)
-                .map_err(|e| e.to_string())
-        })
-        .await
-        .map_err(|e| e.to_string())?;
-        current_instance(&*config.app_state.lock().await, &expected).map_err(|e| e.to_string())?;
-        result
-    }
-    let mut info = evaluate(expected.clone()).await?;
-    if info.runtime.is_none() {
-        super::refresh(false).await?;
-        info = evaluate(expected).await?;
-    }
-    Ok(info)
 }

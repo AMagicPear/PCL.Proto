@@ -1,7 +1,7 @@
 //! Persisted launcher state, mirroring `PCL.Core.App.States` groups.
 
-use crate::{
-    app::metadata::constants,
+use crate::config::metadata::constants;
+use pcl_core::{
     io::net::http::api_client::ApiProvider,
     minecraft::{
         instance::{McInstance, folder::McFolder},
@@ -79,7 +79,7 @@ impl ProfileConfig {
 /// Something that would be shared all over the app and may be displayed
 #[derive(Clone, serde::Serialize, serde::Deserialize, Default)]
 pub struct AppState {
-    pub java_runtimes: Vec<crate::minecraft::java::JavaEntry>,
+    pub java_runtimes: Vec<pcl_core::minecraft::java::JavaEntry>,
     #[serde(default)]
     pub profile: ProfileConfig,
     #[serde(rename = "pcl_setup_info")]
@@ -89,39 +89,39 @@ pub struct AppState {
     pub active_repo_path: PathBuf,
     #[serde(default)]
     pub java_preferences:
-        HashMap<PathBuf, crate::minecraft::java::preference::InstanceJavaSettings>,
+        HashMap<PathBuf, pcl_core::minecraft::java::preference::InstanceJavaSettings>,
     #[serde(default)]
-    pub download_settings: Option<crate::io::download::resources::DownloadSettings>,
+    pub download_settings: Option<pcl_core::io::download::resources::DownloadSettings>,
     #[serde(default)]
     pub log_max_lines: Option<u32>,
     #[serde(default)]
     pub window_settings: Option<WindowSettings>,
     #[serde(default)]
-    pub memory_settings: Option<crate::minecraft::launch::memory::MemorySettings>,
+    pub memory_settings: Option<pcl_core::minecraft::launch::memory::MemorySettings>,
     #[serde(default)]
     pub instance_memory_settings:
-        HashMap<PathBuf, crate::minecraft::launch::memory::MemorySettings>,
+        HashMap<PathBuf, pcl_core::minecraft::launch::memory::MemorySettings>,
     #[serde(default)]
-    pub memory_custom: Option<crate::minecraft::launch::memory::MemoryCustom>,
+    pub memory_custom: Option<pcl_core::minecraft::launch::memory::MemoryCustom>,
     #[serde(default)]
-    pub instance_memory_custom: HashMap<PathBuf, crate::minecraft::launch::memory::MemoryCustom>,
+    pub instance_memory_custom: HashMap<PathBuf, pcl_core::minecraft::launch::memory::MemoryCustom>,
     #[serde(default)]
-    pub isolation_default: crate::minecraft::instance::isolation::IsolationDefault,
+    pub isolation_default: pcl_core::minecraft::instance::isolation::IsolationDefault,
     #[serde(default)]
     pub instance_isolation: HashMap<PathBuf, bool>,
     #[serde(default)]
-    pub launch_arguments: Option<crate::minecraft::launch::arguments::LaunchArguments>,
+    pub launch_arguments: Option<pcl_core::minecraft::launch::arguments::LaunchArguments>,
     #[serde(default)]
     pub instance_launch_arguments:
-        HashMap<PathBuf, crate::minecraft::launch::arguments::LaunchArguments>,
+        HashMap<PathBuf, pcl_core::minecraft::launch::arguments::LaunchArguments>,
     #[serde(default)]
-    pub launcher_visibility: crate::app::visibility::LauncherVisibility,
+    pub launcher_visibility: pcl_core::app::visibility::LauncherVisibility,
     #[serde(default)]
     pub instance_launch_settings:
-        HashMap<PathBuf, crate::minecraft::launch::settings::InstanceLaunchSettings>,
+        HashMap<PathBuf, pcl_core::minecraft::launch::settings::InstanceLaunchSettings>,
     #[serde(default)]
     pub renderer: u8,
-    #[serde(default = "crate::minecraft::launch::settings::default_version_info")]
+    #[serde(default = "crate::config::metadata::default_version_info")]
     pub version_info: String,
     #[serde(default = "default_true")]
     pub disable_jlw: bool,
@@ -130,7 +130,7 @@ pub struct AppState {
     #[serde(default)]
     pub disable_lwjgl_unsafe_agent: bool,
     #[serde(default)]
-    pub proxy: crate::io::net::proxy::ProxySettings,
+    pub proxy: pcl_core::io::net::proxy::ProxySettings,
     #[serde(default)]
     pub instance_descriptions: HashMap<PathBuf, String>,
 }

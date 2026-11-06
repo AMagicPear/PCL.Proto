@@ -53,13 +53,20 @@ Rust 侧分成两个 crate：`crates/pcl-core/` 承载全部领域逻辑且不�
 
 | crate / 位置            | 负责的内容                                                             |
 | ----------------------- | ---------------------------------------------------------------------- |
-| `pcl-core/src/app/`     | `ConfigManager`、`AppState`、凭据注入、可见性判定、启动器资源定位      |
+| `pcl-core/src/app/`     | 凭据注入、可见性判定、启动器自带的只读资源定位                         |
+| `pcl-core/src/runtime.rs` | `RuntimePaths`：宿主提供的配置目录与 Java 运行时目录                  |
 | `pcl-core/src/io/`      | 下载器、文件操作、HTTP 客户端、代理策略                                |
 | `pcl-core/src/minecraft/` | 版本、实例、安装、Java、启动、账户、导出与整合包                     |
 | `pcl-core/src/link/`    | 服务器列表 ping；启用 `link` feature 时提供 Terracotta 桥接            |
 | `pcl-core/src/events.rs` | `EventSink`：后台任务回传进度的普通回调，替代 Tauri 的 `Channel`      |
-| `src-tauri/src/commands/` | 129 个 `#[tauri::command]` 适配层，命令名与参数保持不变              |
+| `src-tauri/src/config/` | `ConfigManager`、`AppState`、档案与登录会话持久化、设置到领域类型的折算 |
+| `src-tauri/src/login/`  | 交互式登录流程（设备码、档案选择、取消与状态轮询）                     |
+| `src-tauri/src/commands/` | 130 个 `#[tauri::command]` 适配层，命令名与参数保持不变             |
 | `src-tauri/src/`        | 应用初始化、窗口动作、自定义 URI 协议、macOS 资源与凭据读取            |
+
+配置系统属于宿主应用：`config.json` 的路径、读写、单例与档案持久化都在 `src-tauri`；
+`pcl-core` 只接收显式输入（`AppState` 折算后的启动请求、`JavaState`、`RuntimePaths`、
+下载设置等），不读配置文件、不持全局状态。
 
 凭据由宿主注入：`src-tauri/src/secrets.rs` 按"编译期烧录 > 环境变量"读取
 `CURSEFORGE_API_KEY` 和 `MS_CLIENT_ID`，启动时调用 `pcl_core::app::secrets::install`；

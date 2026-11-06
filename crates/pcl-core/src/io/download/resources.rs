@@ -206,23 +206,6 @@ impl Drop for ConnectionLease {
 pub fn get_download_stats() -> DownloadStats {
     DOWNLOAD_RESOURCES.stats()
 }
-pub async fn set_download_settings(settings: DownloadSettings) -> Result<DownloadSettings, String> {
-    tokio::task::spawn_blocking(move || {
-        crate::app::config::ConfigManager::instance().update_download_settings(settings)
-    })
-    .await
-    .map_err(|e| e.to_string())?
-}
-
-pub async fn get_download_settings() -> Option<DownloadSettings> {
-    crate::app::config::ConfigManager::instance()
-        .app_state
-        .lock()
-        .await
-        .download_settings
-        .clone()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

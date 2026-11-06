@@ -1,4 +1,4 @@
-use pcl_core::{app::config::ConfigManager, minecraft::java::preference::current_instance};
+use crate::config::{current_instance, manager::ConfigManager};
 
 #[tauri::command]
 pub async fn get_launch_arguments(
@@ -26,11 +26,7 @@ pub async fn set_launch_arguments(
 ) -> Result<pcl_core::minecraft::launch::arguments::LaunchArguments, String> {
     tauri::async_runtime::spawn_blocking(move || {
         ConfigManager::instance().update(|state| {
-            pcl_core::minecraft::launch::arguments::update(
-                state,
-                instance_directory.as_deref(),
-                settings,
-            )
+            crate::config::arguments::update(state, instance_directory.as_deref(), settings)
         })
     })
     .await
@@ -57,7 +53,7 @@ pub async fn set_instance_launch_settings(
 ) -> Result<pcl_core::minecraft::launch::settings::InstanceLaunchSettings, String> {
     tauri::async_runtime::spawn_blocking(move || {
         ConfigManager::instance().update(|state| {
-            pcl_core::minecraft::launch::settings::update(state, &instance_directory, settings)
+            crate::config::launch_settings::update(state, &instance_directory, settings)
         })
     })
     .await

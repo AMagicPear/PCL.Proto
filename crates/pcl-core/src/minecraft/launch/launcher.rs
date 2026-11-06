@@ -7,20 +7,43 @@
 //! GPL-3.0 License | https://github.com/HMCL-dev/HMCL
 // use crate::app::config::constants::LAUNCHER_NAME;
 
-use crate::app::config::constants::{APP_VERSION, LAUNCHER_NAME};
 use crate::io::net::http::api_client::game::McVersion;
 use crate::minecraft::version::{McArgument, McArgumentValue, McRuleContext, rules_allow};
-use crate::{
-    app::config::AppState,
-    minecraft::{instance::McInstance, java::JavaEntry, profile::McProfile},
-};
+use crate::minecraft::{instance::McInstance, java::JavaEntry, profile::McProfile};
+use crate::runtime::RuntimePaths;
 use std::sync::Arc;
 
 /// `(自定义 JVM 参数, JVM 参数, 游戏参数)`，由 `metadata_arguments` 一次算好。
 type ArgumentGroups = (Vec<String>, Vec<String>, Vec<String>);
 
+/// 启动器身份：写进 `-Dminecraft.launcher.brand` 和脚本标题。
+#[derive(Clone, Debug)]
+pub struct LauncherBrand {
+    pub name: String,
+    pub version: String,
+}
+
+/// 启动一次游戏所需的全部输入；由宿主应用从自己的配置组装。
+pub struct LaunchRequest {
+    pub paths: RuntimePaths,
+    pub brand: LauncherBrand,
+    pub instance: Arc<McInstance>,
+    pub profile: McProfile,
+    pub java: Arc<JavaEntry>,
+    pub game_directory: std::path::PathBuf,
+    pub max_memory: usize,
+    pub initial_memory: Option<usize>,
+    pub width: Option<usize>,
+    pub height: Option<usize>,
+    pub launcher_size: bool,
+    pub arguments: crate::minecraft::launch::arguments::LaunchArguments,
+    pub extras: crate::minecraft::launch::settings::LaunchExtras,
+}
+
 /// Essential options for launching a Minecraft game
 pub struct LaunchOption {
+    paths: RuntimePaths,
+    brand: LauncherBrand,
     account: Arc<McProfile>,
     java_runtime: Arc<JavaEntry>,
     game_instance: Arc<McInstance>,
@@ -191,7 +214,7 @@ impl LaunchOption {
             script.push_str("@echo off\r\n");
             script.push_str(&format!(
                 "title {} - {}\r\n",
-                LAUNCHER_NAME, self.game_instance.name
+                self.brand.name, self.game_instance.name
             ));
             script.push_str("chcp 65001>nul\r\n");
             script.push_str(&format!(
@@ -253,9 +276,10 @@ impl LaunchOption {
         {
             return Ok(None);
         }
-        let path = crate::minecraft::launch::settings::java_wrapper().map_err(|error| {
-            GameLaunchError::Resource(format!("Cannot extract Java wrapper: {error}"))
-        })?;
+        let path =
+            crate::minecraft::launch::settings::java_wrapper(&self.paths).map_err(|error| {
+                GameLaunchError::Resource(format!("Cannot extract Java wrapper: {error}"))
+            })?;
         let mut args = Vec::new();
         if self.java_runtime.major_version() >= 9 {
             args.push("--add-exports".into());
@@ -263,9 +287,7 @@ impl LaunchOption {
         }
         args.push(format!(
             "-Doolloo.jlw.tmpdir={}",
-            crate::app::config::ConfigManager::instance()
-                .config_dir()
-                .display()
+            self.paths.config_dir.display()
         ));
         Ok(Some((args, path)))
     }
@@ -321,8 +343,11 @@ impl LaunchOption {
         ));
         args.push(format!("-Dio.netty.native.workdir={}", natives_path));
         // launcher info
-        args.push(format!("-Dminecraft.launcher.brand={}", LAUNCHER_NAME));
-        args.push(format!("-Dminecraft.launcher.version={}", APP_VERSION));
+        args.push(format!("-Dminecraft.launcher.brand={}", self.brand.name));
+        args.push(format!(
+            "-Dminecraft.launcher.version={}",
+            self.brand.version
+        ));
         args.extend(self.agent_arguments()?);
         Ok(args)
     }
@@ -344,21 +369,21 @@ impl LaunchOption {
         if self.extras.debug_log4j2 {
             let legacy = self.release_year().is_some_and(|year| year < 2017);
             let path = resource(
-                crate::minecraft::launch::settings::log4j2_config(legacy),
+                crate::minecraft::launch::settings::log4j2_config(&self.paths, legacy),
                 "log4j2 config",
             )?;
             args.push(format!("-Dlog4j.configurationFile={}", path.display()));
         }
         if self.extras.lwjgl_unsafe_agent && self.lwjgl_version().as_deref() == Some("3.4.1") {
             let path = resource(
-                crate::minecraft::launch::settings::lwjgl_unsafe_agent(),
+                crate::minecraft::launch::settings::lwjgl_unsafe_agent(&self.paths),
                 "LWJGL unsafe agent",
             )?;
             args.push(format!("-javaagent:{}", path.display()));
         }
         if self.extras.legacy_fix && self.needs_legacy_fix() {
             let path = resource(
-                crate::minecraft::launch::settings::legacy_fix(),
+                crate::minecraft::launch::settings::legacy_fix(&self.paths),
                 "LegacyFix",
             )?;
             args.push(format!("-javaagent:{}", path.display()));
@@ -373,7 +398,7 @@ impl LaunchOption {
         }
         // CE only ships the renderer agent for Windows.
         if self.extras.renderer != 0 && cfg!(windows) {
-            let path = crate::minecraft::launch::settings::mesa_loader_path();
+            let path = crate::minecraft::launch::settings::mesa_loader_path(&self.paths);
             if !path.is_file() {
                 return Err(GameLaunchError::Resource(
                     "Renderer agent is missing; start the game again to download it".into(),
@@ -451,8 +476,8 @@ impl LaunchOption {
                     .to_string_lossy()
                     .into_owned(),
             ),
-            ("launcher_name", LAUNCHER_NAME.into()),
-            ("launcher_version", APP_VERSION.into()),
+            ("launcher_name", self.brand.name.clone()),
+            ("launcher_version", self.brand.version.clone()),
             ("version_name", instance.name.clone()),
             ("version_type", self.extras.info.clone()),
             (
@@ -631,92 +656,40 @@ impl LaunchOption {
         Ok((custom_jvm, jvm, game))
     }
 
-    /// build a launch option from app state if it is possible
-    pub fn from_state(
-        state: &AppState,
-        java_selected: Arc<JavaEntry>,
-    ) -> Result<Self, GameLaunchError> {
-        if let Some(game_instance) = state.active_game_instance.as_ref() {
-            let Some(active_account) = state.profile.current() else {
-                return Err(GameLaunchError::MissingAccount);
-            };
-            active_account
-                .validate_for_launch()
-                .map_err(GameLaunchError::InvalidProfile)?;
-            let game_instance = Arc::new(game_instance.refresh().map_err(|error| {
-                GameLaunchError::InvalidMetadata(format!(
-                    "Cannot refresh Minecraft instance: {error:?}"
-                ))
-            })?);
-            let window = state.window_settings.as_ref();
-            let game_directory =
-                crate::minecraft::instance::isolation::directory(state, &game_instance).to_owned();
-            let memory = state
-                .instance_memory_settings
-                .get(&game_instance.directory)
-                .or(state.memory_settings.as_ref());
-            let (max_memory, initial_memory) = if let Some(settings) = memory {
-                let available = if matches!(
-                    settings,
-                    crate::minecraft::launch::memory::MemorySettings::Auto
-                ) {
-                    match sysinfo::System::new() {
-                        Ok(mut system) => {
-                            system.refresh_memory();
-                            system.available_memory()
-                        }
-                        Err(_) => 0,
-                    }
-                } else {
-                    0
-                };
-                crate::minecraft::launch::memory::resolve(
-                    settings,
-                    available,
-                    &game_instance,
-                    &game_directory,
-                    java_selected.is_64_bit,
-                )
-                .map_err(GameLaunchError::Memory)?
-            } else {
-                (state.launcher_setup.max_memory, None)
-            };
-            let custom =
-                window.filter(|settings| settings.mode == crate::app::config::WindowMode::Custom);
-            let global = state.launch_arguments.clone().unwrap_or_else(
-                crate::minecraft::launch::arguments::LaunchArguments::global_default,
-            );
-            let arguments = state
-                .instance_launch_arguments
-                .get(&game_instance.directory)
-                .map(|instance| instance.effective(&global))
-                .unwrap_or(global);
-            arguments
-                .validate(true)
-                .map_err(GameLaunchError::CustomArguments)?;
-            let extras =
-                crate::minecraft::launch::settings::resolve(state, Some(&game_instance.directory));
-            return Ok(Self {
-                account: Arc::new(active_account.clone()),
-                java_runtime: java_selected.clone(),
-                game_instance: game_instance.clone(),
-                game_directory,
-                max_memory,
-                initial_memory,
-                width: custom.map(|settings| settings.width as usize),
-                height: custom.map(|settings| settings.height as usize),
-                launcher_size: window.is_some_and(|settings| {
-                    settings.mode == crate::app::config::WindowMode::Launcher
-                }),
-                version_details: game_instance.read_version_json()?,
-                natives_path: game_instance.natives_path.clone(),
-                arguments,
-                extras,
-                server: None,
-                authlib: None,
-            });
-        }
-        Err(GameLaunchError::MissingInstance)
+    /// 用宿主组装好的输入创建启动选项。
+    pub fn new(request: LaunchRequest) -> Result<Self, GameLaunchError> {
+        request
+            .profile
+            .validate_for_launch()
+            .map_err(GameLaunchError::InvalidProfile)?;
+        let game_instance = Arc::new(request.instance.refresh().map_err(|error| {
+            GameLaunchError::InvalidMetadata(format!(
+                "Cannot refresh Minecraft instance: {error:?}"
+            ))
+        })?);
+        request
+            .arguments
+            .validate(true)
+            .map_err(GameLaunchError::CustomArguments)?;
+        Ok(Self {
+            paths: request.paths,
+            brand: request.brand,
+            account: Arc::new(request.profile),
+            java_runtime: request.java,
+            version_details: game_instance.read_version_json()?,
+            natives_path: game_instance.natives_path.clone(),
+            game_instance,
+            game_directory: request.game_directory,
+            max_memory: request.max_memory,
+            initial_memory: request.initial_memory,
+            width: request.width,
+            height: request.height,
+            launcher_size: request.launcher_size,
+            arguments: request.arguments,
+            extras: request.extras,
+            server: None,
+            authlib: None,
+        })
     }
 
     pub async fn prepare_natives(
@@ -728,9 +701,9 @@ impl LaunchOption {
         patch_macos_jna(&mut self.version_details, &context)?;
         if self.extras.renderer != 0
             && cfg!(windows)
-            && !crate::minecraft::launch::settings::mesa_loader_path().is_file()
+            && !crate::minecraft::launch::settings::mesa_loader_path(&self.paths).is_file()
         {
-            crate::minecraft::launch::settings::ensure_mesa_loader()
+            crate::minecraft::launch::settings::ensure_mesa_loader(&self.paths)
                 .await
                 .map_err(|error| anyhow::anyhow!("Cannot prepare renderer agent: {error}"))?;
         }
@@ -1040,6 +1013,37 @@ fn build_classpath(
         .map_err(|_| GameLaunchError::InvalidMetadata("Classpath is not valid Unicode".into()))
 }
 
+/// 测试里构造启动请求的最小输入。
+#[cfg(test)]
+pub(crate) fn test_request(
+    instance: Arc<McInstance>,
+    profile: McProfile,
+    java: Arc<JavaEntry>,
+    game_directory: std::path::PathBuf,
+) -> LaunchRequest {
+    LaunchRequest {
+        paths: RuntimePaths {
+            config_dir: std::env::temp_dir(),
+            java_runtime_dir: std::env::temp_dir(),
+        },
+        brand: LauncherBrand {
+            name: "PCL.Proto".into(),
+            version: "test".into(),
+        },
+        instance,
+        profile,
+        java,
+        game_directory,
+        max_memory: 2048,
+        initial_memory: None,
+        width: None,
+        height: None,
+        launcher_size: false,
+        arguments: crate::minecraft::launch::arguments::LaunchArguments::global_default(),
+        extras: Default::default(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1117,6 +1121,14 @@ mod tests {
         }))
         .unwrap();
         let mut option = LaunchOption {
+            paths: RuntimePaths {
+                config_dir: std::env::temp_dir(),
+                java_runtime_dir: std::env::temp_dir(),
+            },
+            brand: LauncherBrand {
+                name: "PCL.Proto".into(),
+                version: "test".into(),
+            },
             account: Arc::new(McProfile::yggdrasil(
                 "Name With Space",
                 "uuid",
@@ -1252,16 +1264,14 @@ mod tests {
                 .windows(2)
                 .any(|pair| pair == ["--accessToken", "secret token"])
         );
-        let state = AppState {
-            profile: crate::app::states::ProfileConfig {
-                last_used: 0,
-                profiles: vec![option.account.as_ref().clone()],
-            },
-            active_game_instance: Some(instance.clone()),
-            instance_isolation: [(version.clone(), false)].into(),
-            ..Default::default()
-        };
-        let shared = LaunchOption::from_state(&state, option.java_runtime.clone()).unwrap();
+        // 未隔离的实例使用全局目录。
+        let shared = LaunchOption::new(test_request(
+            instance.clone(),
+            option.account.as_ref().clone(),
+            option.java_runtime.clone(),
+            root.clone(),
+        ))
+        .unwrap();
         assert!(shared.launch_checked().unwrap().wait().unwrap().success());
         let shared_output = fs::read_to_string(root.join("captured")).unwrap();
         let shared_lines: Vec<_> = shared_output.lines().collect();
@@ -1274,35 +1284,29 @@ mod tests {
                 .windows(2)
                 .any(|pair| pair == ["--gameDir", root.to_str().unwrap()])
         );
-        let mut auto_state = state.clone();
-        auto_state.memory_settings = Some(crate::minecraft::launch::memory::MemorySettings::Auto);
-        let auto = LaunchOption::from_state(&auto_state, option.java_runtime.clone()).unwrap();
-        assert!(auto.launch_checked().unwrap().wait().unwrap().success());
-        let auto_output = fs::read_to_string(root.join("captured")).unwrap();
-        assert!(
-            auto_output
-                .lines()
-                .any(|arg| arg == format!("-Xmx{}m", auto.max_memory))
-        );
-        let mut custom_state = state.clone();
-        custom_state.memory_settings =
-            Some(crate::minecraft::launch::memory::MemorySettings::Custom {
-                maximum_mib: 3072,
-                initial_mib: Some(1024),
-            });
-        custom_state.launch_arguments =
-            Some(crate::minecraft::launch::arguments::LaunchArguments {
-                jvm: "-Dglobal=true".into(),
-                game: "--server 'my host' --asset ${assets_root}".into(),
-                classpath: String::new(),
-            });
+        // 自定义内存和参数覆盖全局值。
+        let global_arguments = crate::minecraft::launch::arguments::LaunchArguments {
+            jvm: "-Dglobal=true".into(),
+            game: "--server 'my host' --asset ${assets_root}".into(),
+            classpath: String::new(),
+        };
         let first_head = root.join("first extra.jar");
         let second_head = root.join("second.jar");
-        custom_state.instance_launch_arguments.insert(version.clone(), crate::minecraft::launch::arguments::LaunchArguments {
+        let instance_arguments = crate::minecraft::launch::arguments::LaunchArguments {
             jvm: "-XX:+UseZGC -Xmx8G -Xms256m -Xms512m -Dfixture='two words' -Droot=${game_directory}".into(),
-            game: String::new(), classpath: format!("{};{}", first_head.display(), second_head.display()),
-        });
-        let custom = LaunchOption::from_state(&custom_state, option.java_runtime.clone()).unwrap();
+            game: String::new(),
+            classpath: format!("{};{}", first_head.display(), second_head.display()),
+        };
+        let mut request = test_request(
+            instance.clone(),
+            option.account.as_ref().clone(),
+            option.java_runtime.clone(),
+            root.clone(),
+        );
+        request.max_memory = 3072;
+        request.initial_memory = Some(1024);
+        request.arguments = instance_arguments.effective(&global_arguments);
+        let custom = LaunchOption::new(request).unwrap();
         assert!(custom.launch_checked().unwrap().wait().unwrap().success());
         let output = fs::read_to_string(root.join("captured")).unwrap();
         let lines: Vec<_> = output.lines().collect();
@@ -1436,47 +1440,29 @@ mod tests {
             root.join("libraries/net/minecraftforge/forge/1.20.1-47.0.0/forge-1.20.1-47.0.0.jar");
         fs::create_dir_all(forge_library.parent().unwrap()).unwrap();
         fs::write(&forge_library, b"forge").unwrap();
-        let mut state = AppState {
-            profile: crate::app::states::ProfileConfig {
-                last_used: 0,
-                profiles: vec![option.account.as_ref().clone()],
-            },
-            active_game_instance: Some(option.game_instance.clone()),
-            ..Default::default()
-        };
-        state.memory_settings = Some(crate::minecraft::launch::memory::MemorySettings::Custom {
-            maximum_mib: 4096,
-            initial_mib: Some(2048),
-        });
-        let global_memory = LaunchOption::from_state(&state, option.java_runtime.clone()).unwrap();
-        assert_eq!(global_memory.max_memory, 4096);
-        assert!(
-            global_memory
-                .build_jvm_arguments(false)
-                .unwrap()
-                .contains(&"-Xms2048m".into())
-        );
-        state.instance_memory_settings.insert(
-            child.clone(),
-            crate::minecraft::launch::memory::MemorySettings::Custom {
+        // 32 位 Java 把内存上限压到 1024 MiB。
+        let resolved = crate::minecraft::launch::memory::resolve(
+            &crate::minecraft::launch::memory::MemorySettings::Custom {
                 maximum_mib: 1536,
                 initial_mib: Some(1200),
             },
+            0,
+            &option.game_instance,
+            &child,
+            false,
+        )
+        .unwrap();
+        assert_eq!(resolved, (1024, Some(1024)));
+
+        let mut request = test_request(
+            option.game_instance.clone(),
+            option.account.as_ref().clone(),
+            option.java_runtime.clone(),
+            child.clone(),
         );
-        let mut java32 = (*option.java_runtime).clone();
-        java32.installation.is_64_bit = false;
-        let instance_memory = LaunchOption::from_state(&state, Arc::new(java32)).unwrap();
-        assert_eq!(
-            (instance_memory.max_memory, instance_memory.initial_memory),
-            (1024, Some(1024))
-        );
-        state.window_settings = Some(crate::app::config::WindowSettings {
-            mode: crate::app::config::WindowMode::Custom,
-            width: 1280,
-            height: 720,
-        });
-        let custom = LaunchOption::from_state(&state, option.java_runtime.clone()).unwrap();
-        assert_eq!((custom.width, custom.height), (Some(1280), Some(720)));
+        request.width = Some(1280);
+        request.height = Some(720);
+        let custom = LaunchOption::new(request).unwrap();
         assert!(!custom.uses_launcher_size());
         assert!(custom.launch_checked().unwrap().wait().unwrap().success());
         assert!(
@@ -1485,13 +1471,21 @@ mod tests {
                 .lines()
                 .any(|line| line == "-Dwidth=1280")
         );
-        state.window_settings.as_mut().unwrap().mode = crate::app::config::WindowMode::Launcher;
-        assert!(
-            LaunchOption::from_state(&state, option.java_runtime.clone())
-                .unwrap()
-                .uses_launcher_size()
+        let mut request = test_request(
+            option.game_instance.clone(),
+            option.account.as_ref().clone(),
+            option.java_runtime.clone(),
+            child.clone(),
         );
-        let option = LaunchOption::from_state(&state, option.java_runtime.clone()).unwrap();
+        request.launcher_size = true;
+        assert!(LaunchOption::new(request).unwrap().uses_launcher_size());
+        let option = LaunchOption::new(test_request(
+            option.game_instance.clone(),
+            option.account.as_ref().clone(),
+            option.java_runtime.clone(),
+            child.clone(),
+        ))
+        .unwrap();
         assert_eq!(option.game_instance.jar_path, child.join("Fabric.jar"));
         assert!(option.launch_checked().unwrap().wait().unwrap().success());
         let captured = fs::read_to_string(root.join("captured")).unwrap();

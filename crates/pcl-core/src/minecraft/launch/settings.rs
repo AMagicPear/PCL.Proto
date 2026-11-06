@@ -6,7 +6,7 @@ use std::{
     process::Command,
 };
 
-use crate::app::config::{AppState, constants::LAUNCHER_NAME};
+use crate::runtime::RuntimePaths;
 
 /// 0 follows the global renderer, 1..=4 map to the global numbering 0..=3.
 pub const RENDERER_FOLLOW_GLOBAL: u8 = 0;
@@ -58,19 +58,29 @@ pub struct LaunchExtras {
     pub proxy: Option<(String, u16)>,
 }
 
-pub fn resolve(state: &AppState, instance: Option<&Path>) -> LaunchExtras {
-    let settings = instance
-        .and_then(|path| state.instance_launch_settings.get(path))
-        .cloned()
-        .unwrap_or_default();
+/// 全局启动开关；实例设置只在未覆盖时回落到这里。
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GlobalLaunchSwitches {
+    pub version_info: String,
+    pub renderer: u8,
+    pub disable_jlw: bool,
+    pub disable_legacy_fix: bool,
+    pub disable_lwjgl_unsafe_agent: bool,
+}
+
+pub fn resolve(
+    global: &GlobalLaunchSwitches,
+    instance_settings: Option<&InstanceLaunchSettings>,
+) -> LaunchExtras {
+    let settings = instance_settings.cloned().unwrap_or_default();
     // Empty info stays empty; the launcher drops `--versionType` entirely, as CE does.
     let info = if settings.info.trim().is_empty() {
-        state.version_info.clone()
+        global.version_info.clone()
     } else {
         settings.info.clone()
     };
     let renderer = if settings.renderer == RENDERER_FOLLOW_GLOBAL {
-        state.renderer
+        global.renderer
     } else {
         settings.renderer - 1
     }
@@ -85,36 +95,13 @@ pub fn resolve(state: &AppState, instance: Option<&Path>) -> LaunchExtras {
         prelaunch_command: settings.prelaunch_command,
         prelaunch_wait: settings.prelaunch_wait,
         disable_asset_verify: settings.disable_asset_verify,
-        java_wrapper: !state.disable_jlw && !settings.disable_jlw,
-        legacy_fix: !state.disable_legacy_fix && !settings.disable_legacy_fix,
+        java_wrapper: !global.disable_jlw && !settings.disable_jlw,
+        legacy_fix: !global.disable_legacy_fix && !settings.disable_legacy_fix,
         debug_log4j2: settings.debug_log4j2,
-        lwjgl_unsafe_agent: !state.disable_lwjgl_unsafe_agent
+        lwjgl_unsafe_agent: !global.disable_lwjgl_unsafe_agent
             && !settings.disable_lwjgl_unsafe_agent,
         proxy,
     }
-}
-
-pub fn update(
-    state: &mut AppState,
-    instance_directory: &Path,
-    settings: InstanceLaunchSettings,
-) -> Result<InstanceLaunchSettings, String> {
-    settings.validate()?;
-    crate::minecraft::java::preference::current_instance(state, instance_directory)
-        .map_err(|error| error.to_string())?;
-    if settings == InstanceLaunchSettings::default() {
-        state.instance_launch_settings.remove(instance_directory);
-    } else {
-        state
-            .instance_launch_settings
-            .insert(instance_directory.to_owned(), settings.clone());
-    }
-    Ok(settings)
-}
-
-/// Default global version info mirrors CE's brand value.
-pub fn default_version_info() -> String {
-    LAUNCHER_NAME.into()
 }
 
 /// CE's `LaunchArgumentInfo` rule: bounded length, no NUL, and no quotes, which would
@@ -146,19 +133,18 @@ pub fn java_wrapper_supported() -> bool {
     }
 }
 
-fn resource_dir() -> PathBuf {
-    crate::app::config::ConfigManager::instance()
-        .config_dir()
-        .join("resources")
+fn resource_dir(paths: &RuntimePaths) -> PathBuf {
+    paths.config_dir.join("resources")
 }
 
 #[cfg(not(target_os = "macos"))]
-fn bundled(name: &str, bytes: &[u8]) -> std::io::Result<PathBuf> {
-    let path = resource_dir().join(name);
+fn bundled(paths: &RuntimePaths, name: &str, bytes: &[u8]) -> std::io::Result<PathBuf> {
+    let directory = resource_dir(paths);
+    let path = directory.join(name);
     if std::fs::metadata(&path).is_ok_and(|metadata| metadata.len() == bytes.len() as u64) {
         return Ok(path);
     }
-    std::fs::create_dir_all(resource_dir())?;
+    std::fs::create_dir_all(&directory)?;
     let temp = path.with_extension(format!("{}.tmp", std::process::id()));
     let mut file = std::fs::File::create(&temp)?;
     file.write_all(bytes)?;
@@ -169,44 +155,49 @@ fn bundled(name: &str, bytes: &[u8]) -> std::io::Result<PathBuf> {
 }
 
 macro_rules! bundled_resource {
-    ($name:literal) => {{
+    ($paths:expr, $name:literal) => {{
         #[cfg(target_os = "macos")]
         {
+            let _ = $paths;
             crate::app::resources::launcher($name)
         }
         #[cfg(not(target_os = "macos"))]
         {
-            bundled($name, include_bytes!(concat!("../../../resources/", $name)))
+            bundled(
+                $paths,
+                $name,
+                include_bytes!(concat!("../../../resources/", $name)),
+            )
         }
     }};
 }
 
-pub fn java_wrapper() -> std::io::Result<PathBuf> {
-    bundled_resource!("java-wrapper.jar")
+pub fn java_wrapper(paths: &RuntimePaths) -> std::io::Result<PathBuf> {
+    bundled_resource!(paths, "java-wrapper.jar")
 }
 
-pub fn forge_installer() -> std::io::Result<PathBuf> {
-    bundled_resource!("forge-installer.jar")
+pub fn forge_installer(paths: &RuntimePaths) -> std::io::Result<PathBuf> {
+    bundled_resource!(paths, "forge-installer.jar")
 }
 
-pub fn legacy_fix() -> std::io::Result<PathBuf> {
-    bundled_resource!("legacyfix.jar")
+pub fn legacy_fix(paths: &RuntimePaths) -> std::io::Result<PathBuf> {
+    bundled_resource!(paths, "legacyfix.jar")
 }
 
-pub fn lwjgl_unsafe_agent() -> std::io::Result<PathBuf> {
-    bundled_resource!("lwjgl-unsafe-agent.jar")
+pub fn lwjgl_unsafe_agent(paths: &RuntimePaths) -> std::io::Result<PathBuf> {
+    bundled_resource!(paths, "lwjgl-unsafe-agent.jar")
 }
 
-pub fn log4j2_config(legacy: bool) -> std::io::Result<PathBuf> {
+pub fn log4j2_config(paths: &RuntimePaths, legacy: bool) -> std::io::Result<PathBuf> {
     if legacy {
-        bundled_resource!("log4j2-legacy-debug.xml")
+        bundled_resource!(paths, "log4j2-legacy-debug.xml")
     } else {
-        bundled_resource!("log4j2-debug.xml")
+        bundled_resource!(paths, "log4j2-debug.xml")
     }
 }
 
-pub fn mesa_loader_path() -> PathBuf {
-    resource_dir()
+pub fn mesa_loader_path(paths: &RuntimePaths) -> PathBuf {
+    resource_dir(paths)
         .join("mesa-loader-windows")
         .join(MESA_LOADER_VERSION)
         .join("Loader.jar")
@@ -224,8 +215,8 @@ pub fn mesa_loader_url() -> String {
 }
 
 /// Download the renderer agent CE fetches from its mirror; there is no hash to verify.
-pub async fn ensure_mesa_loader() -> anyhow::Result<PathBuf> {
-    let path = mesa_loader_path();
+pub async fn ensure_mesa_loader(paths: &RuntimePaths) -> anyhow::Result<PathBuf> {
+    let path = mesa_loader_path(paths);
     if path.is_file() {
         return Ok(path);
     }
@@ -288,23 +279,23 @@ pub fn run_prelaunch(extras: &LaunchExtras, working_directory: &Path) {
 mod tests {
     use super::*;
 
-    fn instance(settings: InstanceLaunchSettings) -> AppState {
-        let path = PathBuf::from("/tmp/pcl-instance");
-        let mut state = AppState::default();
-        state.instance_launch_settings.insert(path, settings);
-        state
+    fn global() -> GlobalLaunchSwitches {
+        GlobalLaunchSwitches {
+            version_info: "PCL.Proto".into(),
+            ..Default::default()
+        }
     }
 
     #[test]
     fn resolves_global_defaults_and_instance_overrides() {
-        let mut state = instance(InstanceLaunchSettings {
+        let mut global = global();
+        let mut settings = InstanceLaunchSettings {
             renderer: RENDERER_FOLLOW_GLOBAL,
             use_proxy: true,
             disable_jlw: true,
             ..Default::default()
-        });
-        state.version_info = "PCL.Proto".into();
-        let extras = resolve(&state, Some(Path::new("/tmp/pcl-instance")));
+        };
+        let extras = resolve(&global, Some(&settings));
         assert_eq!(extras.info, "PCL.Proto");
         assert_eq!(extras.renderer, 0);
         assert!(!extras.java_wrapper);
@@ -312,26 +303,15 @@ mod tests {
         assert!(extras.legacy_fix);
         assert!(extras.lwjgl_unsafe_agent);
 
-        state.renderer = 2;
-        let extras = resolve(&state, Some(Path::new("/tmp/pcl-instance")));
+        global.renderer = 2;
+        let extras = resolve(&global, Some(&settings));
         assert_eq!(extras.renderer, 2);
-        state
-            .instance_launch_settings
-            .get_mut(Path::new("/tmp/pcl-instance"))
-            .unwrap()
-            .renderer = 4;
-        let extras = resolve(&state, Some(Path::new("/tmp/pcl-instance")));
+        settings.renderer = 4;
+        let extras = resolve(&global, Some(&settings));
         assert_eq!(extras.renderer, 3);
-        assert_eq!(
-            resolve(&state, Some(Path::new("/tmp/other"))).info,
-            "PCL.Proto"
-        );
-        state.version_info = String::new();
-        assert!(
-            resolve(&state, Some(Path::new("/tmp/other")))
-                .info
-                .is_empty()
-        );
+        assert_eq!(resolve(&global, None).info, "PCL.Proto");
+        global.version_info = String::new();
+        assert!(resolve(&global, None).info.is_empty());
     }
 
     #[test]

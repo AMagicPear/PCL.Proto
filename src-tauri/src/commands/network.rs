@@ -1,4 +1,4 @@
-use pcl_core::app::config::ConfigManager;
+use crate::config::manager::ConfigManager;
 
 #[tauri::command]
 pub async fn get_proxy_settings() -> pcl_core::io::net::proxy::ProxySettings {

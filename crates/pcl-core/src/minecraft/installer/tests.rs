@@ -1,5 +1,6 @@
 use super::*;
 use crate::events::event_sink;
+use crate::minecraft::launch::launcher::test_request;
 use serde_json::json;
 
 #[test]
@@ -208,7 +209,7 @@ async fn official_vanilla_install_with_custom_name() {
         reqwest::Client::new(),
         &crate::io::net::http::api_client::ApiProvider::Official,
     );
-    let result = install_version(
+    let result = install_version_for_test(
         &client,
         &root,
         "1.2.5",
@@ -496,7 +497,7 @@ async fn official_fabric_install(
             api: None,
             install_java: false,
         };
-        install_version(
+        install_version_for_test(
             &client,
             &root,
             game,
@@ -522,15 +523,13 @@ async fn official_fabric_install(
             "is_64_bit":true, "architecture":"X64", "compatibility":"Perfect",
             "java_exe":executable, "vendor":"OpenJDK"
         }))?;
-        let state = crate::app::config::AppState {
-            profile: crate::app::states::ProfileConfig {
-                last_used: 0,
-                profiles: vec![McProfile::offline("test", "uuid")],
-            },
-            active_game_instance: Some(Arc::new(instance)),
-            ..Default::default()
-        };
-        let mut option = LaunchOption::from_state(&state, Arc::new(runtime))?;
+        let directory = instance.directory.clone();
+        let mut option = LaunchOption::new(test_request(
+            Arc::new(instance),
+            McProfile::offline("test", "uuid"),
+            Arc::new(runtime),
+            directory,
+        ))?;
         let natives = option
             .prepare_natives(&Downloader::with_bases(client.api_bases_async().await))
             .await?;
@@ -820,7 +819,7 @@ async fn fabric_install_merges_profile_and_publishes_only_after_verified_files()
     let mirror = MockMirror::new(files.clone(), false);
     let root = std::env::temp_dir().join(format!("pcl-fabric-install-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();
-    install_version(
+    install_version_for_test(
         &mirror.client(),
         &root,
         "1.test",
@@ -880,19 +879,14 @@ async fn fabric_install_merges_profile_and_publishes_only_after_verified_files()
             "java_exe":executable, "vendor":"OpenJDK"
         }))
         .unwrap();
-        let state = crate::app::config::AppState {
-            profile: crate::app::states::ProfileConfig {
-                last_used: 0,
-                profiles: vec![crate::minecraft::profile::McProfile::offline(
-                    "test", "uuid",
-                )],
-            },
-            active_game_instance: Some(Arc::new(instance)),
-            ..Default::default()
-        };
-        let option =
-            crate::minecraft::launch::launcher::LaunchOption::from_state(&state, Arc::new(runtime))
-                .unwrap();
+        let directory = instance.directory.clone();
+        let option = crate::minecraft::launch::launcher::LaunchOption::new(test_request(
+            Arc::new(instance),
+            crate::minecraft::profile::McProfile::offline("test", "uuid"),
+            Arc::new(runtime),
+            directory,
+        ))
+        .unwrap();
         assert!(option.launch_checked().unwrap().wait().unwrap().success());
         let args = fs::read_to_string(root.join("versions/Fabric Custom/captured-args")).unwrap();
         let lines: Vec<_> = args.lines().collect();
@@ -914,7 +908,7 @@ async fn fabric_install_merges_profile_and_publishes_only_after_verified_files()
     fs::remove_file(root.join("libraries/net/fabricmc/fabric-loader/0.16/fabric-loader-0.16.jar"))
         .unwrap();
     assert!(
-        install_version(
+        install_version_for_test(
             &bad.client(),
             &root,
             "1.test",
@@ -1031,7 +1025,7 @@ async fn legacy_fabric_list_and_install_use_legacy_intermediary() {
         api: None,
         install_java: false,
     };
-    install_version(
+    install_version_for_test(
         &client,
         &root,
         "1.test",
@@ -1087,7 +1081,7 @@ async fn full_install_retries_publishes_custom_name_and_reuses_verified_cache() 
     let channel = event_sink(move |event| {
         events.lock().unwrap().push(format!("{event:?}"));
     });
-    install_version(
+    install_version_for_test(
         &client,
         &root,
         "1.test",
@@ -1150,7 +1144,7 @@ async fn full_install_retries_publishes_custom_name_and_reuses_verified_cache() 
     assert_eq!(mirror.count("/client.jar"), 2, "503 is retried");
     assert_eq!(mirror.count("/forbidden.jar"), 0);
     assert!(
-        install_version(
+        install_version_for_test(
             &client,
             &root,
             "1.test",
@@ -1166,7 +1160,7 @@ async fn full_install_retries_publishes_custom_name_and_reuses_verified_cache() 
         path.join("Custom Vanilla.json").is_file(),
         "existing installations survive conflicts"
     );
-    install_version(
+    install_version_for_test(
         &client,
         &root,
         "1.test",
@@ -1192,7 +1186,7 @@ async fn failed_install_never_publishes_an_instance_and_preserves_existing_data(
     let root = std::env::temp_dir().join(format!("pcl-failed-install-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();
     fs::write(root.join("keep.txt"), b"keep").unwrap();
-    let result = install_version(
+    let result = install_version_for_test(
         &mirror.client(),
         &root,
         "1.test",
@@ -1274,7 +1268,7 @@ async fn tampered_version_json_fails_before_downloading_files() {
     let root = std::env::temp_dir().join(format!("pcl-metadata-test-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();
     assert!(
-        install_version(
+        install_version_for_test(
             &mirror.client(),
             &root,
             "1.test",

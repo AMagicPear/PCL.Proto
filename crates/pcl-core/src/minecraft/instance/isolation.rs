@@ -5,7 +5,7 @@ use std::{
 
 use anyhow::Context;
 
-use crate::{app::config::AppState, minecraft::instance::McInstance};
+use crate::minecraft::instance::McInstance;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -100,81 +100,22 @@ pub fn initial(instance: &McInstance, default: IsolationDefault) -> anyhow::Resu
     Ok(non_release || (default == IsolationDefault::ModdedOrNonRelease && modded))
 }
 
-pub fn directory<'a>(state: &AppState, instance: &'a McInstance) -> &'a Path {
-    if state
-        .instance_isolation
-        .get(&instance.directory)
-        .copied()
-        .unwrap_or(true)
-    {
+/// 实例是否隔离；没有记录的实例默认隔离。
+pub fn directory<'a>(
+    overrides: &std::collections::HashMap<PathBuf, bool>,
+    instance: &'a McInstance,
+) -> &'a Path {
+    if overrides.get(&instance.directory).copied().unwrap_or(true) {
         &instance.directory
     } else {
         &instance.global_dir
     }
 }
 
-pub fn ensure(state: &mut AppState, path: &Path) -> Result<bool, String> {
-    let instance = crate::minecraft::java::preference::current_instance(state, path)
-        .map_err(|error| error.to_string())?;
-    if let Some(value) = state.instance_isolation.get(path) {
-        return Ok(*value);
-    }
-    let instance = instance
-        .refresh()
-        .map_err(|error| format!("Cannot refresh Minecraft instance: {error:?}"))?;
-    let value =
-        initial(&instance, state.isolation_default).map_err(|error| format!("{error:#}"))?;
-    state.instance_isolation.insert(PathBuf::from(path), value);
-    Ok(value)
-}
-
-pub fn set_default(state: &mut AppState, value: IsolationDefault) -> Result<(), String> {
-    if state.isolation_default == value {
-        return Ok(());
-    }
-    for repo in &state.repositories {
-        if !repo.path.is_dir() {
-            return Err(format!(
-                "Minecraft folder is unavailable: {}",
-                repo.path.display()
-            ));
-        }
-        let versions = repo.path.join("versions");
-        let entries = match fs::read_dir(&versions) {
-            Ok(entries) => entries,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-            Err(error) => return Err(format!("Cannot inspect {}: {error}", versions.display())),
-        };
-        for entry in entries {
-            let entry = entry.map_err(|error| error.to_string())?;
-            if !entry
-                .file_type()
-                .map_err(|error| error.to_string())?
-                .is_dir()
-            {
-                continue;
-            }
-            let path = entry.path();
-            if state.instance_isolation.contains_key(&path) {
-                continue;
-            }
-            if let Ok(instance) = McInstance::from_version_folder(&path, repo) {
-                let decision = initial(&instance, state.isolation_default).map_err(|error| {
-                    format!("Cannot decide isolation for {}: {error:#}", path.display())
-                })?;
-                state.instance_isolation.insert(path, decision);
-            }
-        }
-    }
-    state.isolation_default = value;
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::minecraft::instance::folder::McFolder;
-    use std::sync::Arc;
 
     #[test]
     fn defaults_and_existing_content_determine_isolation_once_per_directory() {
@@ -220,64 +161,10 @@ mod tests {
         fs::create_dir_all(path.join("saves/world")).unwrap();
         assert!(initial(&instance, IsolationDefault::Off).unwrap());
         fs::remove_dir_all(path.join("saves")).unwrap();
-        let mut state = AppState {
-            active_game_instance: Some(Arc::new(instance.clone())),
-            isolation_default: IsolationDefault::Off,
-            ..Default::default()
-        };
-        assert!(!ensure(&mut state, &path).unwrap());
-        state.isolation_default = IsolationDefault::All;
-        assert!(!ensure(&mut state, &path).unwrap());
-        assert_eq!(directory(&state, &instance), root);
-        let second = root.join("versions/second");
-        fs::create_dir_all(&second).unwrap();
-        fs::write(
-            second.join("second.json"),
-            r#"{"id":"20w14infinite","type":"snapshot"}"#,
-        )
-        .unwrap();
-        fs::write(second.join("second.jar"), b"jar").unwrap();
-        let other = McInstance::from_version_folder(&second, &repo).unwrap();
-        state.active_game_instance = Some(Arc::new(other));
-        assert!(ensure(&mut state, &second).unwrap());
-        assert_eq!(state.instance_isolation.get(&path), Some(&false));
-        state.active_game_instance = Some(Arc::new(instance.clone()));
-        state.instance_isolation.insert(path.clone(), true);
-        assert_eq!(directory(&state, &instance), path);
-        assert!(ensure(&mut state, &root.join("versions/other")).is_err());
-        fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn changing_default_freezes_existing_instances_and_rejects_unavailable_repositories() {
-        let root =
-            std::env::temp_dir().join(format!("pcl-isolation-default-{}", uuid::Uuid::new_v4()));
-        let path = root.join("versions/first");
-        fs::create_dir_all(&path).unwrap();
-        fs::write(path.join("first.json"), r#"{"id":"same","type":"release"}"#).unwrap();
-        fs::write(path.join("first.jar"), b"jar").unwrap();
-        let mut state = AppState {
-            repositories: vec![McFolder::new("test", root.clone())],
-            ..Default::default()
-        };
-        set_default(&mut state, IsolationDefault::Off).unwrap();
-        assert_eq!(state.instance_isolation.get(&path), Some(&true));
-        let second = root.join("versions/second");
-        fs::create_dir_all(&second).unwrap();
-        fs::write(
-            second.join("second.json"),
-            r#"{"id":"same","type":"release"}"#,
-        )
-        .unwrap();
-        fs::write(second.join("second.jar"), b"jar").unwrap();
-        let instance = McInstance::from_version_folder(&second, &state.repositories[0]).unwrap();
-        state.active_game_instance = Some(Arc::new(instance));
-        assert!(!ensure(&mut state, &second).unwrap());
-        state
-            .repositories
-            .push(McFolder::new("missing", root.join("missing")));
-        assert!(set_default(&mut state, IsolationDefault::All).is_err());
-        assert_eq!(state.isolation_default, IsolationDefault::Off);
+        let mut overrides = std::collections::HashMap::new();
+        assert_eq!(directory(&overrides, &instance), path);
+        overrides.insert(path.clone(), false);
+        assert_eq!(directory(&overrides, &instance), root);
         fs::remove_dir_all(root).unwrap();
     }
 }

@@ -3,18 +3,26 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use pcl_core::app::config::AppState;
+use crate::config::manager::ConfigManager;
+use crate::config::states::AppState;
 use pcl_core::io::download::TaskItemReport;
 use pcl_core::io::net::http::api_client::MinecraftApiClient;
 use pcl_core::minecraft::installer::{
-    self, InstallResult, LoaderInstall,
+    self, LoaderInstall,
     forgelike::{self, JavaInstallOffer},
     modpack::{self, OnlinePackInfo, PackInfo},
 };
 use pcl_core::minecraft::version::DownloadFile;
 use tokio::sync::Mutex as AsyncMutex;
 
+#[derive(serde::Serialize)]
+pub struct InstallResult {
+    selected: bool,
+    selection_error: Option<String>,
+}
+
 #[tauri::command(rename_all = "snake_case")]
+#[allow(clippy::too_many_arguments)] // IPC 参数固定
 pub async fn download_minecraft_version(
     state: tauri::State<'_, Arc<AsyncMutex<AppState>>>,
     client: tauri::State<'_, &MinecraftApiClient>,
@@ -24,16 +32,64 @@ pub async fn download_minecraft_version(
     instance_name: String,
     loader: Option<LoaderInstall>,
 ) -> Result<InstallResult, String> {
-    installer::download_minecraft_version(
-        &state,
+    let repo = state.lock().await.active_repo_path.clone();
+    let java = crate::config::java::state();
+    let paths = crate::config::java::paths();
+    let outcome = installer::download_minecraft_version(
+        &repo,
         &client,
         super::channel_sink(on_event),
         version_id,
         task_id,
-        instance_name,
+        instance_name.clone(),
         loader,
+        &java,
+        &paths,
     )
+    .await?;
+    if outcome.isolated {
+        let directory = outcome.directory.clone();
+        ConfigManager::instance().update(move |state| {
+            state.instance_isolation.insert(directory, true);
+            Ok(())
+        })?;
+    }
+    let should_select = ConfigManager::instance()
+        .app_state
+        .lock()
+        .await
+        .download_settings
+        .as_ref()
+        .and_then(|settings| settings.auto_select_instance)
+        .unwrap_or(false);
+    if !should_select {
+        return Ok(InstallResult {
+            selected: false,
+            selection_error: None,
+        });
+    }
+    let selection = tokio::task::spawn_blocking(move || {
+        let repository = pcl_core::minecraft::instance::folder::McFolder::new("", repo.clone());
+        let instance = pcl_core::minecraft::instance::McInstance::from_version_folder(
+            &repo.join("versions").join(instance_name),
+            &repository,
+        )
+        .map_err(|error| format!("{error:?}"))?;
+        ConfigManager::instance().select_installed_instance(&repo, instance)
+    })
     .await
+    .map_err(|error| error.to_string())
+    .and_then(|result| result);
+    Ok(match selection {
+        Ok(selected) => InstallResult {
+            selected,
+            selection_error: None,
+        },
+        Err(error) => InstallResult {
+            selected: false,
+            selection_error: Some(error),
+        },
+    })
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -71,7 +127,8 @@ pub async fn prepare_forgelike_java(
     version_id: String,
     loader: LoaderInstall,
 ) -> Result<Option<JavaInstallOffer>, String> {
-    forgelike::prepare_forgelike_java(&client, version_id, loader).await
+    forgelike::prepare_forgelike_java(&client, version_id, loader, &crate::config::java::state())
+        .await
 }
 
 #[tauri::command]
@@ -106,7 +163,7 @@ pub async fn install_modpack(
     on_event: tauri::ipc::Channel<TaskItemReport>,
 ) -> Result<(), String> {
     modpack::install_modpack(
-        &state,
+        &state.lock().await.active_repo_path.clone(),
         &client,
         path,
         instance_name,
@@ -114,6 +171,8 @@ pub async fn install_modpack(
         install_java,
         task_id,
         super::channel_sink(on_event),
+        &crate::config::java::state(),
+        &crate::config::java::paths(),
     )
     .await
 }
@@ -131,7 +190,7 @@ pub async fn install_online_modpack(
     on_event: tauri::ipc::Channel<TaskItemReport>,
 ) -> Result<(), String> {
     modpack::install_online_modpack(
-        &state,
+        &state.lock().await.active_repo_path.clone(),
         &client,
         token,
         instance_name,
@@ -139,6 +198,8 @@ pub async fn install_online_modpack(
         install_java,
         task_id,
         super::channel_sink(on_event),
+        &crate::config::java::state(),
+        &crate::config::java::paths(),
     )
     .await
 }

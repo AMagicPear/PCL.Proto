@@ -1,7 +1,7 @@
 //! Java list management, mirroring `PCL.Core.Minecraft.Java.JavaManager`.
 //!
 //! Proto keeps the manager as a pure in-memory collection so the authoritative
-//! persisted state stays in `AppState`. Scanning is delegated to
+//! persisted state stays in the host configuration. Scanning is delegated to
 //! [`super::scanner`] because Proto's cross-platform discovery is stricter than
 //! the Windows-only scanners in PCL.Core.
 

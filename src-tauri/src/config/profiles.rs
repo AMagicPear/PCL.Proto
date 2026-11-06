@@ -2,14 +2,14 @@
 //! and `ProfileManagement`.
 //!
 //! CE 把档案列表与“上次使用”的下标存在配置里（`ProfileJson`）；Proto 用
-//! [`crate::app::states::ProfileConfig`] 存同一结构，身份仍然是 `profile_id`。
+//! [`crate::config::states::ProfileConfig`] 存同一结构，身份仍然是 `profile_id`。
 //! 所有写入都走 `ConfigManager::update`，保存失败时内存状态保持不变。
 //!
 //! 这些函数会阻塞式地锁住配置，必须放在 `spawn_blocking` 里调用。
 
-use crate::app::config::ConfigManager;
-use crate::minecraft::profile::auth::{AuthError, AuthResult, AuthenticationResult};
-use crate::minecraft::profile::{McProfile, ProfileType};
+use crate::config::manager::ConfigManager;
+use pcl_core::minecraft::profile::auth::{AuthError, AuthResult, AuthenticationResult};
+use pcl_core::minecraft::profile::{McProfile, ProfileType};
 
 /// 全部档案，按用户添加顺序。
 pub fn all() -> Vec<McProfile> {

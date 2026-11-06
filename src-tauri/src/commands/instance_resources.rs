@@ -1,13 +1,10 @@
-use pcl_core::{
-    app::config::ConfigManager,
-    io::files::open_directory,
-    minecraft::java::{self, preference::current_instance},
-};
+use crate::config::{current_instance, manager::ConfigManager};
+use pcl_core::io::files::open_directory;
 
 /// Re-download missing or broken instance files (CE "补全文件").
 #[tauri::command]
 pub async fn repair_instance_files(instance_directory: std::path::PathBuf) -> Result<(), String> {
-    let info = java::preference::prepare(instance_directory.clone()).await?;
+    let info = crate::config::java::prepare(instance_directory.clone()).await?;
     let arch = info
         .runtime
         .as_ref()
@@ -21,8 +18,11 @@ pub async fn repair_instance_files(instance_directory: std::path::PathBuf) -> Re
             let details = instance
                 .read_version_json()
                 .map_err(|error| error.to_string())?;
-            let game_directory =
-                pcl_core::minecraft::instance::isolation::directory(&state, instance).to_path_buf();
+            let game_directory = pcl_core::minecraft::instance::isolation::directory(
+                &state.instance_isolation,
+                instance,
+            )
+            .to_path_buf();
             // Loader instances share the parent's client JAR; only vanilla owns `jar_path`.
             let vanilla = instance
                 .plugins_version
@@ -82,7 +82,10 @@ pub(crate) fn instance_game_directory(
     let state = ConfigManager::instance().app_state.blocking_lock();
     let instance =
         current_instance(&state, instance_directory).map_err(|error| error.to_string())?;
-    Ok(pcl_core::minecraft::instance::isolation::directory(&state, instance).to_path_buf())
+    Ok(
+        pcl_core::minecraft::instance::isolation::directory(&state.instance_isolation, instance)
+            .to_path_buf(),
+    )
 }
 
 #[tauri::command]

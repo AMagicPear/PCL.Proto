@@ -8,7 +8,6 @@
 use serde::{Deserialize, Serialize};
 
 pub mod auth;
-pub mod service;
 pub mod uuid;
 
 /// Authentication provider of a launcher profile.

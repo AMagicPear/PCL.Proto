@@ -1,11 +1,12 @@
 //! 登录流程编排：复用、刷新与重新认证，对照 CE 的 `ProfileService.AuthenticateAsync`。
 
 use super::{LoginRequest, Ui, cancelled};
-use crate::minecraft::profile::auth::{
+use crate::config::profiles as service;
+use crate::config::profiles::blocking;
+use pcl_core::minecraft::profile::auth::{
     AuthError, AuthResult, AuthenticationResult, authlib, connect, microsoft,
 };
-use crate::minecraft::profile::service::blocking;
-use crate::minecraft::profile::{McProfile, ProfileType, service};
+use pcl_core::minecraft::profile::{McProfile, ProfileType};
 
 /// 完整的登录流程，对照 CE 的 `ProfileService.AuthenticateAsync`。
 pub(super) async fn login(request: LoginRequest, ui: Ui) -> AuthResult<McProfile> {
@@ -291,7 +292,7 @@ fn authlib_provider(profile: &McProfile) -> AuthResult<authlib::AuthlibProvider>
 
 /// 登录前跟随 `X-Authlib-Injector-Api-Location`，对照 CE 的 `ApiLocation.TryRequestAsync`。
 async fn authlib_provider_for_server(server: &str) -> AuthResult<authlib::AuthlibProvider> {
-    let client = crate::minecraft::profile::auth::http_client()?;
+    let client = pcl_core::minecraft::profile::auth::http_client()?;
     let api_root = authlib::resolve_api_location(&client, server).await;
     authlib::AuthlibProvider::new(&api_root)
 }

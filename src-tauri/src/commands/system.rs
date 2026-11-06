@@ -28,7 +28,7 @@ pub async fn system_fonts() -> Result<Vec<String>, String> {
 #[tauri::command]
 /// 获取今日人品，只考虑到日期
 pub fn get_lucky_today() -> u8 {
-    toys::get_lucky_today()
+    toys::get_lucky_today(&crate::config::manager::ConfigManager::instance().pcl_identifier)
 }
 
 #[tauri::command]

@@ -1,8 +1,5 @@
-use pcl_core::{
-    AppState,
-    app::config::ConfigManager,
-    minecraft::instance::{McInstance, folder::McFolder},
-};
+use crate::config::{manager::ConfigManager, states::AppState};
+use pcl_core::minecraft::instance::{McInstance, folder::McFolder};
 use std::sync::Arc;
 use tauri::State;
 use tokio::sync::Mutex;

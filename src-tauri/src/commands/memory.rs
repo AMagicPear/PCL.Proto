@@ -1,4 +1,4 @@
-use pcl_core::{app::config::ConfigManager, minecraft::java::preference::current_instance};
+use crate::config::{current_instance, manager::ConfigManager};
 
 #[tauri::command]
 pub async fn get_memory_settings(
@@ -149,7 +149,11 @@ pub async fn preview_memory_settings(
                     initial_mib: None,
                 });
             let game_directory = instance.as_ref().map(|instance| {
-                pcl_core::minecraft::instance::isolation::directory(&state, instance).to_path_buf()
+                pcl_core::minecraft::instance::isolation::directory(
+                    &state.instance_isolation,
+                    instance,
+                )
+                .to_path_buf()
             });
             (
                 instance.map(|instance| (instance, game_directory.unwrap())),

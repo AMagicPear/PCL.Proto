@@ -27,24 +27,39 @@ pub(crate) use scanner::scan;
 
 static SCAN_LOCK: tokio::sync::Mutex<Option<Instant>> = tokio::sync::Mutex::const_new(None);
 
-pub async fn refresh(force: bool) -> Result<Vec<JavaEntry>, String> {
+/// 已安装的 Java 与当前选择；由宿主应用持久化。
+#[derive(Clone, Debug, Default)]
+pub struct JavaState {
+    pub runtimes: Vec<JavaEntry>,
+    pub selected: Option<std::path::PathBuf>,
+}
+
+/// 扫描 Java 需要知道的目录：各 Minecraft 文件夹和启动器托管的运行时目录。
+#[derive(Clone, Debug, Default)]
+pub struct JavaRoots {
+    pub repositories: Vec<std::path::PathBuf>,
+    pub runtime_dir: std::path::PathBuf,
+}
+
+/// 重新扫描并合并 Java 列表；结果由宿主写回自己的配置。
+pub async fn refresh(
+    force: bool,
+    state: &JavaState,
+    roots: &JavaRoots,
+) -> Result<JavaState, String> {
     let mut guard = SCAN_LOCK.lock().await;
-    let config = crate::app::config::ConfigManager::instance();
     if !force && guard.is_some_and(|last| last.elapsed() < Duration::from_secs(13)) {
-        return Ok(config.app_state.lock().await.java_runtimes.clone());
+        return Ok(state.clone());
     }
-    let (known, mut roots, selected) = {
-        let state = config.app_state.lock().await;
-        let known = state.java_runtimes.clone();
-        let roots = state
-            .repositories
-            .iter()
-            .map(|repository| repository.path.join("runtime"))
-            .collect::<Vec<_>>();
-        (known, roots, state.launcher_setup.selected_java.clone())
-    };
-    roots.push(config.java_runtime_dir());
-    let scanned = scan(known.clone(), roots).await?;
+    let mut directories = roots
+        .repositories
+        .iter()
+        .map(|repository| repository.join("runtime"))
+        .collect::<Vec<_>>();
+    directories.push(roots.runtime_dir.clone());
+    let known = state.runtimes.clone();
+    let scanned = scan(known.clone(), directories).await?;
+    let selected = state.selected.clone();
     let selected_probe = selected.clone();
     let actual_selected = tokio::task::spawn_blocking(move || {
         selected_probe
@@ -53,21 +68,22 @@ pub async fn refresh(force: bool) -> Result<Vec<JavaEntry>, String> {
     })
     .await
     .map_err(|error| error.to_string())?;
-    let runtimes = tokio::task::spawn_blocking(move || {
-        config.update(|state| {
-            let mut manager = JavaManager::from_entries(std::mem::take(&mut state.java_runtimes));
-            manager.merge_scanned(scanned, &known);
-            state.java_runtimes = manager.sorted();
-            if state.launcher_setup.selected_java == selected && actual_selected.is_some() {
-                state.launcher_setup.selected_java = actual_selected;
-            }
-            Ok(state.java_runtimes.clone())
-        })
+    let merged = tokio::task::spawn_blocking(move || {
+        let mut manager = JavaManager::from_entries(known.clone());
+        manager.merge_scanned(scanned, &known);
+        manager.sorted()
     })
     .await
-    .map_err(|error| error.to_string())??;
+    .map_err(|error| error.to_string())?;
     *guard = Some(Instant::now());
-    Ok(runtimes)
+    Ok(JavaState {
+        runtimes: merged,
+        selected: if selected.is_some() {
+            actual_selected
+        } else {
+            None
+        },
+    })
 }
 
 pub fn sort_list(list: &mut [JavaEntry]) {

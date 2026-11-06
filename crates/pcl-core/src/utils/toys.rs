@@ -1,12 +1,9 @@
 //! Referenced from PCL-Community/PCL-CE
-use crate::app::config::ConfigManager;
-
 use super::secret::get_pcl_hash;
 use chrono::{Datelike, Local};
 
 /// 获取今日人品，只考虑到日期
-pub fn get_lucky_today() -> u8 {
-    let pcl_identifier = &ConfigManager::instance().pcl_identifier;
+pub fn get_lucky_today(pcl_identifier: &str) -> u8 {
     let now = Local::now();
     let str1 = format!("asdfgbn{}12#3$45{}IUY", now.day(), now.year());
     let hash1 = get_pcl_hash(&str1);

@@ -4,10 +4,11 @@
 
 use serde::{Deserialize, Serialize};
 
-use pcl_core::minecraft::profile::auth::session::{self, LoginRequest, View};
+use crate::config::profiles as service;
+use crate::config::profiles::blocking;
+use crate::login::{self, LoginRequest, View};
 use pcl_core::minecraft::profile::auth::{AuthError, AuthResult, authlib, connect, microsoft};
-use pcl_core::minecraft::profile::service::blocking;
-use pcl_core::minecraft::profile::{McProfile, ProfileType, SafeProfile, service, uuid};
+use pcl_core::minecraft::profile::{McProfile, ProfileType, SafeProfile, uuid};
 
 /// 档案列表与当前选择，界面一次拿全。
 #[derive(Clone, Debug, Serialize)]
@@ -233,18 +234,18 @@ async fn fetch_discovery(client: &reqwest::Client, api_root: &str) -> Option<Str
 
 #[tauri::command]
 pub async fn start_login(request: LoginRequest) -> Result<String, AuthError> {
-    session::start(request)
+    login::start(request)
 }
 
 #[tauri::command]
 pub async fn login_state(session_id: String) -> Result<View, AuthError> {
-    session::view(&session_id)
+    login::view(&session_id)
         .ok_or_else(|| AuthError::new("session_not_found", "登录会话已结束，请重新登录。"))
 }
 
 #[tauri::command]
 pub async fn cancel_login(session_id: String) {
-    session::cancel(&session_id);
+    login::cancel(&session_id);
 }
 
 #[tauri::command]
@@ -252,5 +253,5 @@ pub async fn select_login_profile(
     session_id: String,
     candidate_id: Option<String>,
 ) -> Result<(), AuthError> {
-    session::select(&session_id, candidate_id)
+    login::select(&session_id, candidate_id)
 }

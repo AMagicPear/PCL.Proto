@@ -2,6 +2,8 @@
 
 use std::path::PathBuf;
 
+use crate::config::manager::ConfigManager;
+
 use pcl_core::io::download::{
     self, TaskItemReport,
     resources::{DownloadSettings, DownloadStats, get_download_stats as core_stats},
@@ -64,12 +66,21 @@ pub fn get_download_stats() -> DownloadStats {
 
 #[tauri::command]
 pub async fn set_download_settings(settings: DownloadSettings) -> Result<DownloadSettings, String> {
-    download::resources::set_download_settings(settings).await
+    tokio::task::spawn_blocking(move || {
+        ConfigManager::instance().update_download_settings(settings)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
 pub async fn get_download_settings() -> Option<DownloadSettings> {
-    download::resources::get_download_settings().await
+    ConfigManager::instance()
+        .app_state
+        .lock()
+        .await
+        .download_settings
+        .clone()
 }
 
 #[cfg(test)]

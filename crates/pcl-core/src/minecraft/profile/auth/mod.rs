@@ -9,7 +9,6 @@ pub mod authlib;
 pub mod connect;
 pub mod microsoft;
 pub mod oauth;
-pub mod session;
 pub mod yggdrasil;
 
 use chrono::{DateTime, Utc};

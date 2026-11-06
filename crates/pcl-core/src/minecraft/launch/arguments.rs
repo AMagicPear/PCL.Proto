@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub const DEFAULT_JVM: &str = "-XX:+UseG1GC -XX:-UseAdaptiveSizePolicy -XX:-OmitStackTraceInFastThrow -Djdk.lang.Process.allowAmbiguousCommands=true -Dfml.ignoreInvalidMinecraftCertificates=True -Dfml.ignorePatchDiscrepancies=True -Dlog4j2.formatMsgNoLookups=true";
 
@@ -65,24 +65,6 @@ impl LaunchArguments {
             classpath: self.classpath.clone(),
         }
     }
-}
-
-pub fn update(
-    state: &mut crate::app::config::AppState,
-    instance_directory: Option<&Path>,
-    settings: LaunchArguments,
-) -> Result<LaunchArguments, String> {
-    settings.validate(instance_directory.is_some())?;
-    if let Some(path) = instance_directory {
-        crate::minecraft::java::preference::current_instance(state, path)
-            .map_err(|error| error.to_string())?;
-        state
-            .instance_launch_arguments
-            .insert(path.to_owned(), settings.clone());
-    } else {
-        state.launch_arguments = Some(settings.clone());
-    }
-    Ok(settings)
 }
 
 #[cfg(test)]

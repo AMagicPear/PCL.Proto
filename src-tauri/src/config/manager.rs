@@ -1,10 +1,9 @@
-pub use crate::app::metadata::constants;
-pub use crate::app::states::{AppState, WindowMode, WindowSettings};
+pub use super::states::{AppState, WindowSettings};
 
 use tokio::sync::Mutex;
 
-use crate::{
-    app::config::constants::USER_AGENT,
+use super::metadata::constants::USER_AGENT;
+use pcl_core::{
     io::net::http::api_client::{ApiProvider, MinecraftApiClient},
     minecraft::instance::{
         McInstance,
@@ -27,7 +26,7 @@ pub async fn get_window_settings() -> Option<WindowSettings> {
         .clone()
 }
 
-pub async fn get_launcher_visibility() -> crate::app::visibility::LauncherVisibility {
+pub async fn get_launcher_visibility() -> pcl_core::app::visibility::LauncherVisibility {
     ConfigManager::instance()
         .app_state
         .lock()
@@ -36,7 +35,7 @@ pub async fn get_launcher_visibility() -> crate::app::visibility::LauncherVisibi
 }
 
 pub async fn set_launcher_visibility(
-    mode: crate::app::visibility::LauncherVisibility,
+    mode: pcl_core::app::visibility::LauncherVisibility,
 ) -> Result<(), String> {
     tokio::task::spawn_blocking(move || {
         ConfigManager::instance().update(|state| {
@@ -60,7 +59,7 @@ pub async fn get_version_info() -> String {
 pub async fn set_version_info(value: String) -> Result<String, String> {
     tokio::task::spawn_blocking(move || {
         ConfigManager::instance().update(|state| {
-            crate::minecraft::launch::settings::validate_info(&value)?;
+            pcl_core::minecraft::launch::settings::validate_info(&value)?;
             state.version_info = value.clone();
             Ok(value)
         })
@@ -79,13 +78,13 @@ impl ConfigManager {
     pub fn ensure_instance_isolation(&self, path: &std::path::Path) -> Result<bool, String> {
         {
             let state = self.app_state.blocking_lock();
-            crate::minecraft::java::preference::current_instance(&state, path)
+            crate::config::java::active_instance(&state, path)
                 .map_err(|error| error.to_string())?;
             if let Some(value) = state.instance_isolation.get(path) {
                 return Ok(*value);
             }
         }
-        self.update(|state| crate::minecraft::instance::isolation::ensure(state, path))
+        self.update(|state| crate::config::isolation::ensure(state, path))
     }
 
     fn update_window_settings(&self, settings: WindowSettings) -> Result<WindowSettings, String> {
@@ -151,6 +150,8 @@ impl ConfigManager {
     /// create a new config manager every time it launches
     /// and initialize the config file, for those who never use this launcher
     fn new() -> Result<Self, ConfigManagerError> {
+        // 核心库自己构造的 HTTP 客户端沿用启动器的 User-Agent。
+        pcl_core::io::net::set_user_agent(USER_AGENT);
         let config_dirs = directories::ProjectDirs::from("pcl-community", "pcl", "proto")
             .ok_or(ConfigManagerError::ConfigDirNotFound)?;
         let config_dir = config_dirs.config_dir();
@@ -167,7 +168,7 @@ impl ConfigManager {
             fs::read_to_string(identifier_path)
                 .map_err(|_| ConfigManagerError::IdentifierFailure)?
         } else {
-            let pcl_identifier = crate::utils::secret::Identify::launcher_id()
+            let pcl_identifier = pcl_core::utils::secret::Identify::launcher_id()
                 .map_err(|_| ConfigManagerError::IdentifierFailure)?;
             fs::write(identifier_path, pcl_identifier.clone())
                 .map_err(|_| ConfigManagerError::IdentifierFailure)?;
@@ -201,7 +202,7 @@ impl ConfigManager {
             .download_settings
             .clone()
             .unwrap_or_default();
-        crate::io::download::resources::DOWNLOAD_RESOURCES
+        pcl_core::io::download::resources::DOWNLOAD_RESOURCES
             .configure(download_settings)
             .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
         log::debug!("launched config at {:?}", instance.config_path);
@@ -221,16 +222,16 @@ impl ConfigManager {
 
     pub fn update_proxy_settings(
         &self,
-        settings: crate::io::net::proxy::ProxySettings,
-    ) -> Result<crate::io::net::proxy::ProxySettings, String> {
+        settings: pcl_core::io::net::proxy::ProxySettings,
+    ) -> Result<pcl_core::io::net::proxy::ProxySettings, String> {
         settings.validate()?;
         // Validate the resulting client before committing the setting.
-        crate::io::net::proxy::build_proxy_client(&settings)?;
+        pcl_core::io::net::proxy::build_proxy_client(&settings)?;
         self.update(|state| {
             state.proxy = settings.clone();
             Ok(settings.clone())
         })?;
-        crate::io::net::proxy::apply(&settings)?;
+        pcl_core::io::net::proxy::apply(&settings)?;
         self.api_client.rebuild_client()?;
         Ok(settings)
     }
@@ -273,7 +274,7 @@ impl ConfigManager {
         let game_dir = folder::create_default_directory(&self.config_dir, portable)
             .map_err(|_| ConfigManagerError::ConfigDirNotFound)?;
         let mut state = self.app_state.blocking_lock();
-        state.version_info = crate::minecraft::launch::settings::default_version_info();
+        state.version_info = crate::config::metadata::default_version_info();
         state.active_repo_path = game_dir.clone();
         state.repositories.push(McFolder {
             name: "Default".into(),
@@ -341,7 +342,7 @@ impl ConfigManager {
         {
             return Err(ConfigManagerError::ConfigFileCorrupted);
         }
-        crate::io::net::proxy::apply(&state_read.proxy)
+        pcl_core::io::net::proxy::apply(&state_read.proxy)
             .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
         let mut state = self.app_state.blocking_lock();
         *state = state_read;
@@ -432,8 +433,8 @@ impl ConfigManager {
 
     pub fn update_download_settings(
         &self,
-        settings: crate::io::download::resources::DownloadSettings,
-    ) -> Result<crate::io::download::resources::DownloadSettings, String> {
+        settings: pcl_core::io::download::resources::DownloadSettings,
+    ) -> Result<pcl_core::io::download::resources::DownloadSettings, String> {
         settings.validate()?;
         let mut state = self.app_state.blocking_lock();
         let mut candidate = state.clone();
@@ -441,7 +442,7 @@ impl ConfigManager {
         save_config_atomically(&self.config_path, &candidate).map_err(|e| format!("{e:?}"))?;
         *state = candidate;
         // 副作用放在提交之后：失败时磁盘与内存一致，用户重试即可恢复。
-        crate::io::download::resources::DOWNLOAD_RESOURCES.configure(settings.clone())?;
+        pcl_core::io::download::resources::DOWNLOAD_RESOURCES.configure(settings.clone())?;
         Ok(settings)
     }
 
@@ -512,6 +513,7 @@ fn save_config_atomically(
 #[cfg(test)]
 mod java_config_tests {
     use super::*;
+    use crate::config::states::WindowMode;
     use serde::ser::Error;
     #[test]
     fn isolation_initialization_is_transactional_and_persists_per_directory() {
@@ -529,7 +531,7 @@ mod java_config_tests {
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState {
                 active_game_instance: Some(Arc::new(instance)),
-                isolation_default: crate::minecraft::instance::isolation::IsolationDefault::Off,
+                isolation_default: pcl_core::minecraft::instance::isolation::IsolationDefault::Off,
                 ..Default::default()
             })),
             api_client: MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::default()),
@@ -551,7 +553,7 @@ mod java_config_tests {
         manager
             .update(|state| {
                 state.isolation_default =
-                    crate::minecraft::instance::isolation::IsolationDefault::All;
+                    pcl_core::minecraft::instance::isolation::IsolationDefault::All;
                 Ok(())
             })
             .unwrap();
@@ -561,7 +563,8 @@ mod java_config_tests {
 
     #[test]
     fn launch_arguments_validate_and_commit_per_instance_transactionally() {
-        use crate::minecraft::launch::arguments::{LaunchArguments, update};
+        use crate::config::arguments::update;
+        use pcl_core::minecraft::launch::arguments::LaunchArguments;
         let root =
             std::env::temp_dir().join(format!("pcl-argument-config-{}", uuid::Uuid::new_v4()));
         let repo = McFolder::new("test", root.clone());
@@ -764,8 +767,8 @@ mod java_config_tests {
         state.launcher_setup.selected_java = Some(PathBuf::from("/test/jdk/bin/java"));
         state.java_preferences.insert(
             PathBuf::from("/test/game"),
-            crate::minecraft::java::preference::InstanceJavaSettings {
-                preference: crate::minecraft::java::preference::JavaPreference::Auto,
+            pcl_core::minecraft::java::preference::InstanceJavaSettings {
+                preference: pcl_core::minecraft::java::preference::JavaPreference::Auto,
                 ignore_compatibility: true,
             },
         );
@@ -873,7 +876,7 @@ mod java_config_tests {
     }
     #[test]
     fn download_settings_validate_and_failed_save_preserves_state() {
-        use crate::io::download::resources::{DOWNLOAD_RESOURCES, DownloadSettings};
+        use pcl_core::io::download::resources::{DOWNLOAD_RESOURCES, DownloadSettings};
         let previous = DOWNLOAD_RESOURCES.settings();
         let root =
             std::env::temp_dir().join(format!("pcl-download-settings-{}", uuid::Uuid::new_v4()));
@@ -955,7 +958,7 @@ mod java_config_tests {
             app_state: Arc::new(Mutex::new(AppState {
                 repositories: vec![repo],
                 active_repo_path: root.clone(),
-                download_settings: Some(crate::io::download::resources::DownloadSettings {
+                download_settings: Some(pcl_core::io::download::resources::DownloadSettings {
                     auto_select_instance: Some(false),
                     ..Default::default()
                 }),

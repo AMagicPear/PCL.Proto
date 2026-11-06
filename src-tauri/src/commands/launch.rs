@@ -1,11 +1,6 @@
 use super::java::cancel_java_download;
-use pcl_core::{
-    app::config::ConfigManager,
-    minecraft::{
-        java::{self, JavaEntry, preference::current_instance},
-        launch::launcher::LaunchOption,
-    },
-};
+use crate::config::{current_instance, manager::ConfigManager};
+use pcl_core::minecraft::{java::JavaEntry, launch::launcher::LaunchOption};
 use std::{
     future::Future,
     sync::{
@@ -247,7 +242,7 @@ async fn launch_game_inner(
     report("Minecraft.Launch.Stage.GetJava", 0.08, false);
     let info = wait_for_launch(
         &mut ticket.receiver,
-        java::preference::prepare(instance_directory.clone()),
+        crate::config::java::prepare(instance_directory.clone()),
     )
     .await??;
     let runtime = info.runtime.ok_or_else(|| {
@@ -306,7 +301,10 @@ async fn launch_game_inner(
             pcl_core::minecraft::profile::auth::http_client().map_err(|error| error.to_string())?;
         let jar = wait_for_launch(
             &mut ticket.receiver,
-            pcl_core::minecraft::launch::authlib::ensure_jar(&client),
+            pcl_core::minecraft::launch::authlib::ensure_jar(
+                &client,
+                ConfigManager::instance().config_dir(),
+            ),
         )
         .await??;
         let server = wait_for_launch(
@@ -395,7 +393,7 @@ async fn launch_game_inner(
 async fn prepare_launch_option(
     instance_directory: std::path::PathBuf,
 ) -> Result<LaunchOption, String> {
-    let info = java::preference::prepare(instance_directory.clone()).await?;
+    let info = crate::config::java::prepare(instance_directory.clone()).await?;
     let runtime = info.runtime.ok_or_else(|| {
         format!(
             "No compatible Java found: {}",
@@ -419,7 +417,8 @@ async fn prepare_launch_option(
 
 /// 刷新当前档案的访问令牌，对照 CE 的 `ModLaunch.mcLoginLoader`。
 async fn refresh_active_account() -> Result<(), String> {
-    use pcl_core::minecraft::profile::{ProfileType, service};
+    use crate::config::profiles as service;
+    use pcl_core::minecraft::profile::ProfileType;
     let Some(profile) = tauri::async_runtime::spawn_blocking(service::current)
         .await
         .map_err(|error| error.to_string())?
@@ -430,7 +429,7 @@ async fn refresh_active_account() -> Result<(), String> {
     if profile.profile_type == ProfileType::Offline {
         return Ok(());
     }
-    pcl_core::minecraft::profile::auth::session::login_for_launch(&profile, false)
+    crate::login::login_for_launch(&profile, false)
         .await
         .map_err(|error| error.to_string())?;
     Ok(())
@@ -446,7 +445,11 @@ async fn prepare_authlib(option: LaunchOption) -> Result<LaunchOption, String> {
     ) {
         return Ok(option);
     }
-    let agent = pcl_core::minecraft::launch::authlib::prepare(&profile).await?;
+    let agent = pcl_core::minecraft::launch::authlib::prepare(
+        &profile,
+        ConfigManager::instance().config_dir(),
+    )
+    .await?;
     Ok(option.with_authlib(agent))
 }
 
@@ -458,7 +461,7 @@ fn build_launch_option(
     config.ensure_instance_isolation(&instance_directory)?;
     let state = config.app_state.blocking_lock();
     current_instance(&state, &instance_directory).map_err(|error| error.to_string())?;
-    LaunchOption::from_state(&state, Arc::new(runtime)).map_err(|error| error.to_string())
+    crate::config::launch::request(&state, Arc::new(runtime)).map_err(|error| error.to_string())
 }
 
 #[tauri::command]

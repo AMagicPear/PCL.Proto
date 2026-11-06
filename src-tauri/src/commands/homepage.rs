@@ -1,4 +1,4 @@
-use pcl_core::app::config::ConfigManager;
+use crate::config::manager::ConfigManager;
 use std::io::{Read, Write};
 
 const MAX_BYTES: usize = 2 * 1024 * 1024;

@@ -21,7 +21,7 @@ const METADATA_SOURCES: [&str; 2] = [
 ];
 
 /// 第三方档案启动前的准备：确保 jar 存在，并预取认证服务器元数据。
-pub async fn prepare(profile: &McProfile) -> Result<AuthlibAgent, String> {
+pub async fn prepare(profile: &McProfile, config_dir: &Path) -> Result<AuthlibAgent, String> {
     let server = profile
         .server
         .as_deref()
@@ -35,7 +35,7 @@ pub async fn prepare(profile: &McProfile) -> Result<AuthlibAgent, String> {
         .ok_or("第三方档案没有认证服务器地址")?;
     let client =
         crate::minecraft::profile::auth::http_client().map_err(|error| error.to_string())?;
-    let jar = ensure_jar(&client).await?;
+    let jar = ensure_jar(&client, config_dir).await?;
     // CE 把服务器根地址的元数据 Base64 后交给 agent，避免游戏启动时再请求一次。
     let metadata = client
         .get(&server)
@@ -58,20 +58,18 @@ pub async fn prepare(profile: &McProfile) -> Result<AuthlibAgent, String> {
 }
 
 /// authlib-injector.jar 的存放位置，对照 CE 的 `pathPure`。
-fn jar_path() -> PathBuf {
-    crate::app::config::ConfigManager::instance()
-        .config_dir()
-        .join("authlib-injector.jar")
+fn jar_path(config_dir: &Path) -> PathBuf {
+    config_dir.join("authlib-injector.jar")
 }
 
 /// 按 latest.json 的 sha256 校验本地 jar，需要时重新下载。
 ///
 /// 元数据取不到时沿用已有 jar（与 CE 一致：下载信息失败只记日志）。
-pub async fn ensure_jar(client: &reqwest::Client) -> Result<PathBuf, String> {
+pub async fn ensure_jar(client: &reqwest::Client, config_dir: &Path) -> Result<PathBuf, String> {
     static DOWNLOAD_LOCK: LazyLock<tokio::sync::Mutex<()>> =
         LazyLock::new(|| tokio::sync::Mutex::new(()));
     let _guard = DOWNLOAD_LOCK.lock().await;
-    let path = jar_path();
+    let path = jar_path(config_dir);
     let latest = fetch_latest(client).await;
     let expected = match &latest {
         Some((_, sha256)) => sha256.clone(),

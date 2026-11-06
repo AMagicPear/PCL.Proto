@@ -378,6 +378,8 @@ async fn install_pack(
     install_java: bool,
     task_id: i32,
     on_event: &EventSink<TaskItemReport>,
+    java: &crate::minecraft::java::JavaState,
+    paths: &crate::runtime::RuntimePaths,
 ) -> anyhow::Result<()> {
     let available: HashSet<_> = pack.info().optional_files.into_iter().collect();
     ensure_optional(&available, &optional_files)?;
@@ -392,13 +394,16 @@ async fn install_pack(
         Some(&pack),
         task_id,
         on_event,
+        java,
+        paths,
     )
-    .await
+    .await?;
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)] // 与 IPC 命令参数一一对应
 pub async fn install_modpack(
-    state: &Arc<Mutex<crate::app::config::AppState>>,
+    repo: &Path,
     client: &MinecraftApiClient,
     path: PathBuf,
     instance_name: String,
@@ -406,22 +411,25 @@ pub async fn install_modpack(
     install_java: bool,
     task_id: i32,
     on_event: EventSink<TaskItemReport>,
+    java: &crate::minecraft::java::JavaState,
+    paths: &crate::runtime::RuntimePaths,
 ) -> Result<(), String> {
     crate::io::download::tasks::run(task_id, async {
         let pack = crate::io::download::tasks::blocking(task_id, move || Modpack::open(&path))
             .await
             .map_err(|error| error.to_string())?
             .map_err(|error| format!("{error:#}"))?;
-        let repo = state.lock().await.active_repo_path.clone();
         install_pack(
             pack,
-            &repo,
+            repo,
             client,
             &instance_name,
             optional_files,
             install_java,
             task_id,
             &on_event,
+            java,
+            paths,
         )
         .await
         .map_err(|error| format!("{error:#}"))
@@ -431,7 +439,7 @@ pub async fn install_modpack(
 
 #[allow(clippy::too_many_arguments)] // 与 IPC 命令参数一一对应
 pub async fn install_online_modpack(
-    state: &Arc<Mutex<crate::app::config::AppState>>,
+    repo: &Path,
     client: &MinecraftApiClient,
     token: String,
     instance_name: String,
@@ -439,6 +447,8 @@ pub async fn install_online_modpack(
     install_java: bool,
     task_id: i32,
     on_event: EventSink<TaskItemReport>,
+    java: &crate::minecraft::java::JavaState,
+    paths: &crate::runtime::RuntimePaths,
 ) -> Result<(), String> {
     let prepared = PREPARED
         .lock()
@@ -447,16 +457,17 @@ pub async fn install_online_modpack(
         .ok_or("Modpack preparation has expired")?;
     crate::io::download::tasks::run(task_id, async {
         let PreparedPack { pack, _directory } = prepared;
-        let repo = state.lock().await.active_repo_path.clone();
         install_pack(
             pack,
-            &repo,
+            repo,
             client,
             &instance_name,
             optional_files,
             install_java,
             task_id,
             &on_event,
+            java,
+            paths,
         )
         .await
         .map_err(|e| format!("{e:#}"))
@@ -620,6 +631,11 @@ mod tests {
             false,
             -2000,
             &events,
+            &crate::minecraft::java::JavaState::default(),
+            &crate::runtime::RuntimePaths {
+                config_dir: root.clone(),
+                java_runtime_dir: root.join("jre"),
+            },
         )
         .await
         .unwrap();
@@ -633,19 +649,6 @@ mod tests {
             instance
                 .join("mods/placeholder-api-2.1.3+1.20.1.jar")
                 .is_file()
-        );
-        assert_eq!(
-            crate::app::config::ConfigManager::instance()
-                .app_state
-                .lock()
-                .await
-                .instance_isolation
-                .get(&instance),
-            Some(&true)
-        );
-        assert_eq!(
-            fs::canonicalize(crate::app::config::ConfigManager::instance().config_dir()).unwrap(),
-            root
         );
         drop(_directory);
         assert!(!temporary_path.exists());

@@ -4,7 +4,7 @@ use std::sync::{
     atomic::{AtomicU64, Ordering},
 };
 
-use crate::app::config::constants::USER_AGENT;
+use crate::io::net::user_agent;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -78,7 +78,7 @@ pub fn builder() -> reqwest::ClientBuilder {
 }
 
 fn builder_for(settings: &ProxySettings) -> reqwest::ClientBuilder {
-    let builder = reqwest::Client::builder().user_agent(USER_AGENT);
+    let builder = reqwest::Client::builder().user_agent(user_agent());
     match settings.mode {
         ProxyMode::Off => builder.no_proxy(),
         // reqwest already follows the system proxy configuration by default.

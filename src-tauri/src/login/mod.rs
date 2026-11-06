@@ -4,7 +4,7 @@
 //! 角色选择弹窗）通过回调回到 WPF。Proto 把同一条流程放进一个后台任务：任务把
 //! 当前状态发布到会话里，前端轮询状态并弹窗，取消与选择通过命令回传。
 
-mod login;
+mod flow;
 
 use std::collections::HashMap;
 use std::future::Future;
@@ -15,12 +15,12 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use tokio::sync::oneshot;
 
-use self::login::login;
-use super::oauth::{AuthorizeResult, DeviceCodeData, classify};
-use super::{AuthError, AuthResult, Candidate};
-use crate::minecraft::profile::ProfileType;
+use self::flow::login;
+use pcl_core::minecraft::profile::ProfileType;
+use pcl_core::minecraft::profile::auth::oauth::{self, AuthorizeResult, DeviceCodeData, classify};
+use pcl_core::minecraft::profile::auth::{AuthError, AuthResult, Candidate};
 
-pub use self::login::{login_for_launch, refresh_microsoft};
+pub use self::flow::{login_for_launch, refresh_microsoft};
 
 /// 用户取消登录时使用的错误码。
 pub const CANCELLED: &str = "login_cancelled";
@@ -153,10 +153,10 @@ impl Ui {
                 return Err(cancelled());
             }
             match classify(poll().await?) {
-                super::oauth::PollOutcome::Authorized(result) => return Ok(result),
-                super::oauth::PollOutcome::Rejected(error) => return Err(error),
-                super::oauth::PollOutcome::SlowDown => interval += Duration::from_secs(5),
-                super::oauth::PollOutcome::Pending => {}
+                oauth::PollOutcome::Authorized(result) => return Ok(result),
+                oauth::PollOutcome::Rejected(error) => return Err(error),
+                oauth::PollOutcome::SlowDown => interval += Duration::from_secs(5),
+                oauth::PollOutcome::Pending => {}
             }
             if !sleep_cancellable(session, interval).await {
                 return Err(cancelled());

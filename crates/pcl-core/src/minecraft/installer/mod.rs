@@ -19,7 +19,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::mpsc;
 
 /// Atomically reserves the destination; never removes an existing instance.
 struct InstallDirectory {
@@ -909,7 +909,14 @@ fn add_fabric_api(
     plan.add(8, &api.file, instance.join("mods").join(&api.filename))
 }
 
-async fn install_version(
+/// 安装完成后的落盘信息；宿主据此更新隔离设置并选择实例。
+pub struct InstallOutcome {
+    pub directory: std::path::PathBuf,
+    pub isolated: bool,
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn install_version(
     client: &MinecraftApiClient,
     repo: &Path,
     version_id: &str,
@@ -917,9 +924,11 @@ async fn install_version(
     loader: Option<&LoaderInstall>,
     task_id: i32,
     on_event: &EventSink<TaskItemReport>,
-) -> anyhow::Result<()> {
+    java: &crate::minecraft::java::JavaState,
+    paths: &crate::runtime::RuntimePaths,
+) -> anyhow::Result<InstallOutcome> {
     install_version_with_modpack(
-        client, repo, version_id, name, loader, None, task_id, on_event,
+        client, repo, version_id, name, loader, None, task_id, on_event, java, paths,
     )
     .await
 }
@@ -935,7 +944,9 @@ async fn install_version_with_modpack(
     pack: Option<&modpack::Modpack>,
     task_id: i32,
     on_event: &EventSink<TaskItemReport>,
-) -> anyhow::Result<()> {
+    java: &crate::minecraft::java::JavaState,
+    paths: &crate::runtime::RuntimePaths,
+) -> anyhow::Result<InstallOutcome> {
     validate_file_name(version_id)?;
     ensure!(
         repo.is_absolute() && repo.is_dir(),
@@ -1010,11 +1021,14 @@ async fn install_version_with_modpack(
     {
         Some(
             forgelike::ensure_java(
+                client,
                 &metadata,
                 version_id,
                 loader.is_some_and(|loader| loader.install_java),
                 task_id,
                 on_event,
+                java,
+                paths,
             )
             .await?,
         )
@@ -1092,6 +1106,7 @@ async fn install_version_with_modpack(
                 &directory.path.join(format!("{name}.jar")),
                 task_id,
                 on_event,
+                paths,
             )
             .await?
         } else {
@@ -1144,15 +1159,6 @@ async fn install_version_with_modpack(
         let temporary_json = directory.path.join(".pcl-version.json.part");
         fs::write(&temporary_json, json)?;
         fs::rename(temporary_json, directory.path.join(filename))?;
-        if isolated {
-            let path = directory.path.clone();
-            crate::app::config::ConfigManager::instance()
-                .update(|state| {
-                    state.instance_isolation.insert(path, true);
-                    Ok(())
-                })
-                .map_err(anyhow::Error::msg)?;
-        }
         directory.committed = true;
         Ok(())
     })
@@ -1166,74 +1172,69 @@ async fn install_version_with_modpack(
         speed: None,
     });
     log::info!("Installed Minecraft {version_id}: {}", path.display());
-    Ok(())
+    Ok(InstallOutcome {
+        directory: path,
+        isolated,
+    })
 }
 
+/// 安装一个版本并把结果交给宿主处理（选择实例、记录隔离设置）。
+#[allow(clippy::too_many_arguments)]
 pub async fn download_minecraft_version(
-    state: &Arc<Mutex<crate::app::config::AppState>>,
+    repo: &Path,
     client: &MinecraftApiClient,
     on_event: EventSink<TaskItemReport>,
     version_id: String,
     task_id: i32,
     instance_name: String,
     loader: Option<LoaderInstall>,
-) -> Result<InstallResult, String> {
-    let repo = state.lock().await.active_repo_path.clone();
+    java: &crate::minecraft::java::JavaState,
+    paths: &crate::runtime::RuntimePaths,
+) -> Result<InstallOutcome, String> {
     crate::io::download::tasks::run(task_id, async {
         install_version(
             client,
-            &repo,
+            repo,
             &version_id,
             &instance_name,
             loader.as_ref(),
             task_id,
             &on_event,
+            java,
+            paths,
         )
         .await
         .map_err(|error| format!("{error:#}"))
     })
-    .await?;
-    let should_select = state
-        .lock()
-        .await
-        .download_settings
-        .as_ref()
-        .and_then(|settings| settings.auto_select_instance)
-        .unwrap_or(false);
-    if !should_select {
-        return Ok(InstallResult {
-            selected: false,
-            selection_error: None,
-        });
-    }
-    let selection = tokio::task::spawn_blocking(move || {
-        let repository = crate::minecraft::instance::folder::McFolder::new("", repo.clone());
-        let instance = crate::minecraft::instance::McInstance::from_version_folder(
-            &repo.join("versions").join(instance_name),
-            &repository,
-        )
-        .map_err(|error| format!("{error:?}"))?;
-        crate::app::config::ConfigManager::instance().select_installed_instance(&repo, instance)
-    })
     .await
-    .map_err(|error| error.to_string())
-    .and_then(|result| result);
-    Ok(match selection {
-        Ok(selected) => InstallResult {
-            selected,
-            selection_error: None,
-        },
-        Err(error) => InstallResult {
-            selected: false,
-            selection_error: Some(error),
-        },
-    })
 }
 
-#[derive(serde::Serialize)]
-pub struct InstallResult {
-    selected: bool,
-    selection_error: Option<String>,
+#[cfg(test)]
+pub(crate) async fn install_version_for_test(
+    client: &MinecraftApiClient,
+    repo: &Path,
+    version_id: &str,
+    name: &str,
+    loader: Option<&LoaderInstall>,
+    task_id: i32,
+    on_event: &EventSink<TaskItemReport>,
+) -> anyhow::Result<InstallOutcome> {
+    let paths = crate::runtime::RuntimePaths {
+        config_dir: std::env::temp_dir().join("pcl-test-config"),
+        java_runtime_dir: std::env::temp_dir().join("pcl-test-jre"),
+    };
+    install_version(
+        client,
+        repo,
+        version_id,
+        name,
+        loader,
+        task_id,
+        on_event,
+        &crate::minecraft::java::JavaState::default(),
+        &paths,
+    )
+    .await
 }
 
 #[cfg(test)]

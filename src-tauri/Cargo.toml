@@ -36,6 +36,7 @@ open = { version = "5.4.5", features = ["shellexecute-on-windows"] }
 fontdb = "0.23"
 sysinfo = { version = "0.40.1", default-features = false, features = ["system"] }
 trash = "5.2.9"
+directories = "6.0.0"
 tempfile = "3.27.0"
 base64 = "0.23.1"
 uuid = { workspace = true, features = ["v4"] }
