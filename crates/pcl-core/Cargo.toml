@@ -56,7 +56,7 @@ open = { version = "5.4.5", features = ["shellexecute-on-windows"] }
 fastnbt = "2.6.3"
 flate2 = "1.1.10"
 tempfile = "3.27.0"
-terracotta = { path = "../../src-terracotta", version = "2.5.0-pcl.proto", optional = true }
+terracotta = { path = "../terracotta", version = "2.5.0-pcl.proto", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Globalization"] }

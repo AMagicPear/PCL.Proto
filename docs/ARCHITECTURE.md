@@ -7,7 +7,7 @@
 仓库根目录的 `package.json`、Vite 和 TypeScript 配置负责网站与 Tauri 前端；
 `packages/components/` 保存组件 npm 包的入口、样式、包描述和独立构建配置，
 直接复用 `src/components/widget/` 中的控件。根目录 `Cargo.toml` 管理 Rust 工作区：
-`crates/pcl-core/` 是启动器核心，`src-tauri/` 是桌面应用，`src-terracotta/` 是独立维护的 Git 子模块；
+`crates/pcl-core/` 是启动器核心，`src-tauri/` 是桌面应用，`crates/terracotta/` 是独立维护的 Git 子模块；
 不要把子模块文件复制到组件包。组件包运行 `bun run components:build` 构建，或执行
 `npm pack ./packages/components` 构建并打包。
 

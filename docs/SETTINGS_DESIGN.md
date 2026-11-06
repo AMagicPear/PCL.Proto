@@ -132,7 +132,7 @@
 
 ### 2.6 联机：6 项均未接入
 
-`TextLinkUsername`, `ComboPreferProtocol`, `CheckLatencyFirstMode`, `CheckTryPunchSym`, `CheckEnableIPv6`, `CheckEnableCliOutput` 只保存页面值。`src-terracotta/src/rooms/mod.rs` 的 EasyTier 配置仍直接设定 `latency_first = true`、监听 TCP/UDP 等，没有接收这组用户偏好。设置页“重启生效”的提示不构成重启后真正生效的证据。
+`TextLinkUsername`, `ComboPreferProtocol`, `CheckLatencyFirstMode`, `CheckTryPunchSym`, `CheckEnableIPv6`, `CheckEnableCliOutput` 只保存页面值。`crates/terracotta/src/rooms/mod.rs` 的 EasyTier 配置仍直接设定 `latency_first = true`、监听 TCP/UDP 等，没有接收这组用户偏好。设置页“重启生效”的提示不构成重启后真正生效的证据。
 
 ### 2.7 语言：一项生效，一项未接入
 
@@ -214,7 +214,7 @@ src-tauri/src/core/launch_session.rs     子进程、日志、退出事件、窗
 src-tauri/src/core/downloader/           复用 DownloadSettings/DownloadResources
 src-tauri/src/core/java/                 保留探测、选择、安装；读取统一偏好
 src-tauri/src/core/network.rs            客户端构造/替换、代理与 DNS 策略
-src-terracotta/src/                      接收明确的联机选项，不读取 Proto 的存储
+crates/terracotta/src/                      接收明确的联机选项，不读取 Proto 的存储
 
 src/api/settings.ts                     IPC DTO 与桌面/网站入口选择
 src/stores/settings.ts                  权威快照镜像、草稿、提交队列、错误
