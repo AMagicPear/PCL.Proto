@@ -1,0 +1,10 @@
+[package]
+name = "pcl-assets"
+version.workspace = true
+edition.workspace = true
+description = "Optional launcher assets for PCL.Proto: Java wrapper, LegacyFix, LWJGL agent, Log4j configs and the Forge installer bridge"
+license = "PCL-License"
+repository = "https://github.com/PCL-Community/PCL.Proto"
+readme = "README.md"
+
+[dependencies]

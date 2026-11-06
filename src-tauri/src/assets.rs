@@ -59,49 +59,40 @@ impl Assets {
     }
 
     pub fn java_wrapper(&self) -> std::io::Result<PathBuf> {
-        self.path(
-            "java-wrapper.jar",
-            include_bytes!("../resources/java-wrapper.jar"),
-        )
+        self.path(pcl_assets::JAVA_WRAPPER_NAME, pcl_assets::JAVA_WRAPPER)
     }
 
     pub fn forge_installer(&self) -> std::io::Result<PathBuf> {
         self.path(
-            "forge-installer.jar",
-            include_bytes!("../resources/forge-installer.jar"),
+            pcl_assets::FORGE_INSTALLER_NAME,
+            pcl_assets::FORGE_INSTALLER,
         )
     }
 
     pub fn legacy_fix(&self) -> std::io::Result<PathBuf> {
-        self.path(
-            "legacyfix.jar",
-            include_bytes!("../resources/legacyfix.jar"),
-        )
+        self.path(pcl_assets::LEGACY_FIX_NAME, pcl_assets::LEGACY_FIX)
     }
 
     pub fn lwjgl_unsafe_agent(&self) -> std::io::Result<PathBuf> {
         self.path(
-            "lwjgl-unsafe-agent.jar",
-            include_bytes!("../resources/lwjgl-unsafe-agent.jar"),
+            pcl_assets::LWJGL_UNSAFE_AGENT_NAME,
+            pcl_assets::LWJGL_UNSAFE_AGENT,
         )
     }
 
     fn log4j2_debug(&self) -> std::io::Result<PathBuf> {
-        self.path(
-            "log4j2-debug.xml",
-            include_bytes!("../resources/log4j2-debug.xml"),
-        )
+        self.path(pcl_assets::LOG4J2_DEBUG_NAME, pcl_assets::LOG4J2_DEBUG)
     }
 
     fn log4j2_legacy_debug(&self) -> std::io::Result<PathBuf> {
         self.path(
-            "log4j2-legacy-debug.xml",
-            include_bytes!("../resources/log4j2-legacy-debug.xml"),
+            pcl_assets::LOG4J2_LEGACY_DEBUG_NAME,
+            pcl_assets::LOG4J2_LEGACY_DEBUG,
         )
     }
 
     fn macos_arm_libraries(&self) -> Option<String> {
-        std::fs::read_to_string(self.directory.join("macos-arm64-libraries.json")).ok()
+        Some(pcl_assets::MACOS_ARM_LIBRARIES.to_owned())
     }
 
     pub fn mesa_loader_path(&self) -> PathBuf {

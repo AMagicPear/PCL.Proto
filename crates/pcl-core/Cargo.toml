@@ -2,9 +2,12 @@
 name = "pcl-core"
 version.workspace = true
 edition.workspace = true
-description = "PCL.Proto launcher core: configuration, instances, installation, launching and networking without any GUI toolkit dependency"
+description = "Minecraft launcher core: instances, installation, launching, Java and networking, without GUI or configuration persistence"
 license = "PCL-License"
 repository = "https://github.com/PCL-Community/PCL.Proto"
+readme = "README.md"
+keywords = ["minecraft", "launcher", "mod-loader", "instance"]
+categories = ["games"]
 
 [features]
 default = []

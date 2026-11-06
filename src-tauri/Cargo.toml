@@ -18,6 +18,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.7.4", features = [] }
 
 [dependencies]
+pcl-assets = { path = "../crates/pcl-assets" }
 pcl-core = { path = "../crates/pcl-core", features = ["link"] }
 
 serde = { workspace = true, features = ["derive"] }

@@ -872,30 +872,33 @@ fn merge_loader_profile(
     Ok(())
 }
 
-#[derive(Clone, Copy, serde::Deserialize, serde::Serialize)]
+/// 要安装的模组加载器种类。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "lowercase")]
-enum LoaderFamily {
+pub enum LoaderFamily {
     Fabric,
     Legacyfabric,
     Forge,
     Neoforge,
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+/// 一次加载器安装请求。
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct LoaderInstall {
-    family: LoaderFamily,
-    version: String,
+    pub family: LoaderFamily,
+    pub version: String,
     #[serde(default)]
-    api: Option<FabricApiInstall>,
+    pub api: Option<FabricApiInstall>,
     #[serde(default)]
-    install_java: bool,
+    pub install_java: bool,
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+/// 可选一并安装的 Fabric API。
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct FabricApiInstall {
     #[serde(flatten)]
-    file: DownloadFile,
-    filename: String,
+    pub file: DownloadFile,
+    pub filename: String,
 }
 
 fn add_fabric_api(

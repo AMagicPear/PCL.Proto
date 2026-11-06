@@ -1074,7 +1074,7 @@ mod tests {
         let java_state = crate::minecraft::java::JavaState::default();
         // 忽略的网络冒烟测试直接使用应用打包的安装器桥接文件。
         let installer = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../src-tauri/resources/forge-installer.jar");
+            .join("../pcl-assets/resources/forge-installer.jar");
         let prepared = prepare(&client, &downloader, game, &loader, 0, &events)
             .await
             .unwrap();

@@ -5252,6 +5252,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "pcl-assets"
+version = "0.10.0"
+
+[[package]]
 name = "pcl-core"
 version = "0.10.0"
 dependencies = [
@@ -5305,6 +5309,7 @@ dependencies = [
  "libc",
  "log",
  "open",
+ "pcl-assets",
  "pcl-core",
  "reqwest 0.13.5",
  "serde",
