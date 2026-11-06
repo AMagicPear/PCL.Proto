@@ -63,3 +63,18 @@ pub async fn set_instance_launch_settings(
     .await
     .map_err(|error| error.to_string())?
 }
+
+#[cfg(test)]
+mod tests {
+    /// 前端表单默认值必须与核心的默认 JVM 参数保持一致。
+    #[test]
+    fn ui_defaults_match_core_jvm_arguments() {
+        let ui: serde_json::Value =
+            serde_json::from_str(include_str!("../../../src/assets/setting-defaults.json"))
+                .unwrap();
+        assert_eq!(
+            ui["PageSetupLaunch"]["TextAdvanceJvm"],
+            pcl_core::minecraft::launch::arguments::DEFAULT_JVM
+        );
+    }
+}

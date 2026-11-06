@@ -91,11 +91,6 @@ mod tests {
 
     #[test]
     fn validates_arguments_and_inherits_each_field_independently() {
-        let ui: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../../src/assets/setting-defaults.json"
-        ))
-        .unwrap();
-        assert_eq!(ui["PageSetupLaunch"]["TextAdvanceJvm"], DEFAULT_JVM);
         let global = LaunchArguments {
             jvm: "-Dglobal=true".into(),
             game: "--demo".into(),

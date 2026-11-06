@@ -178,7 +178,10 @@ mod tests {
     #[tokio::test]
     async fn serves_signed_profile_and_only_its_own_skin() {
         let mut account = McProfile::offline("Player", "5627dd98e6be3c21b8a8e92344183641");
-        let skin_image = include_bytes!("../../../../../public/pcl/images/Skins/Steve.png");
+        // 一张 1×1 的 PNG：测试只关心服务端是否原样返回上传的皮肤字节。
+        const SKIN_PNG: &str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=";
+        let skin_image = STANDARD.decode(SKIN_PNG).unwrap();
+        let skin_image = skin_image.as_slice();
         account.offline_skin = Some(crate::minecraft::profile::OfflineSkin {
             image: STANDARD.encode(skin_image),
             slim: true,
