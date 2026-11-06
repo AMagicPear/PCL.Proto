@@ -36,6 +36,7 @@ pub async fn download_custom_file(
     task_id: i32,
     on_event: tauri::ipc::Channel<TaskItemReport>,
 ) -> Result<(), String> {
+    let url = crate::external::validate(&url)?;
     download::download_custom_file(url, destination, task_id, super::channel_sink(on_event)).await
 }
 

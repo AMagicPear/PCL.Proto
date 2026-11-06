@@ -436,7 +436,6 @@ async fn custom_transfer_checked(
     on_progress: impl Fn(u64, Option<u64>, f64),
 ) -> anyhow::Result<()> {
     use anyhow::{Context, ensure};
-    crate::utils::url::validate(url).map_err(anyhow::Error::msg)?;
     let parent = destination
         .parent()
         .filter(|p| p.is_absolute() && p.is_dir())

@@ -63,7 +63,7 @@ Rust 侧分成两个 crate：`crates/pcl-core/` 承载全部领域逻辑且不�
 | `src-tauri/src/login/`  | 交互式登录流程（设备码、档案选择、取消与状态轮询）                     |
 | `src-tauri/src/commands/` | 130 个 `#[tauri::command]` 适配层，命令名与参数保持不变             |
 | `src-tauri/src/assets.rs` | 随包携带的辅助资源（Java wrapper、LegacyFix、渲染器代理）与解压         |
-| `src-tauri/src/`        | 应用初始化、窗口与可见性策略、设备标识、外链、自定义 URI 协议、macOS 资源 |
+| `src-tauri/src/`        | 应用初始化、窗口与可见性策略、设备标识、外链校验/打开、自定义 URI 协议、macOS 资源 |
 
 配置系统属于宿主应用：`config.json` 的路径、读写、单例与档案持久化都在 `src-tauri`；
 `pcl-core` 只接收显式输入（`AppState` 折算后的启动请求、`JavaState`、`RuntimePaths`、
