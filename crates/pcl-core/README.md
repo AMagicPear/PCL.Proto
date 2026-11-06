@@ -15,6 +15,27 @@ PCL.Proto 的启动器核心能力，供第三方构建自己的 Minecraft 启�
 | 界面、窗口、通知 | 自己实现 |
 | 随包的 JAR 资源 | 用 [`pcl-assets`](../pcl-assets) 或自备文件，把路径传进来 |
 
+## 通过 Git 引入
+
+`pcl-core` 目前通过 Git 分发（尚未发布到 crates.io）：
+
+```toml
+[dependencies]
+pcl-core = { git = "https://github.com/PCL-Community/PCL.Proto", rev = "<commit>" }
+
+# 需要 CE 兼容的启动补丁或 Forge 安装桥接时再加：
+pcl-assets = { git = "https://github.com/PCL-Community/PCL.Proto", rev = "<commit>" }
+```
+
+请固定 `rev`（或 `tag`），不要跟分支漂移。启用联机能力时：
+
+```toml
+pcl-core = { git = "https://github.com/PCL-Community/PCL.Proto", rev = "<commit>", features = ["link"] }
+```
+
+Cargo 会连同仓库的 `crates/terracotta` 子模块一起拉取；如果用 `net.git-fetch-with-cli`
+或公司镜像，请确认子模块地址也可访问。
+
 ## 基本用法
 
 ```rust,ignore
@@ -114,8 +135,8 @@ let state = pcl_core::minecraft::java::refresh(
 | --- | --- | --- |
 | `link` | 关闭 | 引入 Terracotta 联机桥接（`pcl_core::link::scaffolding`） |
 
-`link` 目前依赖同仓的 `crates/terracotta`（Git 子模块）。**它还没有发布到 crates.io**，
-所以开启该 feature 的 `pcl-core` 暂时不能直接发布；只用单机能力时保持默认 feature 即可。
+`link` 依赖同仓的 `crates/terracotta`（Git 子模块，AGPL-3.0）。Git 分发会自动拉取；
+如果只做单机启动器，保持默认 feature 即可。
 
 ## 配套 crate
 
