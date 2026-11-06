@@ -15,12 +15,13 @@
 ## 2. 新目录结构
 
 ```text
-src-tauri/src/
+crates/pcl-core/src/    启动器核心，不依赖 Tauri
   app/
-    config.rs          ConfigManager、配置文件读写、设置迁移与 Tauri 设置命令
+    config.rs          ConfigManager、配置文件读写、设置迁移
     metadata.rs        启动器名称、版本、User-Agent 常量（对应 App/Metadata）
     states.rs          AppState、LauncherSetup、WindowSettings（对应 App/States）
-    visibility.rs      启动器可见性策略与会话联动
+    visibility.rs      启动器可见性策略与会话联动（窗口动作由宿主实现）
+    resources.rs       启动器自带资源的定位（开发用 crate 目录，打包用 .app）
   io/
     files.rs           路径校验、安全拼接、SHA-1、打开目录（对应 IO/Files）
     download/          下载器、Range 分段、全局连接/带宽配额（对应 IO/Download）
@@ -66,8 +67,10 @@ src-tauri/src/
     platform.rs        OS/Architecture/Compatibility
     secret.rs          设备标识与 PCL 哈希
     toys.rs            今日人品
-  commands/            按启动、设置、Java、实例、资源、仓库、皮肤等职责拆分的 IPC 适配层
 ```
+
+`src-tauri/src/` 是 Tauri 宿主：`commands/` 是 129 个 IPC 适配命令，`secrets.rs` 注入凭据，
+`window.rs` 提供窗口动作，`resources.rs`/`protocol.rs` 负责打包资源与自定义协议。
 
 ## 3. 关键结构映射
 

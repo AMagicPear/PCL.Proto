@@ -1,4 +1,4 @@
-use crate::{
+use pcl_core::{
     app::config::ConfigManager,
     io::files::open_directory,
     minecraft::java::{self, preference::current_instance},
@@ -22,7 +22,7 @@ pub async fn repair_instance_files(instance_directory: std::path::PathBuf) -> Re
                 .read_version_json()
                 .map_err(|error| error.to_string())?;
             let game_directory =
-                crate::minecraft::instance::isolation::directory(&state, instance).to_path_buf();
+                pcl_core::minecraft::instance::isolation::directory(&state, instance).to_path_buf();
             // Loader instances share the parent's client JAR; only vanilla owns `jar_path`.
             let vanilla = instance
                 .plugins_version
@@ -40,11 +40,11 @@ pub async fn repair_instance_files(instance_directory: std::path::PathBuf) -> Re
         .await
         .map_err(|error| error.to_string())??;
     let context = match arch {
-        Some(arch) => crate::minecraft::version::McRuleContext::for_java(&arch)
+        Some(arch) => pcl_core::minecraft::version::McRuleContext::for_java(&arch)
             .map_err(|error| error.to_string())?,
-        None => crate::minecraft::version::McRuleContext::current(),
+        None => pcl_core::minecraft::version::McRuleContext::current(),
     };
-    let downloader = crate::io::download::Downloader::with_bases(
+    let downloader = pcl_core::io::download::Downloader::with_bases(
         ConfigManager::instance().api_client.api_bases_async().await,
     );
     if vanilla && details.downloads.client.validate().is_ok() {
@@ -53,7 +53,7 @@ pub async fn repair_instance_files(instance_directory: std::path::PathBuf) -> Re
             .await
             .map_err(|error| format!("Cannot repair client JAR: {error}"))?;
     }
-    crate::minecraft::installer::prepare_launch_libraries(
+    pcl_core::minecraft::installer::prepare_launch_libraries(
         &details,
         &global_dir,
         &directory,
@@ -63,7 +63,7 @@ pub async fn repair_instance_files(instance_directory: std::path::PathBuf) -> Re
     )
     .await
     .map_err(|error| format!("{error:#}"))?;
-    crate::minecraft::installer::prepare_legacy_assets(
+    pcl_core::minecraft::installer::prepare_legacy_assets(
         &details,
         &global_dir,
         &game_directory,
@@ -82,7 +82,7 @@ pub(crate) fn instance_game_directory(
     let state = ConfigManager::instance().app_state.blocking_lock();
     let instance =
         current_instance(&state, instance_directory).map_err(|error| error.to_string())?;
-    Ok(crate::minecraft::instance::isolation::directory(&state, instance).to_path_buf())
+    Ok(pcl_core::minecraft::instance::isolation::directory(&state, instance).to_path_buf())
 }
 
 #[tauri::command]
@@ -93,27 +93,27 @@ pub async fn instance_resource_destination(
     save: Option<String>,
 ) -> Result<std::path::PathBuf, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        crate::io::files::validate_file_name(&filename).map_err(|e| e.to_string())?;
-        let kind = crate::minecraft::instance::files::Kind::parse(&kind)?;
+        pcl_core::io::files::validate_file_name(&filename).map_err(|e| e.to_string())?;
+        let kind = pcl_core::minecraft::instance::files::Kind::parse(&kind)?;
         if !matches!(
             kind,
-            crate::minecraft::instance::files::Kind::Mod
-                | crate::minecraft::instance::files::Kind::ResourcePack
-                | crate::minecraft::instance::files::Kind::Shader
-                | crate::minecraft::instance::files::Kind::Save
-                | crate::minecraft::instance::files::Kind::Datapack
+            pcl_core::minecraft::instance::files::Kind::Mod
+                | pcl_core::minecraft::instance::files::Kind::ResourcePack
+                | pcl_core::minecraft::instance::files::Kind::Shader
+                | pcl_core::minecraft::instance::files::Kind::Save
+                | pcl_core::minecraft::instance::files::Kind::Datapack
         ) {
             return Err("Select a destination for this resource type".into());
         }
         let root = instance_game_directory(&instance_directory)?;
-        let folder = if kind == crate::minecraft::instance::files::Kind::Datapack {
+        let folder = if kind == pcl_core::minecraft::instance::files::Kind::Datapack {
             datapack_destination(
                 &root,
                 save.as_deref()
                     .ok_or("A save name is required for datapacks")?,
             )?
         } else {
-            let folder = crate::minecraft::instance::files::directory(kind, &root, None)?;
+            let folder = pcl_core::minecraft::instance::files::directory(kind, &root, None)?;
             std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
             folder
         };
@@ -142,7 +142,7 @@ fn save_directory(
 }
 
 fn save_in_game(game: &std::path::Path, save: &str) -> Result<std::path::PathBuf, String> {
-    use crate::minecraft::instance::files::{Kind, directory};
+    use pcl_core::minecraft::instance::files::{Kind, directory};
     let folder = directory(Kind::Datapack, game, Some(save))?
         .parent()
         .unwrap()
@@ -176,9 +176,9 @@ fn datapack_destination(game: &std::path::Path, save: &str) -> Result<std::path:
 pub async fn get_save_info(
     instance_directory: std::path::PathBuf,
     save: String,
-) -> Result<crate::minecraft::saves::SaveInfo, String> {
+) -> Result<pcl_core::minecraft::saves::SaveInfo, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        crate::minecraft::saves::read(&save_directory(&instance_directory, &save)?)
+        pcl_core::minecraft::saves::read(&save_directory(&instance_directory, &save)?)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -188,10 +188,10 @@ pub async fn get_save_info(
 pub async fn update_save_info(
     instance_directory: std::path::PathBuf,
     save: String,
-    changes: crate::minecraft::saves::SaveChanges,
-) -> Result<crate::minecraft::saves::SaveInfo, String> {
+    changes: pcl_core::minecraft::saves::SaveChanges,
+) -> Result<pcl_core::minecraft::saves::SaveInfo, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        crate::minecraft::saves::apply(&save_directory(&instance_directory, &save)?, changes)
+        pcl_core::minecraft::saves::apply(&save_directory(&instance_directory, &save)?, changes)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -202,16 +202,21 @@ pub async fn list_instance_resources(
     instance_directory: std::path::PathBuf,
     kind: String,
     save: Option<String>,
-) -> Result<Vec<crate::minecraft::instance::files::Entry>, String> {
+) -> Result<Vec<pcl_core::minecraft::instance::files::Entry>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let kind = crate::minecraft::instance::files::Kind::parse(&kind)?;
+        let kind = pcl_core::minecraft::instance::files::Kind::parse(&kind)?;
         let game_directory = instance_game_directory(&instance_directory)?;
-        let directory =
-            crate::minecraft::instance::files::directory(kind, &game_directory, save.as_deref())?;
-        let mut entries = crate::minecraft::instance::files::list(kind, &directory)?;
+        let directory = pcl_core::minecraft::instance::files::directory(
+            kind,
+            &game_directory,
+            save.as_deref(),
+        )?;
+        let mut entries = pcl_core::minecraft::instance::files::list(kind, &directory)?;
         for entry in &mut entries {
             let picture = match kind {
-                crate::minecraft::instance::files::Kind::Screenshot => Some(entry.path.as_path()),
+                pcl_core::minecraft::instance::files::Kind::Screenshot => {
+                    Some(entry.path.as_path())
+                }
                 _ => entry.icon.as_deref(),
             };
             entry.token = picture.map(crate::protocol::register);
@@ -229,10 +234,13 @@ pub async fn open_instance_resource_folder(
     save: Option<String>,
 ) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let kind = crate::minecraft::instance::files::Kind::parse(&kind)?;
+        let kind = pcl_core::minecraft::instance::files::Kind::parse(&kind)?;
         let game_directory = instance_game_directory(&instance_directory)?;
-        let directory =
-            crate::minecraft::instance::files::directory(kind, &game_directory, save.as_deref())?;
+        let directory = pcl_core::minecraft::instance::files::directory(
+            kind,
+            &game_directory,
+            save.as_deref(),
+        )?;
         std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
         open_directory(&directory)
     })
@@ -265,7 +273,7 @@ pub async fn set_instance_resources_enabled(
         for path in &paths {
             ensure_inside_instance(&game_directory, path)?;
         }
-        crate::minecraft::instance::files::set_enabled(&paths, enabled)
+        pcl_core::minecraft::instance::files::set_enabled(&paths, enabled)
     })
     .await
     .map_err(|error| error.to_string())?
@@ -281,7 +289,7 @@ pub async fn delete_instance_resources(
         for path in &paths {
             ensure_inside_instance(&game_directory, path)?;
         }
-        crate::minecraft::instance::files::delete(&paths)
+        pcl_core::minecraft::instance::files::delete(&paths)
     })
     .await
     .map_err(|error| error.to_string())?
@@ -295,11 +303,14 @@ pub async fn import_instance_resources(
     sources: Vec<std::path::PathBuf>,
 ) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let kind = crate::minecraft::instance::files::Kind::parse(&kind)?;
+        let kind = pcl_core::minecraft::instance::files::Kind::parse(&kind)?;
         let game_directory = instance_game_directory(&instance_directory)?;
-        let directory =
-            crate::minecraft::instance::files::directory(kind, &game_directory, save.as_deref())?;
-        crate::minecraft::instance::files::import(&sources, kind, &directory)
+        let directory = pcl_core::minecraft::instance::files::directory(
+            kind,
+            &game_directory,
+            save.as_deref(),
+        )?;
+        pcl_core::minecraft::instance::files::import(&sources, kind, &directory)
     })
     .await
     .map_err(|error| error.to_string())?

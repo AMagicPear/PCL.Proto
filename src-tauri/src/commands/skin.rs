@@ -1,5 +1,5 @@
-use crate::io::net::http::api_client::MinecraftApiClient;
 use base64::{Engine, engine::general_purpose};
+use pcl_core::io::net::http::api_client::MinecraftApiClient;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::{AppHandle, Manager, path::BaseDirectory};
@@ -96,7 +96,7 @@ pub async fn fetch_profile_skin(
     profile_id: String,
     refresh: bool,
 ) -> Result<ProfileSkin, String> {
-    use crate::minecraft::profile::{ProfileType, service};
+    use pcl_core::minecraft::profile::{ProfileType, service};
 
     let id = profile_id.clone();
     let profile = tauri::async_runtime::spawn_blocking(move || service::find(&id))
@@ -135,7 +135,7 @@ pub async fn fetch_profile_skin(
         });
     }
     let client =
-        crate::minecraft::profile::auth::http_client().map_err(|error| error.to_string())?;
+        pcl_core::minecraft::profile::auth::http_client().map_err(|error| error.to_string())?;
     let Some(address) = skin_address(&profile) else {
         return Ok(ProfileSkin {
             skin: None,
@@ -185,8 +185,8 @@ pub async fn change_offline_skin(
     profile_id: String,
     source: Option<std::path::PathBuf>,
     slim: bool,
-) -> Result<(), crate::minecraft::profile::auth::AuthError> {
-    use crate::minecraft::profile::{OfflineSkin, ProfileType, auth::AuthError, service};
+) -> Result<(), pcl_core::minecraft::profile::auth::AuthError> {
+    use pcl_core::minecraft::profile::{OfflineSkin, ProfileType, auth::AuthError, service};
 
     let skin = if let Some(source) = source {
         let size = tokio::fs::metadata(&source)
@@ -208,7 +208,7 @@ pub async fn change_offline_skin(
         None
     };
     service::blocking(move || {
-        crate::app::config::ConfigManager::instance()
+        pcl_core::app::config::ConfigManager::instance()
             .update(|state| {
                 let profile = state
                     .profile
@@ -228,8 +228,8 @@ pub async fn change_offline_skin(
 }
 
 /// 会话服务器地址：正版用 Mojang，第三方用认证服务器自带的会话服务器。
-fn skin_address(profile: &crate::minecraft::profile::McProfile) -> Option<String> {
-    use crate::minecraft::profile::ProfileType;
+fn skin_address(profile: &pcl_core::minecraft::profile::McProfile) -> Option<String> {
+    use pcl_core::minecraft::profile::ProfileType;
     match profile.profile_type {
         ProfileType::Microsoft => {
             Some("https://sessionserver.mojang.com/session/minecraft/profile/".to_owned())
@@ -275,8 +275,8 @@ fn texture_url(session: &Value) -> Option<String> {
 }
 
 /// 没有自定义皮肤时按 UUID 选择内置皮肤，对照 CE 的 `McSkinSex`。
-fn default_skin(profile: &crate::minecraft::profile::McProfile) -> String {
-    use crate::minecraft::profile::{ProfileType, uuid};
+fn default_skin(profile: &pcl_core::minecraft::profile::McProfile) -> String {
+    use pcl_core::minecraft::profile::{ProfileType, uuid};
     match profile.profile_type {
         // 离线档案按自己的 UUID 选择默认皮肤。
         ProfileType::Offline => uuid::default_skin(&profile.uuid).to_owned(),
@@ -345,24 +345,24 @@ pub async fn change_microsoft_skin(
     profile_id: String,
     source: std::path::PathBuf,
     slim: bool,
-) -> Result<(), crate::minecraft::profile::auth::AuthError> {
-    use crate::minecraft::profile::auth::session;
-    use crate::minecraft::profile::service;
+) -> Result<(), pcl_core::minecraft::profile::auth::AuthError> {
+    use pcl_core::minecraft::profile::auth::session;
+    use pcl_core::minecraft::profile::service;
 
     let id = profile_id.clone();
     let stored = tauri::async_runtime::spawn_blocking(move || service::find(&id))
         .await
         .map_err(|error| {
-            crate::minecraft::profile::auth::AuthError::new("profile_store", error.to_string())
+            pcl_core::minecraft::profile::auth::AuthError::new("profile_store", error.to_string())
         })?
         .ok_or_else(|| {
-            crate::minecraft::profile::auth::AuthError::new(
+            pcl_core::minecraft::profile::auth::AuthError::new(
                 "profile_not_found",
                 "The source profile does not exist.",
             )
         })?;
     let bytes = tokio::fs::read(&source).await.map_err(|error| {
-        crate::minecraft::profile::auth::AuthError::new("skin_file", error.to_string())
+        pcl_core::minecraft::profile::auth::AuthError::new("skin_file", error.to_string())
     })?;
     validate_skin(&bytes)?;
     let file_name = source
@@ -386,8 +386,8 @@ pub async fn change_microsoft_skin(
 }
 
 /// 皮肤文件校验，对照 CE 的 `ModSkin.McSkinSelect`：64×32 或 64×64，且不超过 24 KB。
-fn validate_skin(bytes: &[u8]) -> Result<(), crate::minecraft::profile::auth::AuthError> {
-    use crate::minecraft::profile::auth::AuthError;
+fn validate_skin(bytes: &[u8]) -> Result<(), pcl_core::minecraft::profile::auth::AuthError> {
+    use pcl_core::minecraft::profile::auth::AuthError;
     if bytes.len() > 24 * 1024 {
         return Err(AuthError::new(
             "skin_too_large",
@@ -426,9 +426,9 @@ async fn upload_skin(
     bytes: &[u8],
     file_name: &str,
     slim: bool,
-) -> Result<(), crate::minecraft::profile::auth::AuthError> {
-    use crate::minecraft::profile::auth::AuthError;
-    let client = crate::minecraft::profile::auth::http_client()?;
+) -> Result<(), pcl_core::minecraft::profile::auth::AuthError> {
+    use pcl_core::minecraft::profile::auth::AuthError;
+    let client = pcl_core::minecraft::profile::auth::http_client()?;
     let form = reqwest::multipart::Form::new()
         .text("variant", if slim { "slim" } else { "classic" })
         .part(

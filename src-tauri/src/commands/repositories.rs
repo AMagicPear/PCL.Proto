@@ -1,4 +1,4 @@
-use crate::{
+use pcl_core::{
     AppState,
     app::config::ConfigManager,
     minecraft::instance::{McInstance, folder::McFolder},

@@ -70,10 +70,10 @@ jobs:
       - name: generate icons
         run: bun run icons
 
-      - name: test Java selection and configuration
+      - name: test core crate
         run: |
-          cargo test -p pcl-proto --lib core::java::
-          cargo test -p pcl-proto --lib setup::java_config_tests
+          cargo test -p pcl-core --lib
+          cargo test -p pcl-proto --lib
 
       - name: build tauri app
         run: bun run tauri build ${{ matrix.args }}

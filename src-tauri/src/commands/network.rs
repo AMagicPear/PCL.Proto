@@ -1,7 +1,7 @@
-use crate::app::config::ConfigManager;
+use pcl_core::app::config::ConfigManager;
 
 #[tauri::command]
-pub async fn get_proxy_settings() -> crate::io::net::proxy::ProxySettings {
+pub async fn get_proxy_settings() -> pcl_core::io::net::proxy::ProxySettings {
     ConfigManager::instance()
         .app_state
         .lock()
@@ -12,8 +12,8 @@ pub async fn get_proxy_settings() -> crate::io::net::proxy::ProxySettings {
 
 #[tauri::command]
 pub async fn set_proxy_settings(
-    settings: crate::io::net::proxy::ProxySettings,
-) -> Result<crate::io::net::proxy::ProxySettings, String> {
+    settings: pcl_core::io::net::proxy::ProxySettings,
+) -> Result<pcl_core::io::net::proxy::ProxySettings, String> {
     tauri::async_runtime::spawn_blocking(move || {
         ConfigManager::instance().update_proxy_settings(settings)
     })

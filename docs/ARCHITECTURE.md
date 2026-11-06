@@ -6,9 +6,10 @@
 
 仓库根目录的 `package.json`、Vite 和 TypeScript 配置负责网站与 Tauri 前端；
 `packages/components/` 保存组件 npm 包的入口、样式、包描述和独立构建配置，
-直接复用 `src/components/widget/` 中的控件。根目录 `Cargo.toml` 管理 Rust 工作区，
-`src-tauri/` 是桌面应用，`src-terracotta/` 是独立维护的 Git 子模块；不要把子模块文件复制到组件包。
-组件包运行 `bun run components:build` 构建，或执行 `npm pack ./packages/components` 构建并打包。
+直接复用 `src/components/widget/` 中的控件。根目录 `Cargo.toml` 管理 Rust 工作区：
+`crates/pcl-core/` 是启动器核心，`src-tauri/` 是桌面应用，`src-terracotta/` 是独立维护的 Git 子模块；
+不要把子模块文件复制到组件包。组件包运行 `bun run components:build` 构建，或执行
+`npm pack ./packages/components` 构建并打包。
 
 | 位置                     | 负责的内容                                                   |
 | ------------------------ | ------------------------------------------------------------ |
@@ -45,6 +46,25 @@ types/comp.ts
 
 ## Rust 后端
 
+Rust 侧分成两个 crate：`crates/pcl-core/` 承载全部领域逻辑且不依赖 Tauri；
+`src-tauri/` 只是 Tauri 宿主，负责 IPC、窗口、资源协议和平台打包。
+应用只依赖 `pcl-core`，由核心库按需再引入 Terracotta（`link` feature）；
+第三方启动器可以复用 `pcl-core` 并注入自己的凭据与界面。
+
+| crate / 位置            | 负责的内容                                                             |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `pcl-core/src/app/`     | `ConfigManager`、`AppState`、凭据注入、可见性判定、启动器资源定位      |
+| `pcl-core/src/io/`      | 下载器、文件操作、HTTP 客户端、代理策略                                |
+| `pcl-core/src/minecraft/` | 版本、实例、安装、Java、启动、账户、导出与整合包                     |
+| `pcl-core/src/link/`    | 服务器列表 ping；启用 `link` feature 时提供 Terracotta 桥接            |
+| `pcl-core/src/events.rs` | `EventSink`：后台任务回传进度的普通回调，替代 Tauri 的 `Channel`      |
+| `src-tauri/src/commands/` | 129 个 `#[tauri::command]` 适配层，命令名与参数保持不变              |
+| `src-tauri/src/`        | 应用初始化、窗口动作、自定义 URI 协议、macOS 资源与凭据读取            |
+
+凭据由宿主注入：`src-tauri/src/secrets.rs` 按"编译期烧录 > 环境变量"读取
+`CURSEFORGE_API_KEY` 和 `MS_CLIENT_ID`，启动时调用 `pcl_core::app::secrets::install`；
+核心库本身不含任何内置密钥，未注入时按"未配置"处理。
+
 `src-tauri/src/commands/mod.rs` 只声明命令模块。`lib.rs` 直接注册各模块的命令；模块调整不改变前端 IPC 名称或参数。
 
 | 命令模块                | 职责                                                     |
@@ -60,8 +80,16 @@ types/comp.ts
 | `network.rs`            | 代理设置                                                 |
 | `account.rs`            | 返回不含凭据的账户投影                                   |
 | `skin.rs`               | 皮肤解析、缓存、另存与正版皮肤上传                       |
+| `config.rs`             | 窗口、可见性、版本说明和日志行数设置                     |
+| `download.rs`           | 下载任务、下载资源配额与下载设置                         |
+| `sources.rs`            | Modrinth / CurseForge 元数据请求与可用性                 |
+| `installer.rs`          | 原版安装、Forge 系安装器、整合包导入                     |
+| `export.rs`             | 客户端/服务端导出、加载器文件与资源下载                  |
+| `session.rs`            | 运行中游戏会话的查询、停止与日志清理                     |
+| `system.rs`             | 外链、系统字体、今日人品和服务器 ping                    |
+| `link.rs`               | Terracotta 联机桥接                                      |
 
-命令层负责参数适配、任务编排与 UI 通道；Minecraft、Java、下载和文件操作的领域实现保留在 `minecraft/`、`io/` 等现有模块。`ConfigManager` 负责事务更新与落盘。目录边界、符号链接检查、配置保存失败处理和重命名回滚不能在整理时省略。
+命令层只负责参数适配与 IPC 通道：进度用 `channel_sink` 把 `Channel` 接到核心库的 `EventSink`，状态通过 `ConfigManager` 取得。Minecraft、Java、下载和文件操作的领域实现位于 `pcl-core` 的 `minecraft/`、`io/` 等模块。`ConfigManager` 负责事务更新与落盘。目录边界、符号链接检查、配置保存失败处理和重命名回滚不能在整理时省略。
 
 ## 维护约定与验证
 
@@ -71,4 +99,4 @@ types/comp.ts
 
 本次整理的设置回归位于 `tests/ui/settings-persistence.test.mjs`，覆盖串行与并行作用域、快照隔离、失败重试、过期完成、读取期间编辑、真实领域 IPC 负载和实例编辑器重新挂载。该检查已接入 `bun run check:ui`。
 
-常规验证：`bun run ui:build`、`cargo check --workspace`、`cargo test -p pcl-proto --lib`。离线检查与构建不代表已完成真实游戏启动或 Windows/Linux 桌面验收。
+常规验证：`bun run ui:build`、`cargo check --workspace`、`cargo test -p pcl-core --lib`、`cargo test -p pcl-proto --lib`。离线检查与构建不代表已完成真实游戏启动或 Windows/Linux 桌面验收。

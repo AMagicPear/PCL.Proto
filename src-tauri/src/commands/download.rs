@@ -1,0 +1,104 @@
+//! 下载任务与下载设置类命令。
+
+use std::path::PathBuf;
+
+use pcl_core::io::download::{
+    self, TaskItemReport,
+    resources::{DownloadSettings, DownloadStats, get_download_stats as core_stats},
+    tasks,
+};
+use pcl_core::io::net::http::api_client::FabricFamily;
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn download_fabric_installer(
+    family: FabricFamily,
+    version: String,
+    destination: PathBuf,
+    task_id: i32,
+    on_event: tauri::ipc::Channel<TaskItemReport>,
+) -> Result<(), String> {
+    download::download_fabric_installer(
+        family,
+        version,
+        destination,
+        task_id,
+        super::channel_sink(on_event),
+    )
+    .await
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn download_custom_file(
+    url: String,
+    destination: PathBuf,
+    task_id: i32,
+    on_event: tauri::ipc::Channel<TaskItemReport>,
+) -> Result<(), String> {
+    download::download_custom_file(url, destination, task_id, super::channel_sink(on_event)).await
+}
+
+#[tauri::command]
+pub async fn open_custom_download_folder(directory: PathBuf) -> Result<(), String> {
+    download::open_custom_download_folder(directory).await
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn prepare_download_task(task_id: i32) -> Result<(), String> {
+    tasks::prepare_download_task(task_id)
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn cancel_download_task(task_id: i32) -> Result<(), String> {
+    tasks::cancel_download_task(task_id)
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn release_download_task(task_id: i32) {
+    tasks::release_download_task(task_id)
+}
+
+#[tauri::command]
+pub fn get_download_stats() -> DownloadStats {
+    core_stats()
+}
+
+#[tauri::command]
+pub async fn set_download_settings(settings: DownloadSettings) -> Result<DownloadSettings, String> {
+    download::resources::set_download_settings(settings).await
+}
+
+#[tauri::command]
+pub async fn get_download_settings() -> Option<DownloadSettings> {
+    download::resources::get_download_settings().await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn custom_download_ipc_accepts_task_argument_names() {
+        let app = tauri::test::mock_builder()
+            .invoke_handler(tauri::generate_handler![download_custom_file])
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .unwrap();
+        let window = tauri::WebviewWindowBuilder::new(&app, "custom", Default::default())
+            .build()
+            .unwrap();
+        let result = tauri::test::get_ipc_response(
+            &window,
+            tauri::webview::InvokeRequest {
+                cmd: "download_custom_file".into(),
+                callback: tauri::ipc::CallbackFn(0),
+                error: tauri::ipc::CallbackFn(1),
+                url: "tauri://localhost".parse().unwrap(),
+                body: tauri::ipc::InvokeBody::Json(
+                    serde_json::json!({"url":"file:///bad", "destination":"/tmp/test", "task_id":1, "on_event":"__CHANNEL__:1"}),
+                ),
+                headers: Default::default(),
+                invoke_key: tauri::test::INVOKE_KEY.to_string(),
+            },
+        );
+        assert_eq!(result.unwrap_err(), "Invalid external URL");
+    }
+}

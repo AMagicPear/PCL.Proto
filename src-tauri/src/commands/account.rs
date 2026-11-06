@@ -4,10 +4,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::minecraft::profile::auth::session::{self, LoginRequest, View};
-use crate::minecraft::profile::auth::{AuthError, AuthResult, authlib, connect, microsoft};
-use crate::minecraft::profile::service::blocking;
-use crate::minecraft::profile::{McProfile, ProfileType, SafeProfile, service, uuid};
+use pcl_core::minecraft::profile::auth::session::{self, LoginRequest, View};
+use pcl_core::minecraft::profile::auth::{AuthError, AuthResult, authlib, connect, microsoft};
+use pcl_core::minecraft::profile::service::blocking;
+use pcl_core::minecraft::profile::{McProfile, ProfileType, SafeProfile, service, uuid};
 
 /// 档案列表与当前选择，界面一次拿全。
 #[derive(Clone, Debug, Serialize)]
@@ -185,7 +185,7 @@ pub async fn rename_microsoft_profile(
 #[tauri::command]
 pub async fn probe_auth_server(address: String) -> Result<AuthServerInfo, AuthError> {
     let address = address.trim().to_owned();
-    let client = crate::minecraft::profile::auth::http_client()?;
+    let client = pcl_core::minecraft::profile::auth::http_client()?;
     let api_location = authlib::resolve_api_location(&client, &address).await;
     let normalized = authlib::normalize_server(&api_location)?;
     // CE：主机名命中内置 ClientId 时直接认为支持 OAuth。

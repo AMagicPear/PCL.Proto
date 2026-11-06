@@ -1,0 +1,176 @@
+//! 安装流程类命令：原版安装、Forge 系安装器、整合包导入。
+
+use std::path::PathBuf;
+use std::sync::Arc;
+
+use pcl_core::app::config::AppState;
+use pcl_core::io::download::TaskItemReport;
+use pcl_core::io::net::http::api_client::MinecraftApiClient;
+use pcl_core::minecraft::installer::{
+    self, InstallResult, LoaderInstall,
+    forgelike::{self, JavaInstallOffer},
+    modpack::{self, OnlinePackInfo, PackInfo},
+};
+use pcl_core::minecraft::version::DownloadFile;
+use tokio::sync::Mutex as AsyncMutex;
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn download_minecraft_version(
+    state: tauri::State<'_, Arc<AsyncMutex<AppState>>>,
+    client: tauri::State<'_, &MinecraftApiClient>,
+    on_event: tauri::ipc::Channel<TaskItemReport>,
+    version_id: String,
+    task_id: i32,
+    instance_name: String,
+    loader: Option<LoaderInstall>,
+) -> Result<InstallResult, String> {
+    installer::download_minecraft_version(
+        &state,
+        &client,
+        super::channel_sink(on_event),
+        version_id,
+        task_id,
+        instance_name,
+        loader,
+    )
+    .await
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn forgelike_installer_name(
+    client: tauri::State<'_, &MinecraftApiClient>,
+    game: String,
+    loader: LoaderInstall,
+) -> Result<String, String> {
+    forgelike::forgelike_installer_name(&client, game, loader).await
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn download_forgelike_installer(
+    client: tauri::State<'_, &MinecraftApiClient>,
+    game: String,
+    loader: LoaderInstall,
+    destination: PathBuf,
+    task_id: i32,
+    on_event: tauri::ipc::Channel<TaskItemReport>,
+) -> Result<(), String> {
+    forgelike::download_forgelike_installer(
+        &client,
+        game,
+        loader,
+        destination,
+        task_id,
+        super::channel_sink(on_event),
+    )
+    .await
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn prepare_forgelike_java(
+    client: tauri::State<'_, &MinecraftApiClient>,
+    version_id: String,
+    loader: LoaderInstall,
+) -> Result<Option<JavaInstallOffer>, String> {
+    forgelike::prepare_forgelike_java(&client, version_id, loader).await
+}
+
+#[tauri::command]
+pub async fn inspect_modpack(path: PathBuf) -> Result<PackInfo, String> {
+    modpack::inspect_modpack(path).await
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn prepare_online_modpack(
+    info: DownloadFile,
+    task_id: i32,
+    on_event: tauri::ipc::Channel<TaskItemReport>,
+) -> Result<OnlinePackInfo, String> {
+    modpack::prepare_online_modpack(info, task_id, super::channel_sink(on_event)).await
+}
+
+#[tauri::command]
+pub fn release_online_modpack(token: String) {
+    modpack::release_online_modpack(token)
+}
+
+#[tauri::command(rename_all = "snake_case")]
+#[allow(clippy::too_many_arguments)] // IPC 参数固定
+pub async fn install_modpack(
+    state: tauri::State<'_, Arc<AsyncMutex<AppState>>>,
+    client: tauri::State<'_, &MinecraftApiClient>,
+    path: PathBuf,
+    instance_name: String,
+    optional_files: Vec<String>,
+    install_java: bool,
+    task_id: i32,
+    on_event: tauri::ipc::Channel<TaskItemReport>,
+) -> Result<(), String> {
+    modpack::install_modpack(
+        &state,
+        &client,
+        path,
+        instance_name,
+        optional_files,
+        install_java,
+        task_id,
+        super::channel_sink(on_event),
+    )
+    .await
+}
+
+#[tauri::command(rename_all = "snake_case")]
+#[allow(clippy::too_many_arguments)] // IPC 参数固定
+pub async fn install_online_modpack(
+    state: tauri::State<'_, Arc<AsyncMutex<AppState>>>,
+    client: tauri::State<'_, &MinecraftApiClient>,
+    token: String,
+    instance_name: String,
+    optional_files: Vec<String>,
+    install_java: bool,
+    task_id: i32,
+    on_event: tauri::ipc::Channel<TaskItemReport>,
+) -> Result<(), String> {
+    modpack::install_online_modpack(
+        &state,
+        &client,
+        token,
+        instance_name,
+        optional_files,
+        install_java,
+        task_id,
+        super::channel_sink(on_event),
+    )
+    .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn online_prepare_ipc_accepts_task_arguments_and_validates_source() {
+        let app = tauri::test::mock_builder()
+            .invoke_handler(tauri::generate_handler![prepare_online_modpack])
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .unwrap();
+        let window = tauri::WebviewWindowBuilder::new(&app, "main", Default::default())
+            .build()
+            .unwrap();
+        let result = tauri::test::get_ipc_response(
+            &window,
+            tauri::webview::InvokeRequest {
+                cmd: "prepare_online_modpack".into(),
+                callback: tauri::ipc::CallbackFn(0),
+                error: tauri::ipc::CallbackFn(1),
+                url: "tauri://localhost".parse().unwrap(),
+                body: tauri::ipc::InvokeBody::Json(serde_json::json!({
+                    "info": { "url": "https://example.org/pack.mrpack", "size": 1, "sha1": "", "path": null },
+                    "task_id": -2001, "version_id": "Pack", "on_event": "__CHANNEL__:1"
+                })),
+                headers: Default::default(),
+                invoke_key: tauri::test::INVOKE_KEY.to_string(),
+            },
+        );
+        assert_eq!(result.unwrap_err(), "Unsupported resource host");
+    }
+}

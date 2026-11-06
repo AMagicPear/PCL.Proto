@@ -1,4 +1,4 @@
-use crate::app::config::ConfigManager;
+use pcl_core::app::config::ConfigManager;
 use std::io::{Read, Write};
 
 const MAX_BYTES: usize = 2 * 1024 * 1024;
@@ -31,8 +31,8 @@ pub async fn load_custom_homepage(url: Option<String>) -> Result<String, String>
             return Err("Invalid homepage URL".into());
         }
         use futures_util::StreamExt;
-        let settings = crate::io::download::resources::DOWNLOAD_RESOURCES.settings();
-        let response = crate::io::download::send_request(
+        let settings = pcl_core::io::download::resources::DOWNLOAD_RESOURCES.settings();
+        let response = pcl_core::io::download::send_request(
             settings.http_mode,
             false,
             url.as_str(),

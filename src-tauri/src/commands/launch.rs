@@ -1,5 +1,5 @@
 use super::java::cancel_java_download;
-use crate::{
+use pcl_core::{
     app::config::ConfigManager,
     minecraft::{
         java::{self, JavaEntry, preference::current_instance},
@@ -172,7 +172,7 @@ pub struct LaunchProgress {
     stage: String,
     progress: f64,
     downloading: bool,
-    failure: Option<crate::minecraft::launch::session::LaunchFailure>,
+    failure: Option<pcl_core::minecraft::launch::session::LaunchFailure>,
 }
 
 impl LaunchProgress {
@@ -185,7 +185,7 @@ impl LaunchProgress {
         }
     }
 
-    fn failed(failure: crate::minecraft::launch::session::LaunchFailure) -> Self {
+    fn failed(failure: pcl_core::minecraft::launch::session::LaunchFailure) -> Self {
         Self {
             stage: "Minecraft.Launch.Stage.WaitWindow".into(),
             progress: 0.92,
@@ -207,7 +207,7 @@ pub async fn cancel_launch() -> Result<(), String> {
         .cancel()?;
     cancel_java_download().await;
     if let Some(id) = session {
-        crate::minecraft::launch::session::stop_game_session(id)?;
+        pcl_core::minecraft::launch::session::stop_game_session(id)?;
     }
     Ok(())
 }
@@ -283,7 +283,7 @@ async fn launch_game_inner(
         option = option.with_window_size(size.width as usize, size.height as usize);
     }
     let config = ConfigManager::instance();
-    let downloader = crate::io::download::Downloader::with_bases(
+    let downloader = pcl_core::io::download::Downloader::with_bases(
         wait_for_launch(&mut ticket.receiver, config.api_client.api_bases_async()).await?,
     );
     report("Minecraft.Launch.Stage.CompleteFiles", 0.35, true);
@@ -299,22 +299,22 @@ async fn launch_game_inner(
     .map_err(|e| format!("{e:#}"))?;
     option = wait_for_launch(&mut ticket.receiver, prepare_authlib(option)).await??;
     let skin_server = if option.account().profile_type
-        == crate::minecraft::profile::ProfileType::Offline
+        == pcl_core::minecraft::profile::ProfileType::Offline
         && option.account().offline_skin.is_some()
     {
         let client =
-            crate::minecraft::profile::auth::http_client().map_err(|error| error.to_string())?;
+            pcl_core::minecraft::profile::auth::http_client().map_err(|error| error.to_string())?;
         let jar = wait_for_launch(
             &mut ticket.receiver,
-            crate::minecraft::launch::authlib::ensure_jar(&client),
+            pcl_core::minecraft::launch::authlib::ensure_jar(&client),
         )
         .await??;
         let server = wait_for_launch(
             &mut ticket.receiver,
-            crate::minecraft::launch::offline_skin::start(option.account()),
+            pcl_core::minecraft::launch::offline_skin::start(option.account()),
         )
         .await??;
-        option = option.with_authlib(crate::minecraft::launch::launcher::AuthlibAgent {
+        option = option.with_authlib(pcl_core::minecraft::launch::launcher::AuthlibAgent {
             jar,
             server: server.url.clone(),
             prefetched: server.metadata.clone(),
@@ -344,21 +344,21 @@ async fn launch_game_inner(
                 let _ = child.wait();
                 return Err(LAUNCH_CANCELLED.to_string());
             }
-            let id = crate::minecraft::launch::session::track(
+            let id = pcl_core::minecraft::launch::session::track(
                 child,
                 expected,
                 access_token,
                 move || drop(skin_server),
                 move |id, event| {
                     match event {
-                        crate::minecraft::launch::session::SessionEvent::Spawned => {
+                        pcl_core::minecraft::launch::session::SessionEvent::Spawned => {
                             let _ = session_progress.send(LaunchProgress::new(
                                 "Minecraft.Launch.Stage.WaitWindow",
                                 0.92,
                                 false,
                             ));
                         }
-                        crate::minecraft::launch::session::SessionEvent::Ready => {
+                        pcl_core::minecraft::launch::session::SessionEvent::Ready => {
                             let _ = session_progress.send(LaunchProgress::new(
                                 "Minecraft.Launch.Stage.End",
                                 1.0,
@@ -366,7 +366,7 @@ async fn launch_game_inner(
                             ));
                             finish_launch_session(id);
                         }
-                        crate::minecraft::launch::session::SessionEvent::Finished {
+                        pcl_core::minecraft::launch::session::SessionEvent::Finished {
                             ref failure,
                             ..
                         } => {
@@ -377,11 +377,11 @@ async fn launch_game_inner(
                             finish_launch_session(id);
                         }
                     }
-                    crate::app::visibility::handle(&window, id, visibility, event)
+                    crate::window::handle(&window, id, visibility, event)
                 },
             );
             if !attach_launch_session(&session_ticket, id.clone()) {
-                let _ = crate::minecraft::launch::session::stop_game_session(id);
+                let _ = pcl_core::minecraft::launch::session::stop_game_session(id);
                 return Err(LAUNCH_CANCELLED.to_string());
             }
             Ok::<_, String>(())
@@ -409,7 +409,7 @@ async fn prepare_launch_option(
     })
     .await
     .map_err(|error| error.to_string())??;
-    if option.account().profile_type == crate::minecraft::profile::ProfileType::Offline
+    if option.account().profile_type == pcl_core::minecraft::profile::ProfileType::Offline
         && option.account().offline_skin.is_some()
     {
         return Err("Exporting a launch script with an offline skin is not supported because the skin service requires the launcher to run.".into());
@@ -419,7 +419,7 @@ async fn prepare_launch_option(
 
 /// 刷新当前档案的访问令牌，对照 CE 的 `ModLaunch.mcLoginLoader`。
 async fn refresh_active_account() -> Result<(), String> {
-    use crate::minecraft::profile::{ProfileType, service};
+    use pcl_core::minecraft::profile::{ProfileType, service};
     let Some(profile) = tauri::async_runtime::spawn_blocking(service::current)
         .await
         .map_err(|error| error.to_string())?
@@ -430,7 +430,7 @@ async fn refresh_active_account() -> Result<(), String> {
     if profile.profile_type == ProfileType::Offline {
         return Ok(());
     }
-    crate::minecraft::profile::auth::session::login_for_launch(&profile, false)
+    pcl_core::minecraft::profile::auth::session::login_for_launch(&profile, false)
         .await
         .map_err(|error| error.to_string())?;
     Ok(())
@@ -438,7 +438,7 @@ async fn refresh_active_account() -> Result<(), String> {
 
 /// 第三方账号需要 authlib-injector 才能连到自己的认证服务器。
 async fn prepare_authlib(option: LaunchOption) -> Result<LaunchOption, String> {
-    use crate::minecraft::profile::ProfileType;
+    use pcl_core::minecraft::profile::ProfileType;
     let profile = option.account().clone();
     if !matches!(
         profile.profile_type,
@@ -446,7 +446,7 @@ async fn prepare_authlib(option: LaunchOption) -> Result<LaunchOption, String> {
     ) {
         return Ok(option);
     }
-    let agent = crate::minecraft::launch::authlib::prepare(&profile).await?;
+    let agent = pcl_core::minecraft::launch::authlib::prepare(&profile).await?;
     Ok(option.with_authlib(agent))
 }
 
@@ -478,7 +478,7 @@ pub async fn export_launch_script(
         }
         option = option.with_window_size(size.width as usize, size.height as usize);
     }
-    let downloader = crate::io::download::Downloader::with_bases(
+    let downloader = pcl_core::io::download::Downloader::with_bases(
         ConfigManager::instance().api_client.api_bases_async().await,
     );
     option

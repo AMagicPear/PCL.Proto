@@ -1,10 +1,10 @@
-use crate::{app::config::ConfigManager, minecraft::java::preference::current_instance};
+use pcl_core::{app::config::ConfigManager, minecraft::java::preference::current_instance};
 
 #[tauri::command]
 pub async fn get_memory_settings(
     instance_directory: Option<std::path::PathBuf>,
-) -> Result<crate::minecraft::launch::memory::MemorySnapshot, String> {
-    use crate::minecraft::launch::memory::{MemoryCustom, MemorySettings, MemorySnapshot};
+) -> Result<pcl_core::minecraft::launch::memory::MemorySnapshot, String> {
+    use pcl_core::minecraft::launch::memory::{MemoryCustom, MemorySettings, MemorySnapshot};
     let state = ConfigManager::instance().app_state.lock().await;
     match instance_directory {
         Some(directory) => {
@@ -40,10 +40,10 @@ pub async fn get_memory_settings(
 #[tauri::command]
 pub async fn set_memory_settings(
     instance_directory: Option<std::path::PathBuf>,
-    settings: Option<crate::minecraft::launch::memory::MemorySettings>,
-    custom: Option<crate::minecraft::launch::memory::MemoryCustom>,
-) -> Result<crate::minecraft::launch::memory::MemorySnapshot, String> {
-    use crate::minecraft::launch::memory::{MemoryCustom, MemorySnapshot};
+    settings: Option<pcl_core::minecraft::launch::memory::MemorySettings>,
+    custom: Option<pcl_core::minecraft::launch::memory::MemoryCustom>,
+) -> Result<pcl_core::minecraft::launch::memory::MemorySnapshot, String> {
+    use pcl_core::minecraft::launch::memory::{MemoryCustom, MemorySnapshot};
     if let Some(settings) = &settings {
         settings.validate()?;
     }
@@ -51,7 +51,7 @@ pub async fn set_memory_settings(
         custom.validate()?;
     }
     if let (
-        Some(crate::minecraft::launch::memory::MemorySettings::Custom {
+        Some(pcl_core::minecraft::launch::memory::MemorySettings::Custom {
             maximum_mib,
             initial_mib,
         }),
@@ -112,11 +112,11 @@ pub struct MemoryPreview {
 #[tauri::command]
 pub async fn preview_memory_settings(
     instance_directory: Option<std::path::PathBuf>,
-    settings: Option<crate::minecraft::launch::memory::MemorySettings>,
+    settings: Option<pcl_core::minecraft::launch::memory::MemorySettings>,
     is_64_bit: Option<bool>,
 ) -> Result<MemoryPreview, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        use crate::minecraft::launch::memory::{self, MemorySettings};
+        use pcl_core::minecraft::launch::memory::{self, MemorySettings};
         let config = ConfigManager::instance();
         let path = {
             let state = config.app_state.blocking_lock();
@@ -149,7 +149,7 @@ pub async fn preview_memory_settings(
                     initial_mib: None,
                 });
             let game_directory = instance.as_ref().map(|instance| {
-                crate::minecraft::instance::isolation::directory(&state, instance).to_path_buf()
+                pcl_core::minecraft::instance::isolation::directory(&state, instance).to_path_buf()
             });
             (
                 instance.map(|instance| (instance, game_directory.unwrap())),

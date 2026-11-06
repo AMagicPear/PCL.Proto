@@ -1,4 +1,4 @@
-use crate::{
+use pcl_core::{
     AppState,
     app::config::ConfigManager,
     io::files::open_directory,

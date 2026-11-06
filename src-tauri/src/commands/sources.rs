@@ -1,0 +1,25 @@
+//! Modrinth / CurseForge 元数据请求命令，以及 CurseForge 可用性查询。
+
+use pcl_core::io::net::http::api_client::{self, MinecraftApiClient};
+
+#[tauri::command]
+pub async fn fetch_with_modrinth(
+    api_client: tauri::State<'_, &MinecraftApiClient>,
+    endpoint: &str,
+) -> Result<serde_json::Value, String> {
+    api_client::fetch_with_modrinth(&api_client, endpoint).await
+}
+
+#[tauri::command]
+pub async fn fetch_with_curseforge(
+    api_client: tauri::State<'_, &MinecraftApiClient>,
+    endpoint: &str,
+) -> Result<serde_json::Value, String> {
+    api_client::fetch_with_curseforge(&api_client, endpoint).await
+}
+
+/// 未配置密钥时界面需要隐藏 CurseForge 选项（对照 CE 的 SupportCurseForge）。
+#[tauri::command]
+pub fn curseforge_available() -> bool {
+    api_client::curseforge_available()
+}

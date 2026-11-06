@@ -1,0 +1,65 @@
+[package]
+name = "pcl-core"
+version.workspace = true
+edition.workspace = true
+description = "PCL.Proto launcher core: configuration, instances, installation, launching and networking without any GUI toolkit dependency"
+license = "PCL-License"
+repository = "https://github.com/PCL-Community/PCL.Proto"
+
+[features]
+default = []
+# 联机（Terracotta）桥接；宿主应用按需打开。
+link = ["dep:terracotta"]
+
+[dependencies]
+serde = { workspace = true, features = ["derive", "rc"] }
+serde_json = { workspace = true }
+toml = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+regex = { workspace = true }
+tokio = { workspace = true, features = [
+    "rt",
+    "rt-multi-thread",
+    "macros",
+    "fs",
+    "io-util",
+    "net",
+    "sync",
+    "time",
+] }
+log = "0.4.35"
+shlex = "2.0"
+goblin = "0.10.7"
+directories = "6.0.0"
+reqwest = { workspace = true, features = ["json", "stream", "form", "multipart"] }
+thiserror = "2.0.21"
+futures-util = "0.3.34"
+serde_repr = "0.1.21"
+sha1 = "0.11.0"
+md5 = "0.7.0"
+sha2 = "0.10"
+zip = { version = "9.1.3", default-features = false, features = ["deflate"] }
+anyhow = "1.0.104"
+dashmap = "6.2.1"
+uuid = { workspace = true, features = ["v4"] }
+hickory-resolver = "0.26.3"
+fastrand = "2.5.0"
+base64 = "0.23.1"
+axum = "0.8"
+rsa = { version = "0.9", features = ["sha1", "pem"] }
+rand = "0.8"
+sha1-legacy = { package = "sha1", version = "0.10", features = ["oid"] }
+jsonwebtoken = "9"
+sysinfo = { version = "0.40.1", default-features = false, features = ["system"] }
+trash = "5.2.9"
+open = { version = "5.4.5", features = ["shellexecute-on-windows"] }
+fastnbt = "2.6.3"
+flate2 = "1.1.10"
+tempfile = "3.27.0"
+terracotta = { path = "../../src-terracotta", version = "2.5.0-pcl.proto", optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Globalization"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
