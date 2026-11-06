@@ -54,6 +54,10 @@ pub async fn download_minecraft_version(
             Ok(())
         })?;
     }
+    // 安装过程可能自动装了 Java 运行时，刷新一次写回配置。
+    if let Err(error) = crate::config::java::refresh(true).await {
+        log::warn!("Cannot refresh Java after install: {error}");
+    }
     let should_select = ConfigManager::instance()
         .app_state
         .lock()
@@ -118,7 +122,12 @@ pub async fn download_forgelike_installer(
         task_id,
         super::channel_sink(on_event),
     )
-    .await
+    .await?;
+    // 安装器可能顺带下载了 Java 运行时，刷新一次写回配置。
+    if let Err(error) = crate::config::java::refresh(true).await {
+        log::warn!("Cannot refresh Java after installer download: {error}");
+    }
+    Ok(())
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -174,7 +183,12 @@ pub async fn install_modpack(
         &crate::config::java::state(),
         &crate::config::java::paths(),
     )
-    .await
+    .await?;
+    // 整合包可能包含加载器安装，完成后刷新一次 Java 列表。
+    if let Err(error) = crate::config::java::refresh(true).await {
+        log::warn!("Cannot refresh Java after modpack install: {error}");
+    }
+    Ok(())
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -201,7 +215,12 @@ pub async fn install_online_modpack(
         &crate::config::java::state(),
         &crate::config::java::paths(),
     )
-    .await
+    .await?;
+    // 整合包可能包含加载器安装，完成后刷新一次 Java 列表。
+    if let Err(error) = crate::config::java::refresh(true).await {
+        log::warn!("Cannot refresh Java after modpack install: {error}");
+    }
+    Ok(())
 }
 
 #[cfg(test)]
