@@ -1232,6 +1232,7 @@ mod tests {
         assert!(!log_config.exists());
         assert_eq!(fs::read(&supplied).unwrap(), b"custom");
         option.helpers.log4j2_debug = None;
+        fs::create_dir_all(&option.helper_directory).unwrap();
         fs::create_dir(&log_config).unwrap();
         assert!(option.agent_arguments().is_err());
         fs::remove_dir(&log_config).unwrap();
