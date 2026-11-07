@@ -314,6 +314,8 @@ impl ConfigManager {
                 }
             }
         }
+        #[cfg(windows)]
+        normalize_loaded_paths(&mut state_read);
         if rewrite {
             let backup = self
                 .config_path
@@ -376,14 +378,12 @@ impl ConfigManager {
         if name.is_empty() || !path.is_absolute() || !path.is_dir() {
             return Err("Repository requires a name and an existing absolute directory".into());
         }
-        let path = path.canonicalize().map_err(|error| error.to_string())?;
+        let path = pcl_core::utils::canonicalize(path).map_err(|error| error.to_string())?;
         self.update(|state| {
             if state.repositories.iter().any(|repo| {
                 repo.name == name
                     || repo.path == path
-                    || repo
-                        .path
-                        .canonicalize()
+                    || pcl_core::utils::canonicalize(&repo.path)
                         .is_ok_and(|existing| existing == path)
             }) {
                 return Err("Repository name or path already exists".into());
@@ -460,6 +460,70 @@ impl ConfigManager {
     pub fn java_runtime_dir(&self) -> PathBuf {
         self.config_dir.join("runtime")
     }
+}
+
+#[cfg(windows)]
+fn normalize_loaded_paths(state: &mut AppState) {
+    use pcl_core::minecraft::instance::InstanceJava;
+    use std::collections::HashMap;
+
+    fn path(value: &mut PathBuf) {
+        *value = pcl_core::utils::simplify(value).to_owned();
+    }
+    fn keys<T>(map: &mut HashMap<PathBuf, T>) {
+        let mut original = std::mem::take(map);
+        for (key, value) in original.extract_if(|key, _| pcl_core::utils::simplify(key) == key) {
+            map.insert(key, value);
+        }
+        for (key, value) in original {
+            let simplified = pcl_core::utils::simplify(&key).to_owned();
+            let key = if map.contains_key(&simplified) {
+                key
+            } else {
+                simplified
+            };
+            map.insert(key, value);
+        }
+    }
+    fn java(entry: &mut pcl_core::minecraft::java::JavaEntry) {
+        path(&mut entry.installation.java_exe);
+        path(&mut entry.installation.java_folder);
+    }
+    for repo in &mut state.repositories {
+        path(&mut repo.path);
+    }
+    path(&mut state.active_repo_path);
+    if let Some(instance) = &mut state.active_game_instance {
+        let instance = Arc::make_mut(instance);
+        path(&mut instance.directory);
+        path(&mut instance.jar_path);
+        path(&mut instance.json_path);
+        path(&mut instance.natives_path);
+        path(&mut instance.global_dir);
+        if let InstanceJava::Custom(entry) = &mut instance.game_java {
+            java(Arc::make_mut(entry));
+        }
+    }
+    for entry in &mut state.java_runtimes {
+        java(entry);
+    }
+    if let Some(selected) = &mut state.launcher_setup.selected_java {
+        path(selected);
+    }
+    keys(&mut state.java_preferences);
+    for settings in state.java_preferences.values_mut() {
+        if let crate::config::java_preference::JavaPreference::Existing { java_exe } =
+            &mut settings.preference
+        {
+            path(java_exe);
+        }
+    }
+    keys(&mut state.instance_memory_settings);
+    keys(&mut state.instance_memory_custom);
+    keys(&mut state.instance_isolation);
+    keys(&mut state.instance_launch_arguments);
+    keys(&mut state.instance_launch_settings);
+    keys(&mut state.instance_descriptions);
 }
 
 fn valid_loaded_state(state: &AppState) -> bool {
@@ -809,13 +873,16 @@ mod java_config_tests {
         let restored: AppState = serde_yaml::from_slice(&fs::read(&path).unwrap()).unwrap();
         assert!(restored.version_info.is_empty());
         assert_eq!(restored.repositories.len(), 2);
-        assert_eq!(restored.active_repo_path, official.canonicalize().unwrap());
+        assert_eq!(
+            restored.active_repo_path,
+            pcl_core::utils::canonicalize(&official).unwrap()
+        );
         assert!(portable.join("versions").is_dir());
         let blocked = root.join("blocked");
         fs::write(&blocked, b"file").unwrap();
         assert_eq!(
             crate::config::paths::create_default_directory(&root, Some(&blocked)).unwrap(),
-            root.join(".minecraft").canonicalize().unwrap()
+            pcl_core::utils::canonicalize(root.join(".minecraft")).unwrap()
         );
         fs::remove_dir_all(root).unwrap();
     }
