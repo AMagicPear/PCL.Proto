@@ -11,7 +11,9 @@ keywords = ["minecraft", "launcher", "mod-loader", "instance"]
 categories = ["games"]
 
 [features]
-default = []
+default = ["embedded-resources"]
+# 独立使用 core 时可按需释放辅助文件；外部资源宿主关闭默认功能并传入路径。
+embedded-resources = []
 # Modrinth / CurseForge 资源接入与下载；凭据由调用方提供。
 community = []
 # 微软 OAuth / Xbox / Minecraft 登录；Client ID 由调用方提供。
