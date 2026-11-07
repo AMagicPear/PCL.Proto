@@ -383,6 +383,7 @@ mod tests {
             let mut served = 0;
             while served < requests && Instant::now() < deadline {
                 if let Ok((mut stream, _)) = listener.accept() {
+                    stream.set_nonblocking(false).unwrap();
                     stream
                         .set_read_timeout(Some(std::time::Duration::from_secs(1)))
                         .unwrap();
