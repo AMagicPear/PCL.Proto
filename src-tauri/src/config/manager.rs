@@ -142,6 +142,8 @@ pub enum ConfigManagerError {
     ApiClientBuildError,
 }
 
+const CONFIG_VERSION: u64 = 1;
+
 pub static CONFIG_MANAGER: LazyLock<Result<ConfigManager, ConfigManagerError>> =
     LazyLock::new(ConfigManager::new);
 
@@ -159,7 +161,7 @@ impl ConfigManager {
         if !config_dir.exists() {
             fs::create_dir_all(config_dir).map_err(|_| ConfigManagerError::ConfigDirNotFound)?;
         }
-        let config_path = config_dir.join("config.json");
+        let config_path = config_dir.join("config.yml");
         let identifier_path = config_dir.join("pcl_identifier.txt");
         let pcl_identifier = if identifier_path.exists() {
             fs::read_to_string(identifier_path)
@@ -200,7 +202,10 @@ impl ConfigManager {
             .resources()
             .configure(download_settings.options())
             .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
-        log::debug!("launched config at {:?}", instance.config_path);
+        log::info!(
+            "Loaded configuration from {}",
+            instance.config_path.display()
+        );
         Ok(instance)
     }
 
@@ -281,62 +286,45 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// load the config file
-    /// TODO: Partial config support
+    /// Read known current fields independently; incompatible fields use defaults.
     fn load(&self) -> Result<(), ConfigManagerError> {
-        let file = std::fs::File::open(&self.config_path).map_err(|error| {
+        let bytes = fs::read(&self.config_path).map_err(|error| {
             if error.kind() == std::io::ErrorKind::NotFound {
                 ConfigManagerError::ConfigFileNotFound
             } else {
                 ConfigManagerError::ConfigFileCorrupted
             }
         })?;
-        let mut reader = std::io::BufReader::new(file);
-        let state_read: AppState = serde_json::from_reader(&mut reader)
+        let input = serde_yaml::from_slice::<serde_yaml::Value>(&bytes).unwrap_or_default();
+        let mut rewrite =
+            input.get("config_version").and_then(|v| v.as_u64()) != Some(CONFIG_VERSION);
+        let mut fields = serde_yaml::Value::Mapping(Default::default());
+        let mut state_read: AppState = serde_yaml::from_value(fields.clone())
             .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
-        if state_read
-            .log_max_lines
-            .is_some_and(|lines| lines != 0 && !(50..=2000).contains(&lines))
-        {
-            return Err(ConfigManagerError::ConfigFileCorrupted);
+        if let Some(object) = input.as_mapping() {
+            for (key, value) in object {
+                fields[key] = value.clone();
+                match serde_yaml::from_value::<AppState>(fields.clone()) {
+                    Ok(candidate) if valid_loaded_state(&candidate) => state_read = candidate,
+                    _ => {
+                        fields.as_mapping_mut().unwrap().remove(key);
+                        rewrite = true;
+                        log::warn!("Ignoring invalid configuration field: {key:?}");
+                    }
+                }
+            }
         }
-        if state_read
-            .window_settings
-            .as_ref()
-            .is_some_and(|settings| settings.validate().is_err())
-        {
-            return Err(ConfigManagerError::ConfigFileCorrupted);
-        }
-        if state_read
-            .memory_settings
-            .as_ref()
-            .is_some_and(|settings| settings.validate().is_err())
-            || state_read
-                .instance_memory_settings
-                .values()
-                .any(|settings| settings.validate().is_err())
-        {
-            return Err(ConfigManagerError::ConfigFileCorrupted);
-        }
-        if state_read
-            .memory_custom
-            .as_ref()
-            .is_some_and(|custom| custom.validate().is_err())
-            || state_read
-                .instance_memory_custom
-                .values()
-                .any(|custom| custom.validate().is_err())
-        {
-            return Err(ConfigManagerError::ConfigFileCorrupted);
-        }
-        if state_read.renderer > 3
-            || state_read.proxy.validate().is_err()
-            || state_read
-                .instance_launch_settings
-                .values()
-                .any(|settings| settings.validate().is_err())
-        {
-            return Err(ConfigManagerError::ConfigFileCorrupted);
+        if rewrite {
+            let backup = self
+                .config_path
+                .with_extension(format!("{}.bak", uuid::Uuid::new_v4()));
+            fs::write(&backup, &bytes).map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
+            save_config_atomically(&self.config_path, &state_read)?;
+            log::info!(
+                "Configuration backed up to {} and rewritten for {}",
+                backup.display(),
+                CONFIG_VERSION
+            );
         }
         let (client, http1) = crate::config::network::clients(&state_read.proxy)
             .map_err(|_| ConfigManagerError::ApiClientBuildError)?;
@@ -474,10 +462,49 @@ impl ConfigManager {
     }
 }
 
+fn valid_loaded_state(state: &AppState) -> bool {
+    !(state
+        .log_max_lines
+        .is_some_and(|lines| lines != 0 && !(50..=2000).contains(&lines))
+        || state
+            .window_settings
+            .as_ref()
+            .is_some_and(|settings| settings.validate().is_err())
+        || state
+            .memory_settings
+            .as_ref()
+            .is_some_and(|settings| settings.validate().is_err())
+        || state
+            .instance_memory_settings
+            .values()
+            .any(|settings| settings.validate().is_err())
+        || state
+            .memory_custom
+            .as_ref()
+            .is_some_and(|custom| custom.validate().is_err())
+        || state
+            .instance_memory_custom
+            .values()
+            .any(|custom| custom.validate().is_err())
+        || state
+            .download_settings
+            .as_ref()
+            .is_some_and(|settings| settings.validate().is_err())
+        || state.renderer > 3
+        || state.proxy.validate().is_err()
+        || state
+            .instance_launch_settings
+            .values()
+            .any(|settings| settings.validate().is_err()))
+}
+
 fn save_config_atomically(
     path: &std::path::Path,
     value: &impl serde::Serialize,
 ) -> Result<(), ConfigManagerError> {
+    let mut value =
+        serde_yaml::to_value(value).map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
+    value["config_version"] = CONFIG_VERSION.into();
     let temporary = path.with_extension(format!("{}.tmp", uuid::Uuid::new_v4()));
     let result = (|| {
         let file = fs::OpenOptions::new()
@@ -486,7 +513,7 @@ fn save_config_atomically(
             .open(&temporary)
             .map_err(|_| ConfigManagerError::ConfigFileNotFound)?;
         let mut writer = std::io::BufWriter::new(file);
-        serde_json::to_writer_pretty(&mut writer, value)
+        serde_yaml::to_writer(&mut writer, &value)
             .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
         writer
             .flush()
@@ -519,7 +546,7 @@ mod java_config_tests {
         fs::write(path.join("first.jar"), b"jar").unwrap();
         let instance =
             McInstance::from_version_folder(&path, &McFolder::new("test", root.clone())).unwrap();
-        let config_path = root.join("config.json");
+        let config_path = root.join("config.yml");
         let manager = ConfigManager {
             config_path: config_path.clone(),
             config_dir: root.clone(),
@@ -545,7 +572,7 @@ mod java_config_tests {
         );
         fs::remove_dir(&config_path).unwrap();
         assert!(!manager.ensure_instance_isolation(&path).unwrap());
-        let saved: AppState = serde_json::from_slice(&fs::read(&config_path).unwrap()).unwrap();
+        let saved: AppState = serde_yaml::from_slice(&fs::read(&config_path).unwrap()).unwrap();
         assert_eq!(saved.instance_isolation.get(&path), Some(&false));
         manager
             .update(|state| {
@@ -576,7 +603,7 @@ mod java_config_tests {
             fs::write(path.join(format!("{name}.jar")), b"jar").unwrap();
             instances.push(McInstance::from_version_folder(&path, &repo).unwrap());
         }
-        let config_path = root.join("config.json");
+        let config_path = root.join("config.yml");
         let manager = ConfigManager {
             config_path: config_path.clone(),
             config_dir: root.clone(),
@@ -643,7 +670,7 @@ mod java_config_tests {
         manager
             .update(|state| update(state, Some(&second), other.clone()))
             .unwrap();
-        let saved: AppState = serde_json::from_slice(&fs::read(&config_path).unwrap()).unwrap();
+        let saved: AppState = serde_yaml::from_slice(&fs::read(&config_path).unwrap()).unwrap();
         assert_eq!(saved.instance_launch_arguments.get(&first), Some(&valid));
         assert_eq!(saved.instance_launch_arguments.get(&second), Some(&other));
         fs::remove_dir_all(root).unwrap();
@@ -655,7 +682,7 @@ mod java_config_tests {
             std::env::temp_dir().join(format!("pcl-window-settings-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&root).unwrap();
         let manager = ConfigManager {
-            config_path: root.join("config.json"),
+            config_path: root.join("config.yml"),
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
             api_client: MinecraftApiClient::new(
@@ -687,7 +714,7 @@ mod java_config_tests {
                 .is_err()
         );
         let restored: AppState =
-            serde_json::from_slice(&fs::read(&manager.config_path).unwrap()).unwrap();
+            serde_yaml::from_slice(&fs::read(&manager.config_path).unwrap()).unwrap();
         assert_eq!(restored.window_settings, Some(custom.clone()));
         fs::remove_file(&manager.config_path).unwrap();
         fs::create_dir(&manager.config_path).unwrap();
@@ -699,11 +726,11 @@ mod java_config_tests {
         fs::remove_dir_all(root).unwrap();
     }
     #[test]
-    fn initialization_preserves_invalid_config_and_creates_missing_config() {
+    fn initialization_recovers_config_and_creates_missing_config() {
         let root =
             std::env::temp_dir().join(format!("pcl-config-init-test-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&root).unwrap();
-        let path = root.join("config.json");
+        let path = root.join("config.yml");
         let manager = ConfigManager {
             config_path: path.clone(),
             config_dir: root.clone(),
@@ -714,12 +741,52 @@ mod java_config_tests {
             ),
             pcl_identifier: String::new(),
         };
-        fs::write(&path, b"invalid json").unwrap();
-        assert!(matches!(
-            manager.load_or_init(None, None),
-            Err(ConfigManagerError::ConfigFileCorrupted)
-        ));
-        assert_eq!(fs::read(&path).unwrap(), b"invalid json");
+        fs::write(&path, b"broken: [").unwrap();
+        manager.load_or_init(None, None).unwrap();
+        let backups = || {
+            fs::read_dir(&root)
+                .unwrap()
+                .map(|entry| entry.unwrap().path())
+                .filter(|path| path.extension().is_some_and(|ext| ext == "bak"))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(backups().len(), 1);
+        assert_eq!(fs::read(&backups()[0]).unwrap(), b"broken: [");
+        let different_version = b"config_version: 0\nrenderer: 99\nlog_max_lines: 100\npcl_setup_info:\n  max_memory: 4096\n";
+        fs::write(&path, different_version).unwrap();
+        manager.load().unwrap();
+        let state = manager.app_state.blocking_lock();
+        assert!(state.java_runtimes.is_empty());
+        assert_eq!(state.renderer, 0);
+        assert_eq!(state.log_max_lines, Some(100));
+        assert_eq!(state.launcher_setup.max_memory, 4096);
+        drop(state);
+        assert_eq!(backups().len(), 2);
+        assert!(
+            backups()
+                .iter()
+                .any(|path| fs::read(path).unwrap() == different_version)
+        );
+        let current = fs::read(&path).unwrap();
+        assert_eq!(
+            serde_yaml::from_slice::<serde_yaml::Value>(&current).unwrap()["config_version"],
+            CONFIG_VERSION
+        );
+        manager.load().unwrap();
+        assert_eq!(backups().len(), 2);
+        assert_eq!(fs::read(&path).unwrap(), current);
+        let damaged = String::from_utf8(current)
+            .unwrap()
+            .replace("renderer: 0", "renderer: 99");
+        fs::write(&path, &damaged).unwrap();
+        manager.load().unwrap();
+        assert_eq!(backups().len(), 3);
+        assert!(
+            backups()
+                .iter()
+                .any(|path| fs::read(path).unwrap() == damaged.as_bytes())
+        );
+        assert_eq!(manager.app_state.blocking_lock().renderer, 0);
         fs::remove_file(&path).unwrap();
         let portable = root.join("portable/.minecraft");
         let official = root.join("official/.minecraft");
@@ -739,7 +806,7 @@ mod java_config_tests {
         manager
             .load_or_init(Some(&portable.join(".")), Some(&official))
             .unwrap();
-        let restored: AppState = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let restored: AppState = serde_yaml::from_slice(&fs::read(&path).unwrap()).unwrap();
         assert!(restored.version_info.is_empty());
         assert_eq!(restored.repositories.len(), 2);
         assert_eq!(restored.active_repo_path, official.canonicalize().unwrap());
@@ -758,7 +825,7 @@ mod java_config_tests {
         let root =
             std::env::temp_dir().join(format!("pcl-java-config-test-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&root).unwrap();
-        let path = root.join("config.json");
+        let path = root.join("config.yml");
         fs::write(&path, b"previous config").unwrap();
         struct CannotSerialize;
         impl serde::Serialize for CannotSerialize {
@@ -778,7 +845,7 @@ mod java_config_tests {
             },
         );
         save_config_atomically(&path, &state).unwrap();
-        let restored: AppState = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let restored: AppState = serde_yaml::from_slice(&fs::read(&path).unwrap()).unwrap();
         assert_eq!(
             restored.launcher_setup.selected_java,
             state.launcher_setup.selected_java
@@ -791,7 +858,7 @@ mod java_config_tests {
     fn updates_publish_only_after_save_and_preserve_concurrent_changes() {
         let root = std::env::temp_dir().join(format!("pcl-config-update-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&root).unwrap();
-        let path = root.join("config.json");
+        let path = root.join("config.yml");
         let manager = Arc::new(ConfigManager {
             config_path: path.clone(),
             config_dir: root.clone(),
@@ -834,7 +901,7 @@ mod java_config_tests {
         for thread in threads {
             thread.join().unwrap();
         }
-        let saved: AppState = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let saved: AppState = serde_yaml::from_slice(&fs::read(&path).unwrap()).unwrap();
         assert_eq!(saved.java_preferences.len(), 8);
         assert_eq!(manager.app_state.blocking_lock().java_preferences.len(), 8);
         fs::remove_dir_all(root).unwrap();
@@ -848,7 +915,7 @@ mod java_config_tests {
         fs::create_dir_all(&version).unwrap();
         fs::write(version.join("test.json"), r#"{"id":"test"}"#).unwrap();
         fs::write(version.join("test.jar"), b"jar").unwrap();
-        let path = root.join("config.json");
+        let path = root.join("config.yml");
         let manager = ConfigManager {
             config_path: path.clone(),
             config_dir: root.clone(),
@@ -867,7 +934,7 @@ mod java_config_tests {
         manager
             .select_instance(0, &saved_repo.path, instance.clone())
             .unwrap();
-        let saved: AppState = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let saved: AppState = serde_yaml::from_slice(&fs::read(&path).unwrap()).unwrap();
         assert_eq!(saved.active_game_instance.unwrap().id, "test");
         assert_eq!(saved.active_repo_path, saved_repo.path);
         fs::remove_file(&path).unwrap();
@@ -891,7 +958,7 @@ mod java_config_tests {
         let root =
             std::env::temp_dir().join(format!("pcl-download-settings-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&root).unwrap();
-        let path = root.join("config.json");
+        let path = root.join("config.yml");
         let manager = ConfigManager {
             config_path: path.clone(),
             config_dir: root.clone(),
@@ -927,7 +994,7 @@ mod java_config_tests {
             32
         );
         let saved = fs::read(&path).unwrap();
-        let restored: AppState = serde_json::from_slice(&saved).unwrap();
+        let restored: AppState = serde_yaml::from_slice(&saved).unwrap();
         assert_eq!(restored.download_settings.unwrap().max_connections, 32);
         assert_eq!(
             manager
@@ -968,7 +1035,7 @@ mod java_config_tests {
         let repo = McFolder::new("test", root.clone());
         let instance = McInstance::from_version_folder(&version, &repo).unwrap();
         let manager = ConfigManager {
-            config_path: root.join("config.json"),
+            config_path: root.join("config.yml"),
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState {
                 repositories: vec![repo],
@@ -1008,7 +1075,7 @@ mod java_config_tests {
                 .unwrap()
         );
         let saved: AppState =
-            serde_json::from_slice(&fs::read(&manager.config_path).unwrap()).unwrap();
+            serde_yaml::from_slice(&fs::read(&manager.config_path).unwrap()).unwrap();
         assert_eq!(saved.active_game_instance.unwrap().id, "test");
         fs::remove_file(&manager.config_path).unwrap();
         fs::create_dir(&manager.config_path).unwrap();
@@ -1029,7 +1096,7 @@ mod java_config_tests {
     fn log_limit_validation_and_failed_save_preserve_state() {
         let root = std::env::temp_dir().join(format!("pcl-log-settings-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&root).unwrap();
-        let path = root.join("config.json");
+        let path = root.join("config.yml");
         let manager = ConfigManager {
             config_path: path.clone(),
             config_dir: root.clone(),

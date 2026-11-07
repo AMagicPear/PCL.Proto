@@ -22,6 +22,7 @@ pcl-core = { path = "../crates/pcl-core", default-features = false, features = [
 
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+serde_yaml = "0.9"
 log = "0.4.35"
 anyhow = "1.0.104"
 tauri = { version = "2.12.5", features = [] }
