@@ -108,7 +108,7 @@ mod tests {
                 cmd: "download_custom_file".into(),
                 callback: tauri::ipc::CallbackFn(0),
                 error: tauri::ipc::CallbackFn(1),
-                url: "tauri://localhost".parse().unwrap(),
+                url: window.url().unwrap(),
                 body: tauri::ipc::InvokeBody::Json(
                     serde_json::json!({"url":"file:///bad", "destination":"/tmp/test", "task_id":1, "on_event":"__CHANNEL__:1"}),
                 ),

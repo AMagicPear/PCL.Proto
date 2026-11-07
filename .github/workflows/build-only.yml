@@ -70,7 +70,11 @@ jobs:
       - name: generate icons
         run: bun run icons
 
+      - name: build frontend
+        run: bun run ui:build
+
       - name: test core crate
+        shell: bash
         run: |
           cargo test -p pcl-core --no-default-features --lib
           cargo check -p pcl-core --no-default-features --features community

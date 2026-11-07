@@ -277,7 +277,7 @@ mod tests {
                 cmd: "prepare_online_modpack".into(),
                 callback: tauri::ipc::CallbackFn(0),
                 error: tauri::ipc::CallbackFn(1),
-                url: "tauri://localhost".parse().unwrap(),
+                url: window.url().unwrap(),
                 body: tauri::ipc::InvokeBody::Json(serde_json::json!({
                     "info": { "url": "https://example.org/pack.mrpack", "size": 1, "sha1": "", "path": null },
                     "task_id": -2001, "version_id": "Pack", "on_event": "__CHANNEL__:1"

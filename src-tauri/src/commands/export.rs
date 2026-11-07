@@ -115,7 +115,7 @@ mod tests {
                 cmd: "download_resource".into(),
                 callback: tauri::ipc::CallbackFn(0),
                 error: tauri::ipc::CallbackFn(1),
-                url: "tauri://localhost".parse().unwrap(),
+                url: window.url().unwrap(),
                 body: tauri::ipc::InvokeBody::Json(serde_json::json!({
                     "info": { "url": "https://example.org/file.jar", "size": 1, "sha1": "", "path": null },
                     "destination": "/tmp/resource-test.jar",
