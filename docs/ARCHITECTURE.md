@@ -48,12 +48,11 @@ types/comp.ts
 
 ```text
 src-tauri（PCL.Proto 应用）
-  ├── pcl-core（通用 Minecraft 能力）
-  │     └── terracotta（仅 link feature）
-  └── pcl-assets（可选辅助资源，与 core 无依赖关系）
+  └── pcl-core（通用 Minecraft 能力，包含安装与启动辅助资源）
+        └── terracotta（仅 link feature）
 ```
 
-`pcl-core` 和 `pcl-assets` 通过 Git 分发，`publish = false`，不发布到 crates.io。
+`pcl-core` 通过 Git 分发，`publish = false`，不发布到 crates.io。
 第三方不需要依赖 Tauri 或使用 PCL.Proto 的配置模型；默认 feature 不编译 Terracotta。
 `community`（资源平台 API、资源下载、在线整合包与 Fabric API 随装）、`microsoft`（微软登录）和 `link`（联机）均默认关闭、可独立启用。Tauri 应用显式开启三个 feature。基础安装、本地 mrpack 导入和使用已认证档案启动不要求社区或微软登录 feature。
 
@@ -63,20 +62,20 @@ src-tauri（PCL.Proto 应用）
 | `pcl-core/src/io/` | 校验下载、Range、来源回退、可共享的连接/带宽配额、文件与 HTTP 操作 |
 | `pcl-core/src/link/` | 服务器 ping；`link` feature 提供 Terracotta 桥接 |
 | `pcl-core/src/events.rs` | 普通进度回调 `EventSink` |
-| `pcl-assets/` | JAR、Log4j 配置、macOS ARM64 库映射及落盘函数；不引用 core 或 Tauri |
+| `pcl-core/resources/` | 安装桥接、启动兼容 JAR、Log4j 配置与 macOS ARM64 库映射；由所属功能按需使用 |
 | `src-tauri/src/config/` | 全部启动器设置、继承、默认值、校验、文件位置、事务持久化、设置到功能输入的折算 |
 | `src-tauri/src/login/` | 设备码提示、角色选择、取消、轮询及档案更新 |
 | `src-tauri/src/secrets.rs` | 本应用凭据来源与皮肤站注册的 Client ID |
 | `src-tauri/src/commands/` | IPC 参数、通道适配和应用流程 |
-| `src-tauri/src/assets.rs` | 本应用辅助资源选择、平台打包路径和 Mesa loader 下载 |
+| `src-tauri/src/assets.rs` | 本应用包内资源路径和 Mesa loader 下载；下载缓存始终使用可写目录 |
 | `src-tauri/src/` | 窗口/可见性、设备标识、外链、自定义协议与资源提供者 |
 
 ### 设置如何进入 core
 
 - Java 偏好、相对路径、全局回退和扫描节流在 Tauri；core 扫描接收目录列表，安装器接收按优先级排列的 Java 候选并重新探测兼容性。
 - 内存自动分配、全局/实例参数继承、隔离决策和“跟随启动器窗口尺寸”都在 Tauri。core 接收具体 MiB、游戏目录、参数与窗口尺寸。
-- `LaunchExtras` 是一次启动的实际行为输入，不包含“继承全局”选项。`LaunchHelpers` 提供可选资源，缺省时跳过相应辅助功能。
-- 不再传入 `RuntimePaths` 或配置目录。Java 安装只接收运行时目标目录；authlib-injector 接收 JAR 文件路径；Java wrapper 接收临时目录。
+- `LaunchExtras` 是一次启动的实际行为输入，不包含“继承全局”选项。`LaunchHelpers` 提供默认资源的替代路径；缺省时 core 按启用行为与版本条件准备自带资源，错误向调用方返回。
+- 不再传入 `RuntimePaths` 或配置目录。Java 安装只接收运行时目标目录；authlib-injector 接收 JAR 文件路径；Java wrapper 接收临时目录；启动辅助文件接收专用输出目录。Forge 处理器桥接默认使用本次安装的临时目录，宿主可传路径替换。
 - `DownloadSettings` 留在应用；只有连接数、限速、来源和 HTTP 模式转换为 core 的 `DownloadOptions`。安装后自动选中实例由应用完成。
 - core 不保存代理、User-Agent 或密钥单例。宿主构建 reqwest 客户端，再传入 `Downloader`/认证提供者；CurseForge key 和 OAuth Client ID 在对应功能入口传入。
 

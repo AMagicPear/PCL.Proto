@@ -5,6 +5,10 @@ use anyhow::{Context, ensure};
 use serde_json::Value;
 use std::{fs, io::Read, path::Path};
 
+/// 默认 Forge / NeoForge 处理器桥接，宿主可随应用打包并传入替代路径。
+pub const BRIDGE_NAME: &str = "forge-installer.jar";
+pub const BRIDGE: &[u8] = include_bytes!("../../../resources/installer/forge-installer.jar");
+
 const MAX_JSON_BYTES: u64 = 4 * 1024 * 1024;
 const MAX_ENTRY_BYTES: u64 = 512 * 1024 * 1024;
 const MAX_ARCHIVE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
@@ -455,7 +459,7 @@ pub(super) async fn run_processors(
     vanilla_jar: &Path,
     task_id: i32,
     on_event: &EventSink<super::TaskItemReport>,
-    forge_installer: &Path,
+    forge_installer: Option<&Path>,
 ) -> anyhow::Result<Value> {
     let root = prepared.directory.path();
     let vanilla_dir = root.join("versions").join(game);
@@ -466,7 +470,14 @@ pub(super) async fn run_processors(
         serde_json::to_vec(metadata)?,
     )?;
     fs::write(root.join("launcher_profiles.json"), b"{\"profiles\":{}}")?;
-    let bridge = forge_installer.to_owned();
+    let bridge = match forge_installer {
+        Some(path) => path.to_owned(),
+        None => {
+            let path = root.join(BRIDGE_NAME);
+            crate::io::files::write_embedded(&path, BRIDGE)?;
+            path
+        }
+    };
     let classpath = std::env::join_paths([bridge.as_path(), prepared.archive.as_path()])?;
     let stdout = root.join("installer.stdout.log");
     let stderr = root.join("installer.stderr.log");
@@ -984,6 +995,71 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    async fn processors_use_the_default_bridge_or_a_supplied_file() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        let executable = root.path().join("fake-java");
+        fs::write(
+            &executable,
+            r#"#!/bin/sh
+test "$1" = '-cp' || exit 1
+bridge=${2%%:*}
+test -s "$bridge" || exit 2
+test "$3" = 'com.bangbang93.ForgeInstaller' || exit 3
+mkdir -p "$4/versions/loader"
+echo '{"inheritsFrom":"1.20.1","libraries":[],"mainClass":"Main"}' > "$4/versions/loader/loader.json"
+echo true
+"#,
+        )
+        .unwrap();
+        fs::set_permissions(&executable, fs::Permissions::from_mode(0o755)).unwrap();
+        let java = serde_json::from_value(serde_json::json!({
+            "java_folder":root.path(), "version":"8", "slug_version":8,
+            "is_64_bit":true, "architecture":"X64", "compatibility":"Perfect",
+            "java_exe":executable, "vendor":"OpenJDK"
+        }))
+        .unwrap();
+        let client = root.path().join("client.jar");
+        let custom = root.path().join("custom-bridge.jar");
+        fs::write(&client, b"client").unwrap();
+        fs::write(&custom, b"custom").unwrap();
+        for supplied in [None, Some(custom.as_path())] {
+            let directory = tempfile::tempdir_in(root.path()).unwrap();
+            let default = directory.path().join(BRIDGE_NAME);
+            let prepared = PreparedInstaller {
+                archive: root.path().join("installer.jar"),
+                directory,
+                profile: InstallerProfile {
+                    kind: InstallerKind::Processors,
+                    install: serde_json::json!({"version":"loader"}),
+                    version: serde_json::json!({}),
+                },
+            };
+            run_processors(
+                &prepared,
+                &java,
+                &serde_json::json!({}),
+                "1.20.1",
+                &client,
+                0,
+                &event_sink(|_| ()),
+                supplied,
+            )
+            .await
+            .unwrap();
+            if supplied.is_none() {
+                assert_eq!(fs::read(&default).unwrap(), BRIDGE);
+            } else {
+                assert!(!default.exists());
+                assert_eq!(fs::read(&custom).unwrap(), b"custom");
+            }
+            drop(prepared);
+            assert!(!default.exists());
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
     async fn cancellation_stops_installer_process_tree() {
         use std::os::unix::process::CommandExt;
         let root = tempfile::tempdir().unwrap();
@@ -1056,9 +1132,6 @@ mod tests {
         let events = event_sink(|_| ());
         let paths = std::env::temp_dir().join("pcl-forge-smoke-jre");
         let java_state = Vec::new();
-        // 忽略的网络冒烟测试直接使用应用打包的安装器桥接文件。
-        let installer = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../pcl-assets/resources/forge-installer.jar");
         let prepared = prepare(&client, &downloader, game, &loader, 0, &events)
             .await
             .unwrap();
@@ -1076,11 +1149,9 @@ mod tests {
                 .await
                 .unwrap()
                 .unwrap();
-            run_processors(
-                &prepared, &java, &metadata, game, &jar, 0, &events, &installer,
-            )
-            .await
-            .unwrap()
+            run_processors(&prepared, &java, &metadata, game, &jar, 0, &events, None)
+                .await
+                .unwrap()
         } else {
             prepared.profile.version.clone()
         };
@@ -1141,7 +1212,7 @@ mod tests {
                 &events,
                 &java_state,
                 &paths,
-                Some(&installer),
+                None,
             )
             .await
             .unwrap();

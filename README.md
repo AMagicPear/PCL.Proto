@@ -94,7 +94,7 @@ pcl-core = { git = "https://github.com/PCL-Community/PCL.Proto", rev = "<commit>
 ```
 
 See the [core crate guide](crates/pcl-core/README.md) for explicit HTTP clients, credentials,
-launch inputs, and the optional `pcl-assets` files.
+launch inputs, and the built-in installation and launch helpers.
 
 ## Credits
 

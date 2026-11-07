@@ -6,6 +6,7 @@
 //! Start script referenced from HMCL
 //! GPL-3.0 License | https://github.com/HMCL-dev/HMCL
 
+use super::resources;
 use crate::io::net::http::api_client::game::McVersion;
 use crate::minecraft::version::{McArgument, McArgumentValue, McRuleContext, rules_allow};
 use crate::minecraft::{instance::McInstance, java::JavaEntry, profile::McProfile};
@@ -21,7 +22,7 @@ pub struct LauncherBrand {
     pub version: String,
 }
 
-/// 宿主提供的启动辅助文件；核心库只在需要时使用，缺省即跳过对应功能。
+/// 启动辅助资源的替代路径；缺省时使用 core 自带资源。Mesa loader 需单独提供。
 #[derive(Clone, Debug, Default)]
 pub struct LaunchHelpers {
     pub java_wrapper: Option<std::path::PathBuf>,
@@ -36,6 +37,8 @@ pub struct LaunchHelpers {
 /// 启动一次游戏所需的全部输入；由宿主应用从自己的配置组装。
 pub struct LaunchRequest {
     pub wrapper_temp_dir: std::path::PathBuf,
+    /// 默认启动辅助文件的输出目录，由宿主选择可写位置。
+    pub helper_directory: std::path::PathBuf,
     pub brand: LauncherBrand,
     pub helpers: LaunchHelpers,
     pub instance: Arc<McInstance>,
@@ -53,6 +56,7 @@ pub struct LaunchRequest {
 /// Essential options for launching a Minecraft game
 pub struct LaunchOption {
     wrapper_temp_dir: std::path::PathBuf,
+    helper_directory: std::path::PathBuf,
     brand: LauncherBrand,
     helpers: LaunchHelpers,
     account: Arc<McProfile>,
@@ -282,9 +286,11 @@ impl LaunchOption {
         {
             return Ok(None);
         }
-        let Some(path) = self.helpers.java_wrapper.clone() else {
-            return Ok(None);
-        };
+        let path = self.helper_path(
+            self.helpers.java_wrapper.as_deref(),
+            resources::JAVA_WRAPPER_NAME,
+            resources::JAVA_WRAPPER,
+        )?;
         let mut args = Vec::new();
         if self.java_runtime.major_version() >= 9 {
             args.push("--add-exports".into());
@@ -295,6 +301,20 @@ impl LaunchOption {
             self.wrapper_temp_dir.display()
         ));
         Ok(Some((args, path)))
+    }
+
+    fn helper_path(
+        &self,
+        supplied: Option<&std::path::Path>,
+        name: &str,
+        bytes: &[u8],
+    ) -> Result<std::path::PathBuf, GameLaunchError> {
+        if let Some(path) = supplied {
+            return Ok(path.to_owned());
+        }
+        let path = self.helper_directory.join(name);
+        crate::io::files::write_embedded(&path, bytes)?;
+        Ok(path)
     }
 
     fn build_jvm_arguments(&self, custom_initial: bool) -> Result<Vec<String>, GameLaunchError> {
@@ -369,24 +389,34 @@ impl LaunchOption {
         if self.extras.debug_log4j2 {
             let legacy = self.release_year().is_some_and(|year| year < 2017);
             let path = if legacy {
-                self.helpers.log4j2_legacy_debug.as_ref()
+                self.helper_path(
+                    self.helpers.log4j2_legacy_debug.as_deref(),
+                    resources::LOG4J2_LEGACY_DEBUG_NAME,
+                    resources::LOG4J2_LEGACY_DEBUG,
+                )?
             } else {
-                self.helpers.log4j2_debug.as_ref()
+                self.helper_path(
+                    self.helpers.log4j2_debug.as_deref(),
+                    resources::LOG4J2_DEBUG_NAME,
+                    resources::LOG4J2_DEBUG,
+                )?
             };
-            if let Some(path) = path {
-                args.push(format!("-Dlog4j.configurationFile={}", path.display()));
-            }
+            args.push(format!("-Dlog4j.configurationFile={}", path.display()));
         }
-        if self.extras.lwjgl_unsafe_agent
-            && self.lwjgl_version().as_deref() == Some("3.4.1")
-            && let Some(path) = &self.helpers.lwjgl_unsafe_agent
-        {
+        if self.extras.lwjgl_unsafe_agent && self.lwjgl_version().as_deref() == Some("3.4.1") {
+            let path = self.helper_path(
+                self.helpers.lwjgl_unsafe_agent.as_deref(),
+                resources::LWJGL_UNSAFE_AGENT_NAME,
+                resources::LWJGL_UNSAFE_AGENT,
+            )?;
             args.push(format!("-javaagent:{}", path.display()));
         }
-        if self.extras.legacy_fix
-            && self.needs_legacy_fix()
-            && let Some(path) = &self.helpers.legacy_fix
-        {
+        if self.extras.legacy_fix && self.needs_legacy_fix() {
+            let path = self.helper_path(
+                self.helpers.legacy_fix.as_deref(),
+                resources::LEGACY_FIX_NAME,
+                resources::LEGACY_FIX,
+            )?;
             args.push(format!("-javaagent:{}", path.display()));
             if self
                 .version_details
@@ -676,6 +706,7 @@ impl LaunchOption {
             .map_err(GameLaunchError::CustomArguments)?;
         Ok(Self {
             wrapper_temp_dir: request.wrapper_temp_dir,
+            helper_directory: request.helper_directory,
             brand: request.brand,
             helpers: request.helpers,
             account: Arc::new(request.profile),
@@ -703,7 +734,10 @@ impl LaunchOption {
         patch_macos_arm_libraries(
             &mut self.version_details,
             &context,
-            self.helpers.macos_arm_libraries.as_deref(),
+            self.helpers
+                .macos_arm_libraries
+                .as_deref()
+                .unwrap_or(resources::MACOS_ARM_LIBRARIES),
         )?;
         patch_macos_jna(&mut self.version_details, &context)?;
         let natives = crate::minecraft::installer::prepare_launch_libraries(
@@ -795,7 +829,7 @@ fn patch_macos_jna(details: &mut McVersion, context: &McRuleContext) -> anyhow::
 fn patch_macos_arm_libraries(
     details: &mut McVersion,
     context: &McRuleContext,
-    mapping: Option<&str>,
+    mapping: &str,
 ) -> anyhow::Result<()> {
     if context.os != "osx"
         || context.arch != "aarch64"
@@ -813,9 +847,6 @@ fn patch_macos_arm_libraries(
         return Ok(());
     }
     // Library coordinates and checksums follow HMCL's macos-arm64 native mappings.
-    let Some(mapping) = mapping else {
-        return Ok(());
-    };
     let replacements: std::collections::HashMap<
         String,
         Option<crate::minecraft::version::McLibrary>,
@@ -909,10 +940,10 @@ mod macos_arm_patch_tests {
             version: String::new(),
             features: Default::default(),
         };
-        patch_macos_arm_libraries(&mut details, &context, Some(MAPPING)).unwrap();
+        patch_macos_arm_libraries(&mut details, &context, MAPPING).unwrap();
         assert_eq!(details.libraries[0].name, "org.lwjgl:lwjgl:3.2.1");
         context.arch = "aarch64".into();
-        patch_macos_arm_libraries(&mut details, &context, Some(MAPPING)).unwrap();
+        patch_macos_arm_libraries(&mut details, &context, MAPPING).unwrap();
         let names: Vec<_> = details
             .libraries
             .iter()
@@ -937,7 +968,7 @@ mod macos_arm_patch_tests {
                 }
             }
         }
-        patch_macos_arm_libraries(&mut details, &context, Some(MAPPING)).unwrap();
+        patch_macos_arm_libraries(&mut details, &context, MAPPING).unwrap();
         assert_eq!(details.libraries.len(), 3);
     }
 }
@@ -1038,6 +1069,7 @@ pub(crate) fn test_request(
 ) -> LaunchRequest {
     LaunchRequest {
         wrapper_temp_dir: std::env::temp_dir(),
+        helper_directory: game_directory.join("launcher-resources"),
         brand: LauncherBrand {
             name: "PCL.Proto".into(),
             version: "test".into(),
@@ -1134,6 +1166,7 @@ mod tests {
         .unwrap();
         let mut option = LaunchOption {
             wrapper_temp_dir: std::env::temp_dir(),
+            helper_directory: root.join("launcher-resources"),
             brand: LauncherBrand {
                 name: "PCL.Proto".into(),
                 version: "test".into(),
@@ -1164,6 +1197,31 @@ mod tests {
         assert!(proxy_args.contains(&"-Dhttps.proxyPort=7891".into()));
         assert!(!proxy_args.iter().any(|arg| arg.starts_with("-javaagent")));
         option.extras.proxy = None;
+        assert!(!option.helper_directory.exists());
+        option.extras.debug_log4j2 = true;
+        let log_config = option.helper_directory.join(resources::LOG4J2_DEBUG_NAME);
+        assert!(option.agent_arguments().unwrap().contains(&format!(
+            "-Dlog4j.configurationFile={}",
+            log_config.display()
+        )));
+        assert_eq!(fs::read(&log_config).unwrap(), resources::LOG4J2_DEBUG);
+        let supplied = root.join("custom-log.xml");
+        fs::write(&supplied, b"custom").unwrap();
+        option.helpers.log4j2_debug = Some(supplied.clone());
+        fs::remove_file(&log_config).unwrap();
+        assert!(
+            option
+                .agent_arguments()
+                .unwrap()
+                .contains(&format!("-Dlog4j.configurationFile={}", supplied.display()))
+        );
+        assert!(!log_config.exists());
+        assert_eq!(fs::read(&supplied).unwrap(), b"custom");
+        option.helpers.log4j2_debug = None;
+        fs::create_dir(&log_config).unwrap();
+        assert!(option.agent_arguments().is_err());
+        fs::remove_dir(&log_config).unwrap();
+        option.extras.debug_log4j2 = false;
         option.version_details.release_time = Some("2013-06-24T00:00:00Z".into());
         assert!(option.needs_legacy_fix());
         option.version_details.release_time = Some("2013-06-25T00:00:00Z".into());

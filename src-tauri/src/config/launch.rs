@@ -63,6 +63,7 @@ pub fn request(state: &AppState, java: Arc<JavaEntry>) -> Result<LaunchOption, G
     let config = ConfigManager::instance();
     LaunchOption::new(LaunchRequest {
         wrapper_temp_dir: config.config_dir().to_path_buf(),
+        helper_directory: config.config_dir().join("resources"),
         brand: LauncherBrand {
             name: LAUNCHER_NAME.into(),
             version: APP_VERSION.into(),

@@ -921,6 +921,7 @@ pub struct InstallOutcome {
 }
 
 #[allow(clippy::too_many_arguments)]
+/// 安装版本；`forge_installer` 缺省时使用 core 自带的处理器桥接。
 pub async fn install_version(
     client: &MinecraftApiClient,
     repo: &Path,
@@ -1124,7 +1125,7 @@ async fn install_version_with_modpack(
                 &directory.path.join(format!("{name}.jar")),
                 task_id,
                 on_event,
-                forge_installer.context("Forge processor bridge was not supplied")?,
+                forge_installer,
             )
             .await?
         } else {

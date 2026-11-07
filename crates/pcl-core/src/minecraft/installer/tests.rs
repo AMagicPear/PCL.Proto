@@ -6,7 +6,8 @@ use serde_json::json;
 #[test]
 fn legacy_assets_preserve_existing_files_and_reject_conflicts() {
     use sha1::Digest;
-    let root = std::env::temp_dir().join(format!("pcl-assets-test-{}", uuid::Uuid::new_v4()));
+    let root =
+        std::env::temp_dir().join(format!("pcl-legacy-assets-test-{}", uuid::Uuid::new_v4()));
     let instance = root.join("instance");
     let hash = crate::io::files::sha1_hex(sha1::Sha1::digest(b"sound"));
     let source = root.join("assets/objects").join(&hash[..2]).join(&hash);

@@ -35,9 +35,8 @@ pub async fn download_minecraft_version(
     let repo = state.lock().await.active_repo_path.clone();
     let java = crate::config::java::installer_candidates(&state).await;
     let paths = ConfigManager::instance().java_runtime_dir();
-    let bridge = crate::assets::Assets::new(ConfigManager::instance().config_dir())
-        .forge_installer()
-        .map_err(|error| error.to_string())?;
+    let bridge =
+        crate::assets::Assets::new(ConfigManager::instance().config_dir()).forge_installer();
     let outcome = installer::download_minecraft_version(
         &repo,
         &client,
@@ -48,7 +47,7 @@ pub async fn download_minecraft_version(
         loader,
         &java,
         &paths,
-        Some(&bridge),
+        bridge.as_deref(),
     )
     .await?;
     if outcome.isolated {
@@ -205,11 +204,9 @@ pub async fn install_modpack(
         super::channel_sink(on_event),
         &java,
         &ConfigManager::instance().java_runtime_dir(),
-        Some(
-            &crate::assets::Assets::new(ConfigManager::instance().config_dir())
-                .forge_installer()
-                .map_err(|error| error.to_string())?,
-        ),
+        crate::assets::Assets::new(ConfigManager::instance().config_dir())
+            .forge_installer()
+            .as_deref(),
     )
     .await?;
     // 整合包可能包含加载器安装，完成后刷新一次 Java 列表。
@@ -244,11 +241,9 @@ pub async fn install_online_modpack(
         super::channel_sink(on_event),
         &java,
         &ConfigManager::instance().java_runtime_dir(),
-        Some(
-            &crate::assets::Assets::new(ConfigManager::instance().config_dir())
-                .forge_installer()
-                .map_err(|error| error.to_string())?,
-        ),
+        crate::assets::Assets::new(ConfigManager::instance().config_dir())
+            .forge_installer()
+            .as_deref(),
     )
     .await?;
     // 整合包可能包含加载器安装，完成后刷新一次 Java 列表。

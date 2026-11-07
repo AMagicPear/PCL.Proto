@@ -1,11 +1,12 @@
-//! 启动器随包携带的辅助资源：Java wrapper、LegacyFix、渲染器代理等。
-//!
-//! 打包后从 `.app/Contents/Resources/launcher` 读取；其它平台把它们嵌进二进制，
-//! 首次使用时解压到配置目录。核心库只接收最终路径，不关心这些文件从哪来。
+//! 本应用的辅助资源路径与 Mesa loader 下载。
+//! macOS 使用包内只读资源，其它平台由 core 按需准备默认资源。
 
 use std::path::{Path, PathBuf};
 
-use pcl_core::minecraft::launch::launcher::LaunchHelpers;
+use pcl_core::minecraft::{
+    installer::forgelike,
+    launch::{launcher::LaunchHelpers, resources},
+};
 
 /// 渲染器代理的版本，对照 CE 的 mesa-loader-windows。
 pub const MESA_LOADER_VERSION: &str = "26.0.4";
@@ -25,74 +26,21 @@ fn running_bundle() -> Option<PathBuf> {
 
 pub struct Assets {
     directory: PathBuf,
-    /// 打包后直接在应用包里取文件，不再往只读目录写。
-    bundled: bool,
+    bundled_directory: Option<PathBuf>,
 }
 
 impl Assets {
     pub fn new(config_dir: &Path) -> Self {
-        match running_bundle() {
-            Some(root) => Self {
-                directory: root.join("launcher"),
-                bundled: true,
-            },
-            None => Self {
-                directory: config_dir.join("resources"),
-                bundled: false,
-            },
+        Self {
+            directory: config_dir.join("resources"),
+            bundled_directory: running_bundle().map(|root| root.join("launcher")),
         }
     }
 
-    fn path(&self, name: &str, bytes: &[u8]) -> std::io::Result<PathBuf> {
-        let path = self.directory.join(name);
-        if self.bundled {
-            return Ok(path);
-        }
-        if std::fs::metadata(&path).is_ok_and(|metadata| metadata.len() == bytes.len() as u64) {
-            return Ok(path);
-        }
-        std::fs::create_dir_all(&self.directory)?;
-        let temp = path.with_extension(format!("{}.tmp", std::process::id()));
-        std::fs::write(&temp, bytes)?;
-        std::fs::rename(&temp, &path)?;
-        Ok(path)
-    }
-
-    pub fn java_wrapper(&self) -> std::io::Result<PathBuf> {
-        self.path(pcl_assets::JAVA_WRAPPER_NAME, pcl_assets::JAVA_WRAPPER)
-    }
-
-    pub fn forge_installer(&self) -> std::io::Result<PathBuf> {
-        self.path(
-            pcl_assets::FORGE_INSTALLER_NAME,
-            pcl_assets::FORGE_INSTALLER,
-        )
-    }
-
-    pub fn legacy_fix(&self) -> std::io::Result<PathBuf> {
-        self.path(pcl_assets::LEGACY_FIX_NAME, pcl_assets::LEGACY_FIX)
-    }
-
-    pub fn lwjgl_unsafe_agent(&self) -> std::io::Result<PathBuf> {
-        self.path(
-            pcl_assets::LWJGL_UNSAFE_AGENT_NAME,
-            pcl_assets::LWJGL_UNSAFE_AGENT,
-        )
-    }
-
-    fn log4j2_debug(&self) -> std::io::Result<PathBuf> {
-        self.path(pcl_assets::LOG4J2_DEBUG_NAME, pcl_assets::LOG4J2_DEBUG)
-    }
-
-    fn log4j2_legacy_debug(&self) -> std::io::Result<PathBuf> {
-        self.path(
-            pcl_assets::LOG4J2_LEGACY_DEBUG_NAME,
-            pcl_assets::LOG4J2_LEGACY_DEBUG,
-        )
-    }
-
-    fn macos_arm_libraries(&self) -> Option<String> {
-        Some(pcl_assets::MACOS_ARM_LIBRARIES.to_owned())
+    pub fn forge_installer(&self) -> Option<PathBuf> {
+        self.bundled_directory
+            .as_ref()
+            .map(|directory| directory.join(forgelike::BRIDGE_NAME))
     }
 
     pub fn mesa_loader_path(&self) -> PathBuf {
@@ -148,16 +96,21 @@ impl Assets {
         Ok(path)
     }
 
-    /// 汇总成启动流程需要的辅助文件。
+    /// 包内文件覆盖 core 默认资源；下载的 Mesa loader 始终放在可写目录。
     pub fn launch_helpers(&self) -> LaunchHelpers {
+        let bundled = |name: &str| {
+            self.bundled_directory
+                .as_ref()
+                .map(|directory| directory.join(name))
+        };
         LaunchHelpers {
-            java_wrapper: self.java_wrapper().ok(),
-            legacy_fix: self.legacy_fix().ok(),
-            lwjgl_unsafe_agent: self.lwjgl_unsafe_agent().ok(),
-            log4j2_debug: self.log4j2_debug().ok(),
-            log4j2_legacy_debug: self.log4j2_legacy_debug().ok(),
-            macos_arm_libraries: self.macos_arm_libraries(),
+            java_wrapper: bundled(resources::JAVA_WRAPPER_NAME),
+            legacy_fix: bundled(resources::LEGACY_FIX_NAME),
+            lwjgl_unsafe_agent: bundled(resources::LWJGL_UNSAFE_AGENT_NAME),
+            log4j2_debug: bundled(resources::LOG4J2_DEBUG_NAME),
+            log4j2_legacy_debug: bundled(resources::LOG4J2_LEGACY_DEBUG_NAME),
             mesa_loader: Some(self.mesa_loader_path()),
+            ..Default::default()
         }
     }
 }

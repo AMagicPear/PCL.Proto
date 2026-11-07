@@ -1,6 +1,6 @@
 # pcl-core
 
-用于构建 Minecraft 启动器的 Rust 库：版本、实例、安装、Java、认证、启动、下载、导出、存档与服务器文件、服务器 ping。core 不依赖 Tauri、`pcl-assets` 或 PCL.Proto 的配置系统。
+用于构建 Minecraft 启动器的 Rust 库：版本、实例、安装、Java、认证、启动、下载、导出、存档与服务器文件、服务器 ping。core 不依赖 Tauri 或 PCL.Proto 的配置系统；通用安装与启动辅助资源随 core 提供。
 
 ## 通过 Git 引入
 
@@ -11,9 +11,6 @@
 pcl-core = { git = "https://github.com/PCL-Community/PCL.Proto", rev = "<commit>" }
 reqwest = "0.13"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-
-# 需要辅助 JAR 或 Forge 处理器桥接时再引入，也可以自行提供文件：
-pcl-assets = { git = "https://github.com/PCL-Community/PCL.Proto", rev = "<commit>" }
 ```
 
 三个可选 feature 均默认关闭，按需在依赖上添加，例如 `features = ["community", "microsoft"]`：
@@ -71,12 +68,12 @@ let outcome = installer::install_version(
     &event_sink(|report| { /* 进度 */ }),
     &[],                         // Java 候选
     &data_dir.join("java"),       // 自动安装 Java 的目标目录
-    None,                        // Forge 处理器桥接，仅需要时提供 Some(path)
+    None,                        // 使用 core 自带的 Forge 处理器桥接
 ).await?;
 // outcome.directory：已发布的实例；outcome.isolated：安装结果是否需要隔离
 ```
 
-需要辅助资源时使用 `pcl_assets::materialize(&resource_dir)`，或只写入需要的资源，再传具体文件路径。Forge/NeoForge 处理器需要 `forge-installer.jar`；原版和 Fabric 不依赖资源 crate。
+Forge/NeoForge 处理器需要的桥接由 core 自动写入本次安装的临时目录，结束后清理；原版、Fabric 和不执行处理器的旧版 Forge 不会准备它。只有替换默认桥接时才传 `Some(path)`，该文件由宿主管理。
 
 ## 启动
 
@@ -89,7 +86,8 @@ use pcl_core::minecraft::launch::{
     settings::LaunchExtras,
 };
 
-let option = LaunchOption::new(LaunchRequest {
+let mut option = LaunchOption::new(LaunchRequest {
+    helper_directory: data_dir.join("launch-helpers"),
     wrapper_temp_dir: data_dir.join("java-wrapper-tmp"),
     brand: LauncherBrand { name: "MyLauncher".into(), version: "1.0".into() },
     instance, profile, java, game_directory,
@@ -105,7 +103,7 @@ option.prepare_legacy_assets(&downloader).await?;
 let child = option.launch_checked()?;
 ```
 
-`LaunchArguments` 只包含实际 JVM/游戏参数和 classpath，不处理继承。`LaunchHelpers` 中缺省的文件会跳过对应辅助行为；core 不寻找 PCL.Proto 的资源目录。
+`LaunchArguments` 只包含实际 JVM/游戏参数和 classpath，不处理继承。启用 `LaunchExtras` 中的兼容或调试行为且满足适用条件时，core 才把对应默认文件写入 `helper_directory`；macOS ARM64 原生库映射直接在内存中使用。`LaunchHelpers` 可覆盖默认文件路径或映射；传入的文件不会被 core 改写。Mesa loader 仍需宿主单独准备。资源来源见 [resources](resources/README.md)。core 不寻找 PCL.Proto 的配置目录或应用包。
 第三方账户先调用 `launch::authlib::prepare(&client, &profile, &jar_path)` 并将返回的 agent 交给 `with_authlib`。
 
 ## Java 与认证

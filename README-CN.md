@@ -90,7 +90,7 @@ macOS 打包目录与资源读取方式见 [应用打包说明](docs/PACKAGING.m
 pcl-core = { git = "https://github.com/PCL-Community/PCL.Proto", rev = "<commit>" }
 ```
 
-运行目录、凭据注入、启动输入和可选的 `pcl-assets` 说明见[核心库文档](crates/pcl-core/README.md)。
+运行目录、凭据注入、启动输入和内置安装/启动辅助资源的说明见[核心库文档](crates/pcl-core/README.md)。
 
 ## 鸣谢
 

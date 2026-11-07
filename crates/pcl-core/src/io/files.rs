@@ -5,6 +5,29 @@ use std::{
 
 use sha1::Digest;
 
+/// 更新 core 自带的辅助文件；内容相同时不写入，替换时保留完整的旧文件直到提交。
+pub(crate) fn write_embedded(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    use std::io::Write;
+
+    match std::fs::read(path) {
+        Ok(existing) if existing == bytes => return Ok(()),
+        Ok(_) => (),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => (),
+        Err(error) => return Err(error),
+    }
+    let parent = path.parent().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "Missing resource directory",
+        )
+    })?;
+    std::fs::create_dir_all(parent)?;
+    let mut temp = tempfile::NamedTempFile::new_in(parent)?;
+    temp.write_all(bytes)?;
+    temp.persist(path).map_err(|error| error.error)?;
+    Ok(())
+}
+
 /// Open a folder in the platform file manager.
 pub fn open_directory(path: &Path) -> Result<(), String> {
     std::process::Command::new(if cfg!(windows) {
@@ -98,6 +121,27 @@ pub fn safe_join(root: &Path, relative: &str) -> anyhow::Result<PathBuf> {
 #[cfg(test)]
 mod path_tests {
     use super::*;
+
+    #[test]
+    fn embedded_resources_replace_equal_length_stale_files_and_propagate_errors() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("helpers/agent.jar");
+        write_embedded(&path, b"old").unwrap();
+        write_embedded(&path, b"new").unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), b"new");
+        let modified = std::fs::metadata(&path).unwrap().modified().unwrap();
+        write_embedded(&path, b"new").unwrap();
+        assert_eq!(
+            std::fs::metadata(&path).unwrap().modified().unwrap(),
+            modified
+        );
+        assert_eq!(
+            std::fs::read_dir(path.parent().unwrap()).unwrap().count(),
+            1
+        );
+        assert!(write_embedded(path.parent().unwrap(), b"bytes").is_err());
+        assert_eq!(std::fs::read(&path).unwrap(), b"new");
+    }
 
     #[test]
     fn rejects_portable_path_traversal_and_reserved_names() {
