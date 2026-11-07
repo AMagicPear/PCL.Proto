@@ -93,34 +93,6 @@ const router = useRouter()
         >
           <div
             style="
-              margin: 0px 0px 6px 0px;
-              display: grid;
-              grid-template-columns: auto minmax(0, 1fr) 30px auto minmax(0, 1fr);
-              grid-template-rows: auto auto auto;
-            "
-          >
-            <span
-              style="
-                margin: 0px 20px 0px 0px;
-                grid-row: 1 / span 1;
-                grid-column: 1 / span 1;
-                justify-self: start;
-                align-self: center;
-              "
-              class="pcl-text"
-              >{{ pclText('Setup.Ui.Basic.Opacity') }}</span
-            >
-            <input
-              disabled
-              style="grid-row: 1 / span 1; grid-column: 2 / span 5"
-              type="range"
-              min="0"
-              max="600"
-              v-model.number="values['SliderLauncherOpacity']"
-            />
-          </div>
-          <div
-            style="
               height: 28px;
               margin: 0px 0px 7px 0px;
               display: grid;
@@ -191,14 +163,7 @@ const router = useRouter()
             />
           </div>
           <PCheckBox
-            disabled
-            style="height: 22px; margin: 0px 0px 7px -1px"
-            id="PageSetupUI-CheckLauncherLogo"
-            :label="pclText('Setup.Ui.Basic.ShowLogo')"
-            v-model="values.CheckLauncherLogo"
-          />
-          <PCheckBox
-            disabled
+            :disabled="!isTauri()"
             style="height: 22px; margin: 0px 0px 7px -1px"
             id="PageSetupUI-CheckLockWindowSize"
             :label="pclText('Setup.Ui.Basic.LockWindow')"

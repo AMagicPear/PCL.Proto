@@ -12,6 +12,7 @@ use pcl_core::minecraft::{
 };
 
 /// 从可执行文件路径推导 `.app` 包的 `Contents/Resources`。
+#[cfg(not(all(target_os = "macos", dev)))]
 pub fn bundle_root(executable: &Path) -> Option<PathBuf> {
     let macos = executable.parent()?;
     let contents = macos.parent()?;
@@ -19,6 +20,7 @@ pub fn bundle_root(executable: &Path) -> Option<PathBuf> {
         .then(|| contents.join("Resources"))
 }
 
+#[cfg(not(all(target_os = "macos", dev)))]
 fn running_bundle() -> Option<PathBuf> {
     let executable = std::env::current_exe().ok()?.canonicalize().ok()?;
     bundle_root(&executable)
