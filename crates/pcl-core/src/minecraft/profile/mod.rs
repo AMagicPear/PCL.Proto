@@ -8,6 +8,7 @@
 use serde::{Deserialize, Serialize};
 
 pub mod auth;
+pub mod skin;
 pub mod uuid;
 
 /// Authentication provider of a launcher profile.
@@ -28,7 +29,7 @@ pub enum ProfileType {
 
 /// Full persisted launcher profile.
 ///
-/// Mirrors `PCL.Core.Minecraft.Profile.Models.McProfile` / `SafeProfile`.
+/// Mirrors `PCL.Core.Minecraft.Profile.Models.McProfile`.
 /// Provider-only fields stay optional so offline profiles do not accumulate
 /// meaningless credentials.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -203,70 +204,14 @@ impl McProfile {
     }
 }
 
-/// UI-safe projection of a profile, mirroring `PCL.Core.Minecraft.Profile.Models.SafeProfile`.
-///
-/// Tokens and provider secrets stay in the backend; the webview only receives
-/// identity and display fields.
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SafeProfile {
-    pub profile_id: String,
-    pub user_name: String,
-    pub uuid: String,
-    pub profile_type: ProfileType,
-    pub description: String,
-    pub server: Option<String>,
-    pub server_name: Option<String>,
-}
-
-impl From<&McProfile> for SafeProfile {
-    fn from(profile: &McProfile) -> Self {
-        Self {
-            profile_id: profile.profile_id.clone(),
-            user_name: profile.user_name.clone(),
-            uuid: profile.uuid.clone(),
-            profile_type: profile.profile_type,
-            description: profile.description.clone(),
-            server: profile.server.clone(),
-            server_name: profile.server_name.clone(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn safe_profile_never_exposes_tokens() {
-        let mut profile = McProfile::microsoft("Player", "uuid", "access", "refresh", "xuid");
-        profile.offline_skin = Some(OfflineSkin {
-            image: "image".into(),
-            slim: false,
-        });
-        let safe = SafeProfile::from(&profile);
-        let value = serde_json::to_value(&safe).unwrap();
-        assert_eq!(value["userName"], "Player");
-        assert_eq!(value["profileType"], "microsoft");
-        assert!(value.get("accessToken").is_none());
-        assert!(value.get("refreshToken").is_none());
-        assert!(value.get("xuid").is_none());
-        assert!(value.get("offlineSkin").is_none());
-    }
-
-    #[test]
-    fn offline_skin_round_trips_and_old_profiles_still_load() {
-        let mut profile: McProfile =
+    fn old_profiles_without_offline_skin_still_load() {
+        let profile: McProfile =
             serde_json::from_str(r#"{"username":"Player","uuid":"1234"}"#).unwrap();
         assert!(profile.offline_skin.is_none());
-        profile.offline_skin = Some(OfflineSkin {
-            image: "c2tpbg==".into(),
-            slim: true,
-        });
-        let restored: McProfile =
-            serde_json::from_str(&serde_json::to_string(&profile).unwrap()).unwrap();
-        let skin = restored.offline_skin.unwrap();
-        assert_eq!(skin.image, "c2tpbg==");
-        assert!(skin.slim);
     }
 }

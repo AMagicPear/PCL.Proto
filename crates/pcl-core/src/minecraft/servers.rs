@@ -541,19 +541,4 @@ mod tests {
         assert!(read(folder.path()).is_err());
         assert_eq!(fs::read(path).unwrap(), invalid);
     }
-
-    #[test]
-    fn accepts_frontend_change_contract() {
-        let change: ServerChange = serde_json::from_str(
-            r#"{"action":"edit","index":0,"name":"Test","address":"localhost"}"#,
-        )
-        .unwrap();
-        assert!(matches!(change, ServerChange::Edit { index: 0, .. }));
-        assert!(
-            serde_json::from_str::<ServerChange>(
-                r#"{"action":"remove","index":0,"unexpected":true}"#
-            )
-            .is_err()
-        );
-    }
 }

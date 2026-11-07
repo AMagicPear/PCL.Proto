@@ -103,14 +103,15 @@ option.prepare_legacy_assets(&downloader).await?;
 let child = option.launch_checked()?;
 ```
 
-`LaunchArguments` 只包含实际 JVM/游戏参数和 classpath，不处理继承。启用 `LaunchExtras` 中的兼容或调试行为且满足适用条件时，core 才把对应默认文件写入 `helper_directory`；macOS ARM64 原生库映射直接在内存中使用。`LaunchHelpers` 可覆盖默认文件路径或映射；传入的文件不会被 core 改写。Mesa loader 仍需宿主单独准备。资源来源见 [resources](resources/README.md)。core 不寻找 PCL.Proto 的配置目录或应用包。
+`LaunchArguments` 只包含实际 JVM/游戏参数和 classpath，不处理继承。启用 `LaunchExtras` 中的兼容或调试行为且满足适用条件时，core 才把对应默认文件写入 `helper_directory`；macOS ARM64 原生库映射直接在内存中使用。`LaunchHelpers` 可覆盖默认文件路径或映射；传入的文件不会被 core 改写。`prepare_natives` 也会按 Windows 渲染器设置准备 Mesa loader，缺省使用 `helper_directory`，也可通过 `LaunchHelpers.mesa_loader` 指定缓存路径。资源来源见 [resources](resources/README.md)。core 不寻找 PCL.Proto 的配置目录或应用包。
 第三方账户先调用 `launch::authlib::prepare(&client, &profile, &jar_path)` 并将返回的 agent 交给 `with_authlib`。
 
-## Java 与认证
+## Java、认证与皮肤
 
 - `minecraft::java::scan(known, roots).await` 扫描系统 Java 和指定目录。`JavaManager` 合并列表，`JavaRequirements` 判断版本兼容性；选择偏好、相对启动器目录与扫描节流由宿主负责。
 - `minecraft::java::install::install(requirements, runtime_dir, downloader, progress)` 安装 Mojang Java，不写启动器配置。
 - 开启 `microsoft` 后，`MicrosoftProvider::new(client, client_id)` 提供微软登录；`AuthlibProvider::new(client, server)` 和 `Connect::new(client, discovery, client_id, server)` 不依赖该 feature。它们接收自己的客户端与参数，设备码交互、角色选择、档案持久化由宿主编排。
+- `minecraft::profile::skin` 提供用户名/UUID 查询、皮肤会话读取与纹理解码、默认皮肤选择和文件校验；开启 `microsoft` 后提供皮肤上传。宿主提供 HTTP 客户端，并负责缓存、令牌刷新、文件选择和界面展示。
 - Connect 未指定 Client ID 时可使用服务发现文档的共享 ID；PCL 在皮肤站注册的 ID 留在应用，第三方应提供自己的注册信息。
 
 ## 运行状态与边界

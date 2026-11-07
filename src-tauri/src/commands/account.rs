@@ -9,7 +9,37 @@ use crate::config::profiles as service;
 use crate::config::profiles::blocking;
 use crate::login::{self, LoginRequest, View};
 use pcl_core::minecraft::profile::auth::{AuthError, AuthResult, authlib, connect};
-use pcl_core::minecraft::profile::{McProfile, ProfileType, SafeProfile, uuid};
+use pcl_core::minecraft::profile::{McProfile, ProfileType, uuid};
+
+/// UI-safe projection of a profile, mirroring `PCL.Core.Minecraft.Profile.Models.SafeProfile`.
+///
+/// Tokens and provider secrets stay in the backend; the webview only receives
+/// identity and display fields.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SafeProfile {
+    pub profile_id: String,
+    pub user_name: String,
+    pub uuid: String,
+    pub profile_type: ProfileType,
+    pub description: String,
+    pub server: Option<String>,
+    pub server_name: Option<String>,
+}
+
+impl From<&McProfile> for SafeProfile {
+    fn from(profile: &McProfile) -> Self {
+        Self {
+            profile_id: profile.profile_id.clone(),
+            user_name: profile.user_name.clone(),
+            uuid: profile.uuid.clone(),
+            profile_type: profile.profile_type,
+            description: profile.description.clone(),
+            server: profile.server.clone(),
+            server_name: profile.server_name.clone(),
+        }
+    }
+}
 
 /// 档案列表与当前选择，界面一次拿全。
 #[derive(Clone, Debug, Serialize)]
@@ -255,4 +285,27 @@ pub async fn select_login_profile(
     candidate_id: Option<String>,
 ) -> Result<(), AuthError> {
     login::select(&session_id, candidate_id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pcl_core::minecraft::profile::OfflineSkin;
+
+    #[test]
+    fn safe_profile_never_exposes_tokens() {
+        let mut profile = McProfile::microsoft("Player", "uuid", "access", "refresh", "xuid");
+        profile.offline_skin = Some(OfflineSkin {
+            image: "image".into(),
+            slim: false,
+        });
+        let safe = SafeProfile::from(&profile);
+        let value = serde_json::to_value(&safe).unwrap();
+        assert_eq!(value["userName"], "Player");
+        assert_eq!(value["profileType"], "microsoft");
+        assert!(value.get("accessToken").is_none());
+        assert!(value.get("refreshToken").is_none());
+        assert!(value.get("xuid").is_none());
+        assert!(value.get("offlineSkin").is_none());
+    }
 }

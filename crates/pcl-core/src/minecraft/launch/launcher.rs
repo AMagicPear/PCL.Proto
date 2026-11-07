@@ -730,6 +730,17 @@ impl LaunchOption {
         &mut self,
         downloader: &crate::io::download::Downloader,
     ) -> anyhow::Result<std::path::PathBuf> {
+        if self.extras.renderer != 0 && cfg!(windows) {
+            let path = self
+                .helpers
+                .mesa_loader
+                .clone()
+                .unwrap_or_else(|| resources::mesa_loader_path(&self.helper_directory));
+            resources::ensure_mesa_loader(downloader, &path)
+                .await
+                .map_err(anyhow::Error::msg)?;
+            self.helpers.mesa_loader = Some(path);
+        }
         let context = McRuleContext::for_java(&self.java_runtime.architecture)?;
         patch_macos_arm_libraries(
             &mut self.version_details,

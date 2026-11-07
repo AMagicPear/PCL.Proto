@@ -195,7 +195,7 @@ pub fn run() {
             commands::instances::get_active_instance,
             commands::system::server_query,
             commands::skin::fetch_username_uuid,
-            commands::skin::fetch_uuid_profile,
+            commands::skin::fetch_skin_url,
             commands::sources::fetch_with_modrinth,
             commands::sources::fetch_with_curseforge,
             commands::sources::curseforge_available,

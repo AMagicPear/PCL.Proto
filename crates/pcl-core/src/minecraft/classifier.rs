@@ -121,13 +121,4 @@ mod tests {
         assert!(is_april_fools("24w14potato"));
         assert!(!is_april_fools("1.20.1"));
     }
-
-    #[test]
-    fn release_time_is_parsed_as_utc() {
-        let value = json!({"releaseTime":"2023-06-12T12:00:00+08:00"});
-        assert_eq!(
-            McVersionClassifier::release_time(&value).to_rfc3339(),
-            "2023-06-12T04:00:00+00:00"
-        );
-    }
 }

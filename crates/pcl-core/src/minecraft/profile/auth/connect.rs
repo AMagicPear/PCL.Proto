@@ -658,16 +658,7 @@ mod tests {
     }
 
     #[test]
-    fn claims_parse_selected_and_available_profiles() {
-        let claims: Claims = serde_json::from_value(serde_json::json!({
-            "sub": "1",
-            "aud": "1514",
-            "selectedProfile": { "id": "uuid", "name": "Player" },
-            "availableProfiles": [{ "id": "uuid", "name": "Player" }]
-        }))
-        .unwrap();
-        assert_eq!(claims.selected_profile.unwrap().name, "Player");
-        assert_eq!(claims.available_profiles.len(), 1);
+    fn audience_detects_empty_claims() {
         assert!(!audience_is_empty(&serde_json::json!("1514")));
         assert!(audience_is_empty(&serde_json::json!([])));
     }

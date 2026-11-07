@@ -7,7 +7,7 @@
 仓库根目录的 `package.json`、Vite 和 TypeScript 配置负责网站与 Tauri 前端；
 `packages/components/` 保存组件 npm 包的入口、样式、包描述和独立构建配置，
 直接复用 `src/components/widget/` 中的控件。根目录 `Cargo.toml` 管理 Rust 工作区：
-`crates/pcl-core/` 是启动器核心，`src-tauri/` 是桌面应用，`crates/terracotta/` 是独立维护的 Git 子模块；
+`crates/pcl-core/` 是 Minecraft 核心，`src-tauri/` 是桌面应用，`crates/terracotta/` 是独立维护的 Git 子模块；
 不要把子模块文件复制到组件包。组件包运行 `bun run components:build` 构建，或执行
 `npm pack ./packages/components` 构建并打包。
 
@@ -58,7 +58,7 @@ src-tauri（PCL.Proto 应用）
 
 | 位置 | 职责 |
 | --- | --- |
-| `pcl-core/src/minecraft/` | 版本、实例、安装、Java 探测/扫描/约束、启动、认证协议、存档和服务器文件、导出 |
+| `pcl-core/src/minecraft/` | 版本、实例、安装、Java 探测/扫描/约束、启动、认证与皮肤协议、存档和服务器文件、导出 |
 | `pcl-core/src/io/` | 校验下载、Range、来源回退、可共享的连接/带宽配额、文件与 HTTP 操作 |
 | `pcl-core/src/link/` | 服务器 ping；`link` feature 提供 Terracotta 桥接 |
 | `pcl-core/src/events.rs` | 普通进度回调 `EventSink` |
@@ -66,14 +66,19 @@ src-tauri（PCL.Proto 应用）
 | `src-tauri/src/config/` | 全部启动器设置、继承、默认值、校验、文件位置、事务持久化、设置到功能输入的折算 |
 | `src-tauri/src/login/` | 设备码提示、角色选择、取消、轮询及档案更新 |
 | `src-tauri/src/secrets.rs` | 本应用凭据来源与皮肤站注册的 Client ID |
-| `src-tauri/src/commands/` | IPC 参数、通道适配和应用流程 |
-| `src-tauri/src/assets.rs` | 本应用包内资源路径和 Mesa loader 下载；下载缓存始终使用可写目录 |
-| `src-tauri/src/` | 窗口/可见性、设备标识、外链、自定义协议与资源提供者 |
+| `src-tauri/src/commands/` | IPC 参数、账号展示模型、通道适配和应用流程 |
+| `src-tauri/src/assets.rs` | 本应用包内资源和可写缓存目录的路径；下载与兼容逻辑由 core 执行 |
+| `src-tauri/src/` | 窗口/可见性、设备标识、今日人品、外链、自定义协议与资源提供者 |
+
+游戏启动与管理的协议、校验、下载和文件操作属于 core；PCL.Proto 的配置、交互与展示属于应用。`SafeProfile` 是应用的 WebView 投影，留在账号命令中；core 只提供完整档案与游戏能力。
+
+皮肤会话地址、纹理解码、默认皮肤规则、文件校验和微软上传在 `minecraft::profile::skin`。应用负责选择文件、读取账号、刷新登录、写入配置及皮肤缓存，不向 core 传入 `AppHandle` 或配置单例。
 
 ### 设置如何进入 core
 
 - Java 偏好、相对路径、全局回退和扫描节流在 Tauri；core 扫描接收目录列表，安装器接收按优先级排列的 Java 候选并重新探测兼容性。
 - 内存自动分配、全局/实例参数继承、隔离决策和“跟随启动器窗口尺寸”都在 Tauri。core 接收具体 MiB、游戏目录、参数与窗口尺寸。
+- Mesa loader 的版本、下载与校验由 core 管理，`prepare_natives` 按 Windows 渲染器设置补全；普通启动与导出脚本共用，宿主只指定缓存路径。
 - `LaunchExtras` 是一次启动的实际行为输入，不包含“继承全局”选项。`LaunchHelpers` 提供默认资源的替代路径；缺省时 core 按启用行为与版本条件准备自带资源，错误向调用方返回。
 - 不再传入 `RuntimePaths` 或配置目录。Java 安装只接收运行时目标目录；authlib-injector 接收 JAR 文件路径；Java wrapper 接收临时目录；启动辅助文件接收专用输出目录。Forge 处理器桥接默认使用本次安装的临时目录，宿主可传路径替换。
 - `DownloadSettings` 留在应用；只有连接数、限速、来源和 HTTP 模式转换为 core 的 `DownloadOptions`。安装后自动选中实例由应用完成。

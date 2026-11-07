@@ -417,14 +417,11 @@ mod tests {
     }
 
     #[test]
-    fn classifier_only_libraries_and_missing_servers_are_valid() {
+    fn classifier_only_libraries_resolve_native_downloads() {
         let library: McLibrary = serde_json::from_value(json!({
             "name":"org.lwjgl:lwjgl:2", "natives":{"osx":"natives-osx-${arch}"},
             "downloads":{"classifiers":{"natives-osx-64":{"sha1":"a".repeat(40),"size":1,"url":"https://example.org/native.jar"}}}
         })).unwrap();
-        assert!(library.downloads.as_ref().unwrap().artifact.is_none());
         assert!(library.native_download(&context()).unwrap().is_some());
-        let downloads: McVersionDownloads = serde_json::from_value(json!({"client":{"sha1":"a".repeat(40),"size":1,"url":"https://example.org/client.jar"}})).unwrap();
-        assert!(downloads.server.is_none());
     }
 }

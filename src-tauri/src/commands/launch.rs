@@ -401,20 +401,6 @@ async fn prepare_launch_option(
     })?;
     // CE 在启动前先跑一遍登录加载器：令牌过期时静默刷新，失败就要求重新登录。
     refresh_active_account().await?;
-    // 渲染器代理是 Windows 专属的附加资源，启动前确保已就绪。
-    if cfg!(windows) {
-        let needs_agent = {
-            let config = ConfigManager::instance();
-            let state = config.app_state.lock().await;
-            crate::config::launch_settings::resolve_for(&state, Some(&instance_directory)).renderer
-                != 0
-        };
-        if needs_agent {
-            crate::assets::Assets::new(ConfigManager::instance().config_dir())
-                .ensure_mesa_loader()
-                .await?;
-        }
-    }
     let (option, launcher_size) = tauri::async_runtime::spawn_blocking(move || {
         build_launch_option(instance_directory, runtime)
     })
