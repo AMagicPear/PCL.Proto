@@ -12,7 +12,9 @@ export const appearance = usePageSettings('PageSetupUI', {
   ComboLightColor: '1',
   ComboDarkColor: '1',
   CheckBackgroundColorful: true,
-  UiLogoType: '0',
+  UiLogoType: '1',
+  CheckLogoLeft: false,
+  TextLogoText: '',
 })
 
 for (const key of ['ComboUiFont', 'ComboUiMotdFont'] as const) {
