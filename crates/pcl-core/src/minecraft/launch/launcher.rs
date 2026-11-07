@@ -164,6 +164,11 @@ impl LaunchOption {
     /// Launch a Minecraft game with the given options
     fn launch(&self) -> Result<std::process::Child, GameLaunchError> {
         let mut command = self.command()?;
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(windows_sys::Win32::System::Threading::CREATE_NO_WINDOW);
+        }
         crate::minecraft::launch::settings::run_prelaunch(
             &self.extras,
             &self.game_instance.global_dir,
