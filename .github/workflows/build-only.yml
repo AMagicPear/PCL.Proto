@@ -63,6 +63,10 @@ jobs:
       - name: generate icons
         run: bun run icons
 
+      - name: build frontend resources for macOS tests
+        if: matrix.platform == 'macos-latest'
+        run: bun run ui:build-only
+
       - name: test core crate
         shell: bash
         run: |
