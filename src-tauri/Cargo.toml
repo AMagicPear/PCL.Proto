@@ -19,7 +19,7 @@ tauri-build = { version = "2.7.4", features = [] }
 
 [dependencies]
 pcl-assets = { path = "../crates/pcl-assets" }
-pcl-core = { path = "../crates/pcl-core", features = ["link"] }
+pcl-core = { path = "../crates/pcl-core", features = ["community", "microsoft", "link"] }
 
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

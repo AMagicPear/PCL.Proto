@@ -886,6 +886,7 @@ pub enum LoaderFamily {
 pub struct LoaderInstall {
     pub family: LoaderFamily,
     pub version: String,
+    #[cfg(feature = "community")]
     #[serde(default)]
     pub api: Option<FabricApiInstall>,
     #[serde(default)]
@@ -893,6 +894,7 @@ pub struct LoaderInstall {
 }
 
 /// 可选一并安装的 Fabric API。
+#[cfg(feature = "community")]
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct FabricApiInstall {
     #[serde(flatten)]
@@ -900,6 +902,7 @@ pub struct FabricApiInstall {
     pub filename: String,
 }
 
+#[cfg(feature = "community")]
 fn add_fabric_api(
     plan: &mut InstallPlan,
     instance: &Path,
@@ -1020,6 +1023,7 @@ async fn install_version_with_modpack(
                 merge_loader_profile(&mut metadata, &profile)?;
             }
             LoaderFamily::Forge | LoaderFamily::Neoforge => {
+                #[cfg(feature = "community")]
                 ensure!(loader.api.is_none(), "Fabric API requires Fabric");
                 forgelike = Some(
                     forgelike::prepare(client, &downloader, version_id, loader, task_id, on_event)
@@ -1077,6 +1081,7 @@ async fn install_version_with_modpack(
         2,
     )
     .await?;
+    #[cfg(feature = "community")]
     if let Some(api) = loader.and_then(|loader| loader.api.as_ref()) {
         add_fabric_api(&mut plan, &directory.path, api)?;
     }
@@ -1165,7 +1170,9 @@ async fn install_version_with_modpack(
     metadata["clientVersion"] = version_id.into();
     let json = serde_json::to_vec_pretty(&metadata)?;
     let filename = format!("{name}.json");
-    let isolated = pack.is_some() || loader.and_then(|loader| loader.api.as_ref()).is_some();
+    let isolated = pack.is_some();
+    #[cfg(feature = "community")]
+    let isolated = isolated || loader.and_then(|loader| loader.api.as_ref()).is_some();
     let path = directory.path.clone();
     crate::io::download::tasks::commit(task_id, move || {
         let mut directory = directory;

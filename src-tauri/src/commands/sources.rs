@@ -21,8 +21,7 @@ pub async fn fetch_with_curseforge(
     api_client
         .fetch_with_curseforge(
             endpoint,
-            crate::secrets::SECRETS
-                .curseforge_api_key
+            crate::secrets::CURSEFORGE_API_KEY
                 .as_deref()
                 .unwrap_or_default(),
         )
@@ -33,5 +32,5 @@ pub async fn fetch_with_curseforge(
 /// 未配置密钥时界面需要隐藏 CurseForge 选项（对照 CE 的 SupportCurseForge）。
 #[tauri::command]
 pub fn curseforge_available() -> bool {
-    crate::secrets::SECRETS.curseforge_api_key.is_some()
+    crate::secrets::CURSEFORGE_API_KEY.is_some()
 }

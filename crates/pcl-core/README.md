@@ -16,7 +16,17 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 pcl-assets = { git = "https://github.com/PCL-Community/PCL.Proto", rev = "<commit>" }
 ```
 
-联机默认关闭。需要时在 `pcl-core` 依赖上添加 `features = ["link"]`，才会编译 Terracotta；服务器 ping 不需要该 feature。
+三个可选 feature 均默认关闭，按需在依赖上添加，例如 `features = ["community", "microsoft"]`：
+
+| Feature | 启用的入口 | 宿主提供 |
+| --- | --- | --- |
+| `community` | Modrinth / CurseForge API、资源文件下载、在线整合包、Fabric API 随装 | reqwest 客户端；CurseForge 请求所需的 API Key |
+| `microsoft` | 微软 OAuth、Xbox Live / XSTS、Minecraft 登录与账号操作 | reqwest 客户端和自己的 OAuth Client ID |
+| `link` | Terracotta 联机桥接及其依赖 | 身份文件路径 |
+
+这些 feature 彼此独立。Modrinth 不需要 CurseForge Key；关闭 `community` 仍可安装原版/加载器和导入本地 mrpack。关闭 `microsoft` 仍可用宿主自行认证的微软档案启动。服务器 ping 不需要 `link`。
+core 不读取 `.env` 或任何启动器的凭据；只在对应功能调用时接收参数，缺少一类凭据不会阻止其他功能初始化。PCL.Proto 的 Tauri 应用显式启用三个 feature，并分别按需读取自己的 CurseForge Key 和微软 Client ID。
+
 Terracotta 来自同仓 Git 子模块，使用 AGPL-3.0；使用 Git CLI/镜像时也须能访问子模块地址。
 
 ## 网络与下载
@@ -42,7 +52,7 @@ let api = MinecraftApiClient::new(downloader.clone(), &ApiProvider::Official);
 也可以用 `Downloader::default()` 的中性 UA 和默认 HTTP 客户端。`clone()` 共享连接配额、限速、统计和客户端；重新构造则隔离。`api.downloader().await` 同时沿用 API 当前的来源地址。
 `replace_clients(client, http1)` 让后续请求使用新客户端，已发出的请求不受影响。
 
-CurseForge key 传给 `api.fetch_with_curseforge(endpoint, key)`，不会注入全局状态。下载选项只控制网络功能，不包含安装后选中实例等界面策略。
+开启 `community` 后可用 `api.fetch_with_modrinth(endpoint)` 和 `api.fetch_with_curseforge(endpoint, key)`。CurseForge key 按调用提供，缓存按凭据隔离，不会注入全局状态。下载选项只控制网络功能，不包含安装后选中实例等界面策略。
 
 ## 安装
 
@@ -102,7 +112,7 @@ let child = option.launch_checked()?;
 
 - `minecraft::java::scan(known, roots).await` 扫描系统 Java 和指定目录。`JavaManager` 合并列表，`JavaRequirements` 判断版本兼容性；选择偏好、相对启动器目录与扫描节流由宿主负责。
 - `minecraft::java::install::install(requirements, runtime_dir, downloader, progress)` 安装 Mojang Java，不写启动器配置。
-- `MicrosoftProvider::new(client, client_id)`、`AuthlibProvider::new(client, server)`、`Connect::new(client, discovery, client_id, server)` 接收自己的客户端与参数。设备码交互、角色选择、档案持久化由宿主编排。
+- 开启 `microsoft` 后，`MicrosoftProvider::new(client, client_id)` 提供微软登录；`AuthlibProvider::new(client, server)` 和 `Connect::new(client, discovery, client_id, server)` 不依赖该 feature。它们接收自己的客户端与参数，设备码交互、角色选择、档案持久化由宿主编排。
 - Connect 未指定 Client ID 时可使用服务发现文档的共享 ID；PCL 在皮肤站注册的 ID 留在应用，第三方应提供自己的注册信息。
 
 ## 运行状态与边界

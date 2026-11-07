@@ -25,7 +25,9 @@ pub struct ApiBases {
     pub resources_base: &'static str,
     pub fabric_base: &'static str,
     pub legacy_fabric_base: &'static str,
+    #[cfg(feature = "community")]
     pub modrinth_base: &'static str,
+    #[cfg(feature = "community")]
     pub curseforge_base: &'static str,
 }
 
@@ -37,7 +39,9 @@ impl ApiBases {
                 resources_base: "https://resources.download.minecraft.net",
                 fabric_base: "https://meta.fabricmc.net/v2/versions/loader",
                 legacy_fabric_base: "https://meta.legacyfabric.net/v2/versions/loader",
+                #[cfg(feature = "community")]
                 modrinth_base: "https://api.modrinth.com/v2",
+                #[cfg(feature = "community")]
                 curseforge_base: "https://api.curseforge.com/v1",
             },
             ApiProvider::BMCLApi => ApiBases {
@@ -45,7 +49,9 @@ impl ApiBases {
                 resources_base: "https://bmclapi2.bangbang93.com/assets",
                 fabric_base: "https://bmclapi2.bangbang93.com/fabric-meta/v2/versions/loader",
                 legacy_fabric_base: "https://meta.legacyfabric.net/v2/versions/loader",
+                #[cfg(feature = "community")]
                 modrinth_base: "https://api.modrinth.com/v2",
+                #[cfg(feature = "community")]
                 curseforge_base: "https://api.curseforge.com/v1",
             },
         }
@@ -827,6 +833,7 @@ impl MinecraftApiClient {
         }))
     }
 
+    #[cfg(feature = "community")]
     pub async fn fetch_with_modrinth<T: DeserializeOwned + Serialize>(
         &self,
         endpoint: &str,
@@ -838,6 +845,7 @@ impl MinecraftApiClient {
 
     /// CurseForge 要求 `x-api-key` 请求头，而 `send_request` 不携带自定义头，
     /// 因此走代理策略一致的专用客户端；缓存与 Modrinth 保持一致。
+    #[cfg(feature = "community")]
     pub async fn fetch_with_curseforge<T: DeserializeOwned + Serialize>(
         &self,
         endpoint: &str,
@@ -918,7 +926,12 @@ mod tests {
         };
         let make = |agent: &str| {
             let mut bases = ApiBases::new(&ApiProvider::Official);
-            bases.curseforge_base = base;
+            bases.meta_base = base;
+            #[cfg(feature = "community")]
+            {
+                bases.modrinth_base = base;
+                bases.curseforge_base = base;
+            }
             let api = MinecraftApiClient::with_test_bases(bases);
             let (client, http1) = clients(agent);
             api.replace_clients(client, http1);
@@ -950,29 +963,40 @@ mod tests {
             metadata,
             serde_json::json!({"agent": "FirstLauncher", "key": null})
         );
-        let reply: serde_json::Value = first
-            .fetch_with_curseforge("echo", "first-key")
-            .await
-            .unwrap();
-        assert_eq!(
-            reply,
-            serde_json::json!({"agent": "FirstLauncher", "key": "first-key"})
-        );
-        let reply: serde_json::Value = first
-            .fetch_with_curseforge("echo", "another-key")
-            .await
-            .unwrap();
-        assert_eq!(reply["key"], "another-key");
-        let reply: serde_json::Value = first.get(&echo, true).await.unwrap();
-        assert_eq!(reply["key"], serde_json::Value::Null);
-        let reply: serde_json::Value = second
-            .fetch_with_curseforge("echo", "second-key")
-            .await
-            .unwrap();
-        assert_eq!(
-            reply,
-            serde_json::json!({"agent": "SecondLauncher", "key": "second-key"})
-        );
+        #[cfg(feature = "community")]
+        {
+            assert!(matches!(
+                first
+                    .fetch_with_curseforge::<serde_json::Value>("echo", "")
+                    .await,
+                Err(McApiError::MissingApiKey("CurseForge"))
+            ));
+            let reply: serde_json::Value = first.fetch_with_modrinth("echo").await.unwrap();
+            assert_eq!(reply["key"], serde_json::Value::Null);
+            let reply: serde_json::Value = first
+                .fetch_with_curseforge("echo", "first-key")
+                .await
+                .unwrap();
+            assert_eq!(
+                reply,
+                serde_json::json!({"agent": "FirstLauncher", "key": "first-key"})
+            );
+            let reply: serde_json::Value = first
+                .fetch_with_curseforge("echo", "another-key")
+                .await
+                .unwrap();
+            assert_eq!(reply["key"], "another-key");
+            let reply: serde_json::Value = first.get(&echo, true).await.unwrap();
+            assert_eq!(reply["key"], serde_json::Value::Null);
+            let reply: serde_json::Value = second
+                .fetch_with_curseforge("echo", "second-key")
+                .await
+                .unwrap();
+            assert_eq!(
+                reply,
+                serde_json::json!({"agent": "SecondLauncher", "key": "second-key"})
+            );
+        }
         let (client, http1) = clients("UpdatedLauncher");
         first.replace_clients(client, http1);
         let reply: serde_json::Value = download

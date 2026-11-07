@@ -7,6 +7,7 @@
 
 pub mod authlib;
 pub mod connect;
+#[cfg(feature = "microsoft")]
 pub mod microsoft;
 pub mod oauth;
 pub mod yggdrasil;

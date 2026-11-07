@@ -148,6 +148,7 @@ fn failed_installations_clean_only_their_own_directory() {
     fs::remove_dir_all(root).unwrap();
 }
 
+#[cfg(feature = "community")]
 #[test]
 fn fabric_api_is_staged_inside_the_instance_mods_folder() {
     let install: LoaderInstall = serde_json::from_value(json!({
@@ -500,6 +501,7 @@ async fn official_fabric_install(
                 }
             },
             version: version.into(),
+            #[cfg(feature = "community")]
             api: None,
             install_java: false,
         };
@@ -831,6 +833,7 @@ async fn fabric_install_merges_profile_and_publishes_only_after_verified_files()
         Some(&LoaderInstall {
             family: LoaderFamily::Fabric,
             version: "0.16".into(),
+            #[cfg(feature = "community")]
             api: None,
             install_java: false,
         }),
@@ -920,6 +923,7 @@ async fn fabric_install_merges_profile_and_publishes_only_after_verified_files()
             Some(&LoaderInstall {
                 family: LoaderFamily::Fabric,
                 version: "0.16".into(),
+                #[cfg(feature = "community")]
                 api: None,
                 install_java: false,
             }),
@@ -1026,6 +1030,7 @@ async fn legacy_fabric_list_and_install_use_legacy_intermediary() {
     let choice = LoaderInstall {
         family: LoaderFamily::Legacyfabric,
         version: "0.16".into(),
+        #[cfg(feature = "community")]
         api: None,
         install_java: false,
     };

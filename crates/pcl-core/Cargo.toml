@@ -12,6 +12,10 @@ categories = ["games"]
 
 [features]
 default = []
+# Modrinth / CurseForge 资源接入与下载；凭据由调用方提供。
+community = []
+# 微软 OAuth / Xbox / Minecraft 登录；Client ID 由调用方提供。
+microsoft = []
 # 联机（Terracotta）桥接；宿主应用按需打开。
 link = ["dep:terracotta"]
 

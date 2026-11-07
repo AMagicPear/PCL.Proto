@@ -1,6 +1,6 @@
 # 代码组织与维护边界
 
-更新：2026-11-06。第三方接入见 [pcl-core](../crates/pcl-core/README.md)，前端约定见 [DEVELOPMENT.md](DEVELOPMENT.md)，打包见 [PACKAGING.md](PACKAGING.md)，主页兼容见 [CUSTOM_HOMEPAGE.md](CUSTOM_HOMEPAGE.md)。
+更新：2026-11-07。第三方接入见 [pcl-core](../crates/pcl-core/README.md)，前端约定见 [DEVELOPMENT.md](DEVELOPMENT.md)，打包见 [PACKAGING.md](PACKAGING.md)，主页兼容见 [CUSTOM_HOMEPAGE.md](CUSTOM_HOMEPAGE.md)。
 
 ## 前端
 
@@ -55,6 +55,7 @@ src-tauri（PCL.Proto 应用）
 
 `pcl-core` 和 `pcl-assets` 通过 Git 分发，`publish = false`，不发布到 crates.io。
 第三方不需要依赖 Tauri 或使用 PCL.Proto 的配置模型；默认 feature 不编译 Terracotta。
+`community`（资源平台 API、资源下载、在线整合包与 Fabric API 随装）、`microsoft`（微软登录）和 `link`（联机）均默认关闭、可独立启用。Tauri 应用显式开启三个 feature。基础安装、本地 mrpack 导入和使用已认证档案启动不要求社区或微软登录 feature。
 
 | 位置 | 职责 |
 | --- | --- |
@@ -83,6 +84,7 @@ src-tauri（PCL.Proto 应用）
 `MinecraftApiClient` 使用传入的下载器，`downloader().await` 返回共享该网络运行状态的文件下载器。
 更换代理时应用先预建客户端并保存配置，再替换该实例的客户端；已发出的请求继续使用原客户端。
 core 的任务取消、游戏会话、在线整合包暂存及 Terracotta 桥接仍有进程级运行状态；它们不保存启动器设置，任务 ID 需在进程内唯一。
+CurseForge Key 与微软 Client ID 由应用分别按需读取，并在各自的调用入口传入；core 不读取环境变量或要求集中注册凭据。
 
 ### 持久化与错误
 
@@ -109,4 +111,4 @@ core 的任务取消、游戏会话、在线整合包暂存及 Terracotta 桥接
 
 设置持久化回归位于 `tests/ui/settings-persistence.test.mjs`，覆盖串行与并行作用域、快照隔离、失败重试、过期完成、读取期间编辑、真实领域 IPC 负载和实例编辑器重新挂载。该检查已接入 `bun run check:ui`。
 
-常规验证：`bun run ui:build`、`cargo check --workspace`、`cargo test -p pcl-core --no-default-features --lib`、`cargo check -p pcl-core --features link`、`cargo test -p pcl-proto --lib`。离线检查与构建不代表已完成真实游戏启动或 Windows/Linux 桌面验收。
+常规验证：`bun run ui:build`、`cargo check --workspace`、`cargo test -p pcl-core --no-default-features --lib`、`cargo check -p pcl-core --no-default-features --features community`、`cargo check -p pcl-core --no-default-features --features microsoft`、`cargo test -p pcl-core --all-features --lib`、`cargo test -p pcl-proto --lib`。离线检查与构建不代表已完成真实游戏启动或 Windows/Linux 桌面验收。

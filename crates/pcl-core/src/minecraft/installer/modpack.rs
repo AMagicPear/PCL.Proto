@@ -2,7 +2,7 @@ use super::*;
 use crate::events::EventSink;
 use std::{
     collections::{HashMap, HashSet},
-    sync::{LazyLock, Mutex as StdMutex},
+    sync::Mutex as StdMutex,
 };
 
 #[derive(Deserialize)]
@@ -41,14 +41,17 @@ pub struct Modpack {
     optional: HashSet<String>,
 }
 
+#[cfg(feature = "community")]
 struct PreparedPack {
     pack: Modpack,
     _directory: tempfile::TempDir,
 }
 
-static PREPARED: LazyLock<StdMutex<HashMap<String, PreparedPack>>> =
-    LazyLock::new(|| StdMutex::new(HashMap::new()));
+#[cfg(feature = "community")]
+static PREPARED: std::sync::LazyLock<StdMutex<HashMap<String, PreparedPack>>> =
+    std::sync::LazyLock::new(|| StdMutex::new(HashMap::new()));
 
+#[cfg(feature = "community")]
 #[derive(serde::Serialize)]
 pub struct OnlinePackInfo {
     token: String,
@@ -177,6 +180,7 @@ impl Modpack {
                 .map(|version| LoaderInstall {
                     family,
                     version: version.clone(),
+                    #[cfg(feature = "community")]
                     api: None,
                     install_java,
                 })
@@ -323,6 +327,7 @@ pub async fn inspect_modpack(path: PathBuf) -> Result<PackInfo, String> {
     .map_err(|error| error.to_string())?
 }
 
+#[cfg(feature = "community")]
 pub async fn prepare_online_modpack(
     downloader: &crate::io::download::Downloader,
     info: DownloadFile,
@@ -344,6 +349,7 @@ pub async fn prepare_online_modpack(
     Ok(OnlinePackInfo { token, info })
 }
 
+#[cfg(feature = "community")]
 async fn prepare_online_archive(
     downloader: &crate::io::download::Downloader,
     info: DownloadFile,
@@ -371,6 +377,7 @@ async fn prepare_online_archive(
     .await?
 }
 
+#[cfg(feature = "community")]
 pub fn release_online_modpack(token: String) {
     if let Ok(mut prepared) = PREPARED.lock() {
         prepared.remove(&token);
@@ -450,6 +457,7 @@ pub async fn install_modpack(
     .await
 }
 
+#[cfg(feature = "community")]
 #[allow(clippy::too_many_arguments)] // 与 IPC 命令参数一一对应
 pub async fn install_online_modpack(
     repo: &Path,
@@ -500,6 +508,7 @@ fn ensure_optional(available: &HashSet<String>, selected: &[String]) -> anyhow::
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "community")]
     use crate::events::event_sink;
 
     use super::*;
@@ -594,6 +603,7 @@ mod tests {
         assert!(extract_overrides(&pack.archive, &pack.prefix, &target, "instance").is_err());
     }
 
+    #[cfg(feature = "community")]
     #[test]
     fn releasing_prepared_pack_removes_its_temporary_directory() {
         let (directory, path) = archive(index(), "", &[]);
@@ -612,6 +622,7 @@ mod tests {
         release_online_modpack(token);
     }
 
+    #[cfg(feature = "community")]
     #[tokio::test]
     #[ignore = "Downloads a public Modrinth pack and a complete Minecraft installation"]
     async fn online_fabric_pack_installs_in_isolated_configuration() {

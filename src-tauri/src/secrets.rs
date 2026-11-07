@@ -4,13 +4,13 @@
 //! 开发构建回退到运行环境变量；第三方启动器可以完全换一套读取方式。
 
 use crate::config::manager::ConfigManager;
+use std::sync::LazyLock;
 
-pub struct Secrets {
-    pub curseforge_api_key: Option<String>,
-    pub ms_oauth_client_id: Option<String>,
-}
-
-pub static SECRETS: std::sync::LazyLock<Secrets> = std::sync::LazyLock::new(read);
+pub static CURSEFORGE_API_KEY: LazyLock<Option<String>> = LazyLock::new(|| {
+    compile_time(option_env!("CURSEFORGE_API_KEY"))
+        .or_else(|| from_env("CURSEFORGE_API_KEY"))
+        .or_else(|| from_env("PCL_CURSEFORGE_API_KEY"))
+});
 
 /// 空白值按未配置处理。
 fn usable(value: Option<String>) -> Option<String> {
@@ -26,22 +26,16 @@ fn from_env(name: &str) -> Option<String> {
     usable(std::env::var(name).ok())
 }
 
-fn read() -> Secrets {
-    Secrets {
-        curseforge_api_key: compile_time(option_env!("CURSEFORGE_API_KEY"))
-            .or_else(|| from_env("CURSEFORGE_API_KEY"))
-            .or_else(|| from_env("PCL_CURSEFORGE_API_KEY")),
-        ms_oauth_client_id: compile_time(option_env!("MS_CLIENT_ID"))
-            .or_else(|| from_env("MS_CLIENT_ID"))
-            .or_else(|| from_env("PCL_MS_CLIENT_ID")),
-    }
-}
-
 pub fn microsoft_provider() -> pcl_core::minecraft::profile::auth::AuthResult<
     pcl_core::minecraft::profile::auth::microsoft::MicrosoftProvider,
 > {
     use pcl_core::minecraft::profile::auth::{AuthError, microsoft::MicrosoftProvider};
-    let id = SECRETS.ms_oauth_client_id.as_deref().ok_or_else(|| AuthError::configuration(
+    static CLIENT_ID: LazyLock<Option<String>> = LazyLock::new(|| {
+        compile_time(option_env!("MS_CLIENT_ID"))
+            .or_else(|| from_env("MS_CLIENT_ID"))
+            .or_else(|| from_env("PCL_MS_CLIENT_ID"))
+    });
+    let id = CLIENT_ID.as_deref().ok_or_else(|| AuthError::configuration(
         "未配置微软 OAuth 的 Client ID：请在构建时设置 MS_CLIENT_ID，或通过 .env / 运行环境变量提供"
     ))?;
     MicrosoftProvider::new(ConfigManager::instance().api_client.http_client(), id)

@@ -925,6 +925,7 @@ mod tests {
         let legacy = super::super::LoaderInstall {
             family: super::super::LoaderFamily::Forge,
             version: "14.23.5.2860".into(),
+            #[cfg(feature = "community")]
             api: None,
             install_java: false,
         };
@@ -1048,6 +1049,7 @@ mod tests {
         let loader = LoaderInstall {
             family,
             version: version.into(),
+            #[cfg(feature = "community")]
             api: None,
             install_java: false,
         };

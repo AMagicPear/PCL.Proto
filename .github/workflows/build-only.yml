@@ -72,7 +72,10 @@ jobs:
 
       - name: test core crate
         run: |
-          cargo test -p pcl-core --lib
+          cargo test -p pcl-core --no-default-features --lib
+          cargo check -p pcl-core --no-default-features --features community
+          cargo check -p pcl-core --no-default-features --features microsoft
+          cargo test -p pcl-core --all-features --lib
           cargo test -p pcl-proto --lib
 
       - name: build tauri app
