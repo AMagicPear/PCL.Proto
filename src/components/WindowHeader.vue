@@ -60,7 +60,7 @@ appWindow?.onResized(async () => {
 </script>
 
 <template lang="pug">
-  header(data-tauri-drag-region)
+  header(data-tauri-drag-region :class="{ 'windows-drag-region': currentPlatform === 'windows' }")
     Transition(name="nav")
       .left.title(v-if="!isSubPage" :class="{ 'mac-margin-title': currentPlatform == 'macos' }")
         title-logo()
@@ -113,6 +113,19 @@ header {
   z-index: 4;
   position: relative;
   color: white;
+}
+
+/* WebView2 native drag regions also support touch input. */
+header.windows-drag-region,
+.windows-drag-region .center,
+.windows-drag-region .title-text {
+  app-region: drag;
+}
+
+.windows-drag-region #main-nav,
+.windows-drag-region .left i,
+.windows-drag-region .right {
+  app-region: no-drag;
 }
 
 header > .left.title {
