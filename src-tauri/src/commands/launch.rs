@@ -254,7 +254,7 @@ async fn launch_game_inner(
     let expected = instance_directory.clone();
     report("Minecraft.Launch.Stage.GetArguments", 0.2, false);
     wait_for_launch(&mut ticket.receiver, refresh_active_account()).await??;
-    let mut option = wait_for_launch(
+    let (mut option, launcher_size) = wait_for_launch(
         &mut ticket.receiver,
         tauri::async_runtime::spawn_blocking(move || {
             build_launch_option(instance_directory, runtime)
@@ -267,7 +267,7 @@ async fn launch_game_inner(
             .with_server(&address)
             .map_err(|error| error.to_string())?;
     }
-    if option.uses_launcher_size() {
+    if launcher_size {
         if ticket.cancelled.load(Ordering::Acquire) {
             return Err(LAUNCH_CANCELLED.into());
         }
@@ -278,9 +278,7 @@ async fn launch_game_inner(
         option = option.with_window_size(size.width as usize, size.height as usize);
     }
     let config = ConfigManager::instance();
-    let downloader = pcl_core::io::download::Downloader::with_bases(
-        wait_for_launch(&mut ticket.receiver, config.api_client.api_bases_async()).await?,
-    );
+    let downloader = wait_for_launch(&mut ticket.receiver, config.api_client.downloader()).await?;
     report("Minecraft.Launch.Stage.CompleteFiles", 0.35, true);
     wait_for_launch(&mut ticket.receiver, option.prepare_natives(&downloader))
         .await?
@@ -297,13 +295,14 @@ async fn launch_game_inner(
         == pcl_core::minecraft::profile::ProfileType::Offline
         && option.account().offline_skin.is_some()
     {
-        let client =
-            pcl_core::minecraft::profile::auth::http_client().map_err(|error| error.to_string())?;
+        let client = ConfigManager::instance().api_client.http_client();
         let jar = wait_for_launch(
             &mut ticket.receiver,
             pcl_core::minecraft::launch::authlib::ensure_jar(
                 &client,
-                ConfigManager::instance().config_dir(),
+                &ConfigManager::instance()
+                    .config_dir()
+                    .join("authlib-injector.jar"),
             ),
         )
         .await??;
@@ -392,7 +391,7 @@ async fn launch_game_inner(
 /// Resolve the instance from the configured repositories and build its launch plan.
 async fn prepare_launch_option(
     instance_directory: std::path::PathBuf,
-) -> Result<LaunchOption, String> {
+) -> Result<(LaunchOption, bool), String> {
     let info = crate::config::java::prepare(instance_directory.clone()).await?;
     let runtime = info.runtime.ok_or_else(|| {
         format!(
@@ -416,7 +415,7 @@ async fn prepare_launch_option(
                 .await?;
         }
     }
-    let option = tauri::async_runtime::spawn_blocking(move || {
+    let (option, launcher_size) = tauri::async_runtime::spawn_blocking(move || {
         build_launch_option(instance_directory, runtime)
     })
     .await
@@ -426,7 +425,7 @@ async fn prepare_launch_option(
     {
         return Err("Exporting a launch script with an offline skin is not supported because the skin service requires the launcher to run.".into());
     }
-    prepare_authlib(option).await
+    Ok((prepare_authlib(option).await?, launcher_size))
 }
 
 /// 刷新当前档案的访问令牌，对照 CE 的 `ModLaunch.mcLoginLoader`。
@@ -460,8 +459,11 @@ async fn prepare_authlib(option: LaunchOption) -> Result<LaunchOption, String> {
         return Ok(option);
     }
     let agent = pcl_core::minecraft::launch::authlib::prepare(
+        &ConfigManager::instance().api_client.http_client(),
         &profile,
-        ConfigManager::instance().config_dir(),
+        &ConfigManager::instance()
+            .config_dir()
+            .join("authlib-injector.jar"),
     )
     .await?;
     Ok(option.with_authlib(agent))
@@ -470,12 +472,18 @@ async fn prepare_authlib(option: LaunchOption) -> Result<LaunchOption, String> {
 fn build_launch_option(
     instance_directory: std::path::PathBuf,
     runtime: JavaEntry,
-) -> Result<LaunchOption, String> {
+) -> Result<(LaunchOption, bool), String> {
     let config = ConfigManager::instance();
     config.ensure_instance_isolation(&instance_directory)?;
     let state = config.app_state.blocking_lock();
     current_instance(&state, &instance_directory).map_err(|error| error.to_string())?;
-    crate::config::launch::request(&state, Arc::new(runtime)).map_err(|error| error.to_string())
+    let option = crate::config::launch::request(&state, Arc::new(runtime))
+        .map_err(|error| error.to_string())?;
+    let launcher_size = state
+        .window_settings
+        .as_ref()
+        .is_some_and(|settings| settings.mode == crate::config::states::WindowMode::Launcher);
+    Ok((option, launcher_size))
 }
 
 #[tauri::command]
@@ -487,17 +495,15 @@ pub async fn export_launch_script(
     if !target_path.is_absolute() || target_path.file_name().is_none() {
         return Err("Invalid launch script path".into());
     }
-    let mut option = prepare_launch_option(instance_directory).await?;
-    if option.uses_launcher_size() {
+    let (mut option, launcher_size) = prepare_launch_option(instance_directory).await?;
+    if launcher_size {
         let size = window.inner_size().map_err(|error| error.to_string())?;
         if size.width == 0 || size.height == 0 {
             return Err("Launcher window size is unavailable".into());
         }
         option = option.with_window_size(size.width as usize, size.height as usize);
     }
-    let downloader = pcl_core::io::download::Downloader::with_bases(
-        ConfigManager::instance().api_client.api_bases_async().await,
-    );
+    let downloader = ConfigManager::instance().api_client.downloader().await;
     option
         .prepare_natives(&downloader)
         .await

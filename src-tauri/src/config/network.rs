@@ -1,11 +1,3 @@
-//! Process-wide HTTP proxy policy shared by downloads, metadata and game launch.
-use std::sync::{
-    LazyLock, RwLock,
-    atomic::{AtomicU64, Ordering},
-};
-
-use crate::io::net::user_agent;
-
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProxyMode {
@@ -52,33 +44,9 @@ impl ProxySettings {
     }
 }
 
-static SETTINGS: LazyLock<RwLock<ProxySettings>> =
-    LazyLock::new(|| RwLock::new(ProxySettings::default()));
-static GENERATION: AtomicU64 = AtomicU64::new(0);
-
-pub fn current() -> ProxySettings {
-    SETTINGS.read().unwrap().clone()
-}
-
-/// Bumped on every applied change so lazily built clients can rebuild.
-pub fn generation() -> u64 {
-    GENERATION.load(Ordering::Acquire)
-}
-
-pub fn apply(settings: &ProxySettings) -> Result<(), String> {
-    settings.validate()?;
-    *SETTINGS.write().unwrap() = settings.clone();
-    GENERATION.fetch_add(1, Ordering::AcqRel);
-    Ok(())
-}
-
-/// Client builder that honours the current proxy policy.
-pub fn builder() -> reqwest::ClientBuilder {
-    builder_for(&current())
-}
-
-fn builder_for(settings: &ProxySettings) -> reqwest::ClientBuilder {
-    let builder = reqwest::Client::builder().user_agent(user_agent());
+pub fn builder_for(settings: &ProxySettings) -> reqwest::ClientBuilder {
+    let builder =
+        reqwest::Client::builder().user_agent(crate::config::metadata::constants::USER_AGENT);
     match settings.mode {
         ProxyMode::Off => builder.no_proxy(),
         // reqwest already follows the system proxy configuration by default.
@@ -89,14 +57,6 @@ fn builder_for(settings: &ProxySettings) -> reqwest::ClientBuilder {
             Err(_) => builder.no_proxy(),
         },
     }
-}
-
-/// Build a client for a candidate setting so it can be validated before saving.
-pub fn build_proxy_client(settings: &ProxySettings) -> Result<reqwest::Client, String> {
-    settings.validate()?;
-    builder_for(settings)
-        .build()
-        .map_err(|error| error.to_string())
 }
 
 #[cfg(test)]
@@ -119,4 +79,20 @@ mod tests {
         assert!(settings.validate().is_ok());
         assert_eq!(settings.game_endpoint(), None);
     }
+}
+
+pub fn clients(settings: &ProxySettings) -> Result<(reqwest::Client, reqwest::Client), String> {
+    let build = |http1| {
+        let mut builder = builder_for(settings)
+            .connect_timeout(std::time::Duration::from_secs(15))
+            .read_timeout(std::time::Duration::from_secs(15))
+            .pool_max_idle_per_host(64)
+            .pool_idle_timeout(std::time::Duration::from_secs(90));
+        if http1 {
+            builder = builder.http1_only();
+        }
+        builder.build().map_err(|error| error.to_string())
+    };
+    settings.validate()?;
+    Ok((build(false)?, build(true)?))
 }

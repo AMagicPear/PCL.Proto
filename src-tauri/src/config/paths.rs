@@ -1,5 +1,6 @@
 //! 桌面应用的目录约定：启动器旁边的 `.minecraft`、官方启动器目录等。
 
+use anyhow::Context;
 use std::path::{Path, PathBuf};
 
 use pcl_core::utils::platform::OS;
@@ -56,4 +57,11 @@ pub fn create_default_directory(
         }
     }
     prepare(&config_dir.join(".minecraft"))
+}
+
+pub fn launcher_directory() -> anyhow::Result<PathBuf> {
+    Ok(std::env::current_exe()?
+        .parent()
+        .context("Missing launcher directory")?
+        .to_owned())
 }

@@ -1,14 +1,18 @@
-//! 启动器配置：文件位置、读写、内存状态与档案持久化。
+//! 启动器配置：文件位置、读写、内存状态、策略与档案持久化。
 //!
-//! 领域逻辑在 `pcl-core`，这一层只负责"配置从哪里来、存到哪里去"。
+//! 在这里解析默认值、继承与用户偏好，再向 `pcl-core` 传递具体操作参数。
 
 pub mod arguments;
+pub mod download;
 pub mod isolation;
 pub mod java;
+pub mod java_preference;
 pub mod launch;
 pub mod launch_settings;
 pub mod manager;
+pub mod memory;
 pub mod metadata;
+pub mod network;
 pub mod paths;
 pub mod profiles;
 pub mod states;

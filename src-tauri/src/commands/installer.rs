@@ -33,8 +33,8 @@ pub async fn download_minecraft_version(
     loader: Option<LoaderInstall>,
 ) -> Result<InstallResult, String> {
     let repo = state.lock().await.active_repo_path.clone();
-    let java = crate::config::java::state();
-    let paths = crate::config::java::paths();
+    let java = crate::config::java::installer_candidates(&state).await;
+    let paths = ConfigManager::instance().java_runtime_dir();
     let bridge = crate::assets::Assets::new(ConfigManager::instance().config_dir())
         .forge_installer()
         .map_err(|error| error.to_string())?;
@@ -48,15 +48,19 @@ pub async fn download_minecraft_version(
         loader,
         &java,
         &paths,
-        &bridge,
+        Some(&bridge),
     )
     .await?;
     if outcome.isolated {
         let directory = outcome.directory.clone();
-        ConfigManager::instance().update(move |state| {
-            state.instance_isolation.insert(directory, true);
-            Ok(())
-        })?;
+        tokio::task::spawn_blocking(move || {
+            ConfigManager::instance().update(move |state| {
+                state.instance_isolation.insert(directory, true);
+                Ok(())
+            })
+        })
+        .await
+        .map_err(|error| error.to_string())??;
     }
     // 安装过程可能自动装了 Java 运行时，刷新一次写回配置。
     if let Err(error) = crate::config::java::refresh(true).await {
@@ -136,12 +140,18 @@ pub async fn download_forgelike_installer(
 
 #[tauri::command(rename_all = "snake_case")]
 pub async fn prepare_forgelike_java(
+    state: tauri::State<'_, Arc<AsyncMutex<AppState>>>,
     client: tauri::State<'_, &MinecraftApiClient>,
     version_id: String,
     loader: LoaderInstall,
 ) -> Result<Option<JavaInstallOffer>, String> {
-    forgelike::prepare_forgelike_java(&client, version_id, loader, &crate::config::java::state())
-        .await
+    forgelike::prepare_forgelike_java(
+        &client,
+        version_id,
+        loader,
+        &crate::config::java::installer_candidates(&state).await,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -151,11 +161,18 @@ pub async fn inspect_modpack(path: PathBuf) -> Result<PackInfo, String> {
 
 #[tauri::command(rename_all = "snake_case")]
 pub async fn prepare_online_modpack(
+    client: tauri::State<'_, &MinecraftApiClient>,
     info: DownloadFile,
     task_id: i32,
     on_event: tauri::ipc::Channel<TaskItemReport>,
 ) -> Result<OnlinePackInfo, String> {
-    modpack::prepare_online_modpack(info, task_id, super::channel_sink(on_event)).await
+    modpack::prepare_online_modpack(
+        &client.downloader().await,
+        info,
+        task_id,
+        super::channel_sink(on_event),
+    )
+    .await
 }
 
 #[tauri::command]
@@ -175,8 +192,10 @@ pub async fn install_modpack(
     task_id: i32,
     on_event: tauri::ipc::Channel<TaskItemReport>,
 ) -> Result<(), String> {
+    let repo = state.lock().await.active_repo_path.clone();
+    let java = crate::config::java::installer_candidates(&state).await;
     modpack::install_modpack(
-        &state.lock().await.active_repo_path.clone(),
+        &repo,
         &client,
         path,
         instance_name,
@@ -184,11 +203,13 @@ pub async fn install_modpack(
         install_java,
         task_id,
         super::channel_sink(on_event),
-        &crate::config::java::state(),
-        &crate::config::java::paths(),
-        &crate::assets::Assets::new(ConfigManager::instance().config_dir())
-            .forge_installer()
-            .map_err(|error| error.to_string())?,
+        &java,
+        &ConfigManager::instance().java_runtime_dir(),
+        Some(
+            &crate::assets::Assets::new(ConfigManager::instance().config_dir())
+                .forge_installer()
+                .map_err(|error| error.to_string())?,
+        ),
     )
     .await?;
     // 整合包可能包含加载器安装，完成后刷新一次 Java 列表。
@@ -210,8 +231,10 @@ pub async fn install_online_modpack(
     task_id: i32,
     on_event: tauri::ipc::Channel<TaskItemReport>,
 ) -> Result<(), String> {
+    let repo = state.lock().await.active_repo_path.clone();
+    let java = crate::config::java::installer_candidates(&state).await;
     modpack::install_online_modpack(
-        &state.lock().await.active_repo_path.clone(),
+        &repo,
         &client,
         token,
         instance_name,
@@ -219,11 +242,13 @@ pub async fn install_online_modpack(
         install_java,
         task_id,
         super::channel_sink(on_event),
-        &crate::config::java::state(),
-        &crate::config::java::paths(),
-        &crate::assets::Assets::new(ConfigManager::instance().config_dir())
-            .forge_installer()
-            .map_err(|error| error.to_string())?,
+        &java,
+        &ConfigManager::instance().java_runtime_dir(),
+        Some(
+            &crate::assets::Assets::new(ConfigManager::instance().config_dir())
+                .forge_installer()
+                .map_err(|error| error.to_string())?,
+        ),
     )
     .await?;
     // 整合包可能包含加载器安装，完成后刷新一次 Java 列表。
@@ -239,7 +264,12 @@ mod tests {
 
     #[test]
     fn online_prepare_ipc_accepts_task_arguments_and_validates_source() {
+        let client: &'static MinecraftApiClient = Box::leak(Box::new(MinecraftApiClient::new(
+            pcl_core::io::download::Downloader::default(),
+            &pcl_core::io::net::http::api_client::ApiProvider::Official,
+        )));
         let app = tauri::test::mock_builder()
+            .manage(client)
             .invoke_handler(tauri::generate_handler![prepare_online_modpack])
             .build(tauri::test::mock_context(tauri::test::noop_assets()))
             .unwrap();

@@ -88,37 +88,34 @@ pub struct AppState {
     pub active_game_instance: Option<Arc<McInstance>>,
     pub active_repo_path: PathBuf,
     #[serde(default)]
-    pub java_preferences:
-        HashMap<PathBuf, pcl_core::minecraft::java::preference::InstanceJavaSettings>,
+    pub java_preferences: HashMap<PathBuf, crate::config::java_preference::InstanceJavaSettings>,
     #[serde(default)]
-    pub download_settings: Option<pcl_core::io::download::resources::DownloadSettings>,
+    pub download_settings: Option<crate::config::download::DownloadSettings>,
     #[serde(default)]
     pub log_max_lines: Option<u32>,
     #[serde(default)]
     pub window_settings: Option<WindowSettings>,
     #[serde(default)]
-    pub memory_settings: Option<pcl_core::minecraft::launch::memory::MemorySettings>,
+    pub memory_settings: Option<crate::config::memory::MemorySettings>,
     #[serde(default)]
-    pub instance_memory_settings:
-        HashMap<PathBuf, pcl_core::minecraft::launch::memory::MemorySettings>,
+    pub instance_memory_settings: HashMap<PathBuf, crate::config::memory::MemorySettings>,
     #[serde(default)]
-    pub memory_custom: Option<pcl_core::minecraft::launch::memory::MemoryCustom>,
+    pub memory_custom: Option<crate::config::memory::MemoryCustom>,
     #[serde(default)]
-    pub instance_memory_custom: HashMap<PathBuf, pcl_core::minecraft::launch::memory::MemoryCustom>,
+    pub instance_memory_custom: HashMap<PathBuf, crate::config::memory::MemoryCustom>,
     #[serde(default)]
-    pub isolation_default: pcl_core::minecraft::instance::isolation::IsolationDefault,
+    pub isolation_default: crate::config::isolation::IsolationDefault,
     #[serde(default)]
     pub instance_isolation: HashMap<PathBuf, bool>,
     #[serde(default)]
-    pub launch_arguments: Option<pcl_core::minecraft::launch::arguments::LaunchArguments>,
+    pub launch_arguments: Option<crate::config::arguments::LaunchArguments>,
     #[serde(default)]
-    pub instance_launch_arguments:
-        HashMap<PathBuf, pcl_core::minecraft::launch::arguments::LaunchArguments>,
+    pub instance_launch_arguments: HashMap<PathBuf, crate::config::arguments::LaunchArguments>,
     #[serde(default)]
     pub launcher_visibility: crate::window::LauncherVisibility,
     #[serde(default)]
     pub instance_launch_settings:
-        HashMap<PathBuf, pcl_core::minecraft::launch::settings::InstanceLaunchSettings>,
+        HashMap<PathBuf, crate::config::launch_settings::InstanceLaunchSettings>,
     #[serde(default)]
     pub renderer: u8,
     #[serde(default = "crate::config::metadata::default_version_info")]
@@ -130,7 +127,7 @@ pub struct AppState {
     #[serde(default)]
     pub disable_lwjgl_unsafe_agent: bool,
     #[serde(default)]
-    pub proxy: pcl_core::io::net::proxy::ProxySettings,
+    pub proxy: crate::config::network::ProxySettings,
     #[serde(default)]
     pub instance_descriptions: HashMap<PathBuf, String>,
 }

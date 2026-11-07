@@ -24,8 +24,6 @@ pub use config::manager::{AppState, CONFIG_MANAGER, ConfigManager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    secrets::install();
-
     #[cfg(all(target_os = "macos", not(dev)))]
     let context = tauri::generate_context!(
         assets = resources::FrontendAssets::new()

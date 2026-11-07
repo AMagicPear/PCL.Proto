@@ -1,11 +1,12 @@
-//! Java 列表的扫描编排与持久化；扫描与选择规则在 `pcl-core`。
+//! Java 列表的扫描编排、选择策略与持久化；探测与兼容性判断在 `pcl-core`。
 
 use std::path::{Path, PathBuf};
 
+use crate::config::java_preference::JavaLaunchInfo;
+use crate::config::java_preference::current_instance;
 use pcl_core::minecraft::instance::McInstance;
-use pcl_core::minecraft::java::preference::JavaLaunchInfo;
-use pcl_core::minecraft::java::{JavaEntry, JavaRoots, JavaState, preference::current_instance};
-use pcl_core::runtime::RuntimePaths;
+use pcl_core::minecraft::java::{JavaEntry, JavaInstallation, JavaManager, scan};
+use std::time::{Duration, Instant};
 
 use crate::config::manager::ConfigManager;
 use crate::config::states::AppState;
@@ -16,20 +17,27 @@ pub fn active_instance<'a>(state: &'a AppState, expected: &Path) -> Result<&'a M
         .map_err(|error| error.to_string())
 }
 
-pub fn state() -> JavaState {
-    let state = ConfigManager::instance().app_state.blocking_lock();
-    JavaState {
-        runtimes: state.java_runtimes.clone(),
-        selected: state.launcher_setup.selected_java.clone(),
+/// Installer candidates in host preference order; the core rechecks compatibility.
+pub async fn installer_candidates(state: &tokio::sync::Mutex<AppState>) -> Vec<JavaEntry> {
+    let (mut entries, selected) = {
+        let state = state.lock().await;
+        (
+            state.java_runtimes.clone(),
+            state.launcher_setup.selected_java.clone(),
+        )
+    };
+    entries.sort_by(pcl_core::minecraft::java::candidate_order);
+    if let Some(selected) = selected {
+        if let Some(index) = entries.iter().position(|java| java.java_exe == selected) {
+            let selected = entries.remove(index);
+            entries.insert(0, selected);
+        } else if let Ok(Ok(java)) =
+            tokio::task::spawn_blocking(move || JavaEntry::probe(&selected)).await
+        {
+            entries.insert(0, java);
+        }
     }
-}
-
-pub fn paths() -> RuntimePaths {
-    let config = ConfigManager::instance();
-    RuntimePaths {
-        config_dir: config.config_dir().to_path_buf(),
-        java_runtime_dir: config.java_runtime_dir(),
-    }
+    entries
 }
 
 /// 重新扫描 Java 列表；结果写回配置。
@@ -47,7 +55,7 @@ pub async fn refresh(force: bool) -> Result<Vec<JavaEntry>, String> {
             state.launcher_setup.selected_java.clone(),
         )
     };
-    let scanned = pcl_core::minecraft::java::refresh(
+    let scanned = refresh_state(
         force,
         &JavaState {
             runtimes: known,
@@ -111,4 +119,103 @@ pub async fn prepare(expected: PathBuf) -> Result<JavaLaunchInfo, String> {
         info = evaluate(expected).await?;
     }
     Ok(info)
+}
+
+static SCAN_LOCK: tokio::sync::Mutex<Option<Instant>> = tokio::sync::Mutex::const_new(None);
+
+/// 已安装的 Java 与当前选择；由宿主应用持久化。
+#[derive(Clone, Debug, Default)]
+pub struct JavaState {
+    pub runtimes: Vec<JavaEntry>,
+    pub selected: Option<std::path::PathBuf>,
+}
+
+/// 扫描 Java 需要知道的目录：各 Minecraft 文件夹和启动器托管的运行时目录。
+#[derive(Clone, Debug, Default)]
+pub struct JavaRoots {
+    pub repositories: Vec<std::path::PathBuf>,
+    pub runtime_dir: std::path::PathBuf,
+}
+
+/// 重新扫描并合并 Java 列表；结果由宿主写回自己的配置。
+async fn refresh_state(
+    force: bool,
+    state: &JavaState,
+    roots: &JavaRoots,
+) -> Result<JavaState, String> {
+    let mut guard = SCAN_LOCK.lock().await;
+    if !force && guard.is_some_and(|last| last.elapsed() < Duration::from_secs(13)) {
+        return Ok(state.clone());
+    }
+    let mut directories = roots
+        .repositories
+        .iter()
+        .map(|repository| repository.join("runtime"))
+        .collect::<Vec<_>>();
+    directories.push(roots.runtime_dir.clone());
+    let known = state.runtimes.clone();
+    if let Ok(directory) = crate::config::paths::launcher_directory() {
+        directories.extend([
+            directory.join("PCL"),
+            directory.join("runtime"),
+            directory.join("jre"),
+            directory.join(".minecraft/runtime"),
+        ]);
+    }
+    let scanned = scan(known.clone(), directories).await?;
+    let selected = state.selected.clone();
+    let selected_probe = selected.clone();
+    let actual_selected = tokio::task::spawn_blocking(move || {
+        selected_probe
+            .and_then(|path| JavaInstallation::probe(&path).ok())
+            .map(|installation| installation.java_exe)
+    })
+    .await
+    .map_err(|error| error.to_string())?;
+    let merged = tokio::task::spawn_blocking(move || {
+        let mut manager = JavaManager::from_entries(known.clone());
+        manager.merge_scanned(scanned, &known);
+        manager.sorted()
+    })
+    .await
+    .map_err(|error| error.to_string())?;
+    *guard = Some(Instant::now());
+    Ok(JavaState {
+        runtimes: merged,
+        selected: if selected.is_some() {
+            actual_selected
+        } else {
+            None
+        },
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn installer_reprobes_a_selected_java_missing_from_the_scan() {
+        let root = std::env::temp_dir().join(format!("pcl-java-choice-{}", uuid::Uuid::new_v4()));
+        let bin = root.join("bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        let executable = bin.join(pcl_core::minecraft::java::java_binary());
+        std::fs::write(&executable, b"fixture").unwrap();
+        std::fs::write(
+            root.join("release"),
+            format!(
+                "JAVA_VERSION=\"21.0.7\"\nOS_ARCH=\"{}\"\n",
+                std::env::consts::ARCH
+            ),
+        )
+        .unwrap();
+        let mut state = AppState::default();
+        state.launcher_setup.selected_java = Some(executable.clone());
+        let state = tokio::sync::Mutex::new(state);
+        let candidates = installer_candidates(&state).await;
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].java_exe, executable.canonicalize().unwrap());
+        std::fs::remove_dir_all(root).unwrap();
+        assert!(installer_candidates(&state).await.is_empty());
+    }
 }

@@ -67,14 +67,15 @@ impl Downloader {
     ) -> Result<Option<u64>, McApiError> {
         // A one-byte probe avoids opening several full responses on non-Range servers.
         let _lease = self.resources.acquire().await;
-        let response = send_request(
-            self.resources.settings().http_mode,
-            true,
-            url,
-            Some((0, 0)),
-            None,
-        )
-        .await?;
+        let response = self
+            .send_request(
+                self.resources.settings().http_mode,
+                true,
+                url,
+                Some((0, 0)),
+                None,
+            )
+            .await?;
         if matches!(
             response.status(),
             reqwest::StatusCode::OK | reqwest::StatusCode::RANGE_NOT_SATISFIABLE
@@ -228,14 +229,15 @@ impl Downloader {
         };
         let result = async {
             let _lease = self.resources.acquire().await;
-            let response = send_request(
-                self.resources.settings().http_mode,
-                true,
-                url,
-                Some((segment.offset, segment.end)),
-                None,
-            )
-            .await?;
+            let response = self
+                .send_request(
+                    self.resources.settings().http_mode,
+                    true,
+                    url,
+                    Some((segment.offset, segment.end)),
+                    None,
+                )
+                .await?;
             if matches!(
                 response.status(),
                 reqwest::StatusCode::OK | reqwest::StatusCode::RANGE_NOT_SATISFIABLE

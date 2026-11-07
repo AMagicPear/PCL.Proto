@@ -8,7 +8,7 @@ use tauri::State;
 use tokio::sync::Mutex;
 
 #[tauri::command]
-pub async fn get_isolation_default() -> pcl_core::minecraft::instance::isolation::IsolationDefault {
+pub async fn get_isolation_default() -> crate::config::isolation::IsolationDefault {
     ConfigManager::instance()
         .app_state
         .lock()
@@ -18,7 +18,7 @@ pub async fn get_isolation_default() -> pcl_core::minecraft::instance::isolation
 
 #[tauri::command]
 pub async fn set_isolation_default(
-    value: pcl_core::minecraft::instance::isolation::IsolationDefault,
+    value: crate::config::isolation::IsolationDefault,
 ) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         ConfigManager::instance()
@@ -64,10 +64,8 @@ pub async fn open_instance_folder(
         let state = ConfigManager::instance().app_state.blocking_lock();
         let instance =
             current_instance(&state, &instance_directory).map_err(|error| error.to_string())?;
-        let game_directory = pcl_core::minecraft::instance::isolation::directory(
-            &state.instance_isolation,
-            instance,
-        );
+        let game_directory =
+            crate::config::isolation::directory(&state.instance_isolation, instance);
         let directory = pcl_core::minecraft::instance::prepare_shortcut_directory(
             instance,
             game_directory,

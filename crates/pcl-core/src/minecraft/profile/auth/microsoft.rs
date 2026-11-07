@@ -69,16 +69,17 @@ pub struct MicrosoftProvider {
 }
 
 impl MicrosoftProvider {
-    /// 使用配置的 Client ID，未配置时直接报配置错误（CE 同样不接受空配置）。
-    pub fn new() -> AuthResult<Self> {
-        let client_id = crate::secrets::ms_oauth_client_id().ok_or_else(|| {
-            AuthError::configuration(
-                "未配置微软 OAuth 的 Client ID：请在构建时设置 MS_CLIENT_ID，或通过 .env / 运行环境变量提供",
-            )
-        })?;
+    /// Client ID and HTTP policy are supplied by the caller.
+    pub fn new(client: reqwest::Client, client_id: &str) -> AuthResult<Self> {
+        let client_id = client_id.trim();
+        if client_id.is_empty() {
+            return Err(AuthError::configuration(
+                "Microsoft OAuth Client ID is required",
+            ));
+        }
         Ok(Self {
-            client: super::http_client()?,
-            client_id,
+            client,
+            client_id: client_id.to_owned(),
         })
     }
 
@@ -418,10 +419,7 @@ mod tests {
 
     #[test]
     fn provider_requires_a_configured_client_id() {
-        if crate::secrets::ms_oauth_client_id().is_some() {
-            return;
-        }
-        match MicrosoftProvider::new() {
+        match MicrosoftProvider::new(reqwest::Client::new(), "   ") {
             Ok(_) => panic!("未配置 Client ID 时不应构造出 Provider"),
             Err(error) => assert_eq!(error.code, "configuration_error"),
         }
@@ -431,7 +429,10 @@ mod tests {
     #[tokio::test]
     #[ignore = "需要网络、微软端点与已配置的 MS_CLIENT_ID"]
     async fn device_code_endpoint_returns_a_user_code() {
-        let provider = match MicrosoftProvider::new() {
+        let provider = match MicrosoftProvider::new(
+            reqwest::Client::new(),
+            &std::env::var("MS_CLIENT_ID").unwrap_or_default(),
+        ) {
             Ok(provider) => provider,
             Err(error) => {
                 eprintln!("跳过：未配置可用于冒烟测试的 Client ID（{error}）");

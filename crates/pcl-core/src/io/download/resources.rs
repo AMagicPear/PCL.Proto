@@ -1,7 +1,7 @@
-//! CE-style process-wide HTTP quotas, byte accounting and bandwidth budget.
+//! Shared per-client HTTP quotas, byte accounting and bandwidth budget.
 use std::{
     sync::{
-        Arc, LazyLock, Mutex, RwLock,
+        Arc, Mutex, RwLock,
         atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
     },
     time::{Duration, Instant},
@@ -28,16 +28,15 @@ pub enum HttpMode {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(default)]
-pub struct DownloadSettings {
+pub struct DownloadOptions {
     pub max_connections: usize,
     pub file_connections: usize,
     pub speed_limit: u64,
     pub http_mode: HttpMode,
     pub file_source: SourcePreference,
     pub version_source: SourcePreference,
-    pub auto_select_instance: Option<bool>,
 }
-impl Default for DownloadSettings {
+impl Default for DownloadOptions {
     fn default() -> Self {
         Self {
             max_connections: 64,
@@ -46,16 +45,12 @@ impl Default for DownloadSettings {
             http_mode: HttpMode::Auto,
             file_source: SourcePreference::Auto,
             version_source: SourcePreference::Auto,
-            auto_select_instance: None,
         }
     }
 }
-impl DownloadSettings {
+impl DownloadOptions {
     pub fn validate(&self) -> Result<(), String> {
-        if !(1..=256).contains(&self.max_connections)
-            || !(1..=8).contains(&self.file_connections)
-            || self.speed_limit > 20 * 1024 * 1024
-        {
+        if !(1..=256).contains(&self.max_connections) || !(1..=8).contains(&self.file_connections) {
             return Err("Invalid download connection count or speed limit".into());
         }
         Ok(())
@@ -80,7 +75,7 @@ struct Bandwidth {
 }
 
 pub struct DownloadResources {
-    settings: RwLock<DownloadSettings>,
+    settings: RwLock<DownloadOptions>,
     active: AtomicUsize,
     bytes: AtomicU64,
     speed: Mutex<SpeedSample>,
@@ -89,13 +84,10 @@ pub struct DownloadResources {
     pub official_fast: AtomicBool,
 }
 
-pub static DOWNLOAD_RESOURCES: LazyLock<Arc<DownloadResources>> =
-    LazyLock::new(|| Arc::new(DownloadResources::default()));
-
 impl Default for DownloadResources {
     fn default() -> Self {
         Self {
-            settings: RwLock::new(DownloadSettings::default()),
+            settings: RwLock::new(DownloadOptions::default()),
             active: AtomicUsize::new(0),
             bytes: AtomicU64::new(0),
             speed: Mutex::new(SpeedSample {
@@ -113,10 +105,10 @@ impl Default for DownloadResources {
     }
 }
 impl DownloadResources {
-    pub fn settings(&self) -> DownloadSettings {
+    pub fn settings(&self) -> DownloadOptions {
         self.settings.read().unwrap().clone()
     }
-    pub fn configure(&self, settings: DownloadSettings) -> Result<(), String> {
+    pub fn configure(&self, settings: DownloadOptions) -> Result<(), String> {
         settings.validate()?;
         *self.settings.write().unwrap() = settings;
         self.changed.notify_waiters();
@@ -203,9 +195,6 @@ impl Drop for ConnectionLease {
     }
 }
 
-pub fn get_download_stats() -> DownloadStats {
-    DOWNLOAD_RESOURCES.stats()
-}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -213,7 +202,7 @@ mod tests {
     async fn bandwidth_budget_is_shared_across_concurrent_transfers() {
         let resources = Arc::new(DownloadResources::default());
         resources
-            .configure(DownloadSettings {
+            .configure(DownloadOptions {
                 speed_limit: 1024 * 1024,
                 ..Default::default()
             })
@@ -229,7 +218,7 @@ mod tests {
     async fn global_quota_is_shared_live_and_cancellation_safe() {
         let resources = Arc::new(DownloadResources::default());
         resources
-            .configure(DownloadSettings {
+            .configure(DownloadOptions {
                 max_connections: 1,
                 ..Default::default()
             })
@@ -242,7 +231,7 @@ mod tests {
                 .is_err()
         );
         resources
-            .configure(DownloadSettings {
+            .configure(DownloadOptions {
                 max_connections: 2,
                 ..Default::default()
             })
@@ -251,7 +240,7 @@ mod tests {
         resources.record_bytes(7);
         assert_eq!(resources.stats().downloaded_bytes, 7);
         resources
-            .configure(DownloadSettings {
+            .configure(DownloadOptions {
                 max_connections: 1,
                 ..Default::default()
             })
@@ -272,7 +261,7 @@ mod tests {
         assert_eq!(resources.stats().speed, 0.0);
         assert!(
             resources
-                .configure(DownloadSettings {
+                .configure(DownloadOptions {
                     max_connections: 257,
                     ..Default::default()
                 })
@@ -283,7 +272,7 @@ mod tests {
     async fn bandwidth_wait_is_cancel_safe_and_can_be_disabled_live() {
         let resources = Arc::new(DownloadResources::default());
         resources
-            .configure(DownloadSettings {
+            .configure(DownloadOptions {
                 speed_limit: 1,
                 ..Default::default()
             })
@@ -294,7 +283,7 @@ mod tests {
                 .await
                 .is_err()
         );
-        resources.configure(DownloadSettings::default()).unwrap();
+        resources.configure(DownloadOptions::default()).unwrap();
         tokio::time::timeout(Duration::from_secs(1), resources.throttle(1024))
             .await
             .unwrap();

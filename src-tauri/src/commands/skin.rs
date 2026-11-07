@@ -1,3 +1,4 @@
+use crate::config::manager::ConfigManager;
 use base64::{Engine, engine::general_purpose};
 use pcl_core::io::net::http::api_client::MinecraftApiClient;
 use serde::{Deserialize, Serialize};
@@ -135,8 +136,7 @@ pub async fn fetch_profile_skin(
             default,
         });
     }
-    let client =
-        pcl_core::minecraft::profile::auth::http_client().map_err(|error| error.to_string())?;
+    let client = ConfigManager::instance().api_client.http_client();
     let Some(address) = skin_address(&profile) else {
         return Ok(ProfileSkin {
             skin: None,
@@ -430,7 +430,7 @@ async fn upload_skin(
     slim: bool,
 ) -> Result<(), pcl_core::minecraft::profile::auth::AuthError> {
     use pcl_core::minecraft::profile::auth::AuthError;
-    let client = pcl_core::minecraft::profile::auth::http_client()?;
+    let client = ConfigManager::instance().api_client.http_client();
     let form = reqwest::multipart::Form::new()
         .text("variant", if slim { "slim" } else { "classic" })
         .part(

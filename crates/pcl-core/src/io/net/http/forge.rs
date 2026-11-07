@@ -1,6 +1,6 @@
 //! Forge version metadata shared by the version list and installer.
 use super::api_client::{McApiError, McApiResult, MinecraftApiClient};
-use crate::io::download::resources::{DOWNLOAD_RESOURCES, SourcePreference};
+use crate::io::download::resources::SourcePreference;
 use serde_json::Value;
 
 #[derive(Clone, Debug)]
@@ -199,7 +199,7 @@ impl MinecraftApiClient {
             return Err(McApiError::InvalidMetadata("Invalid Forge version".into()));
         }
         let mirror_first = !matches!(
-            DOWNLOAD_RESOURCES.settings().version_source,
+            self.resources().settings().version_source,
             SourcePreference::Official
         );
         let mirror = format!(
@@ -336,7 +336,10 @@ mod tests {
             }
             requests
         });
-        let client = MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::Official);
+        let client = MinecraftApiClient::new(
+            crate::io::download::Downloader::default(),
+            &ApiProvider::Official,
+        );
         let url = |path| format!("http://{address}/{path}");
         for first in ["bad", "absent"] {
             let versions = client
@@ -359,7 +362,10 @@ mod tests {
     #[ignore = "Reads current Forge version lists from the official and BMCL sources"]
     async fn real_forge_sources_expose_the_same_installer() {
         use super::super::api_client::ApiProvider;
-        let client = MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::Official);
+        let client = MinecraftApiClient::new(
+            crate::io::download::Downloader::default(),
+            &ApiProvider::Official,
+        );
         let mirror: Value = client
             .get(
                 "https://bmclapi2.bangbang93.com/forge/minecraft/1.20.1",

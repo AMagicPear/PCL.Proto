@@ -119,17 +119,21 @@ impl Assets {
             "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/org/glavo/mesa-loader-windows/{MESA_LOADER_VERSION}/mesa-loader-windows-{MESA_LOADER_VERSION}-{arch}.jar"
         );
         log::info!("Downloading renderer agent from {url}");
-        let response = pcl_core::io::download::send_request(
-            pcl_core::io::download::resources::HttpMode::Auto,
-            true,
-            &url,
-            None,
-            Some(std::time::Duration::from_secs(120)),
-        )
-        .await
-        .map_err(|error| error.to_string())?
-        .error_for_status()
-        .map_err(|error| error.to_string())?;
+        let response = crate::config::manager::ConfigManager::instance()
+            .api_client
+            .downloader()
+            .await
+            .send_request(
+                pcl_core::io::download::resources::HttpMode::Auto,
+                true,
+                &url,
+                None,
+                Some(std::time::Duration::from_secs(120)),
+            )
+            .await
+            .map_err(|error| error.to_string())?
+            .error_for_status()
+            .map_err(|error| error.to_string())?;
         let bytes = response.bytes().await.map_err(|error| error.to_string())?;
         if !(1024..=64 * 1024 * 1024).contains(&bytes.len()) {
             return Err("Invalid renderer agent size".into());

@@ -9,12 +9,20 @@ use pcl_core::minecraft::version::DownloadFile;
 
 #[tauri::command(rename_all = "snake_case")]
 pub async fn download_resource(
+    client: tauri::State<'_, &MinecraftApiClient>,
     info: DownloadFile,
     destination: PathBuf,
     task_id: i32,
     on_event: tauri::ipc::Channel<TaskItemReport>,
 ) -> Result<(), String> {
-    resource::download_resource(info, destination, task_id, super::channel_sink(on_event)).await
+    resource::download_resource(
+        &client.downloader().await,
+        info,
+        destination,
+        task_id,
+        super::channel_sink(on_event),
+    )
+    .await
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -60,7 +68,17 @@ pub async fn save_loader_file(
     version: String,
     destination: PathBuf,
 ) -> Result<(), String> {
-    loader::save_loader_file(loader, game, version, destination).await
+    loader::save_loader_file(
+        &crate::config::manager::ConfigManager::instance()
+            .api_client
+            .downloader()
+            .await,
+        loader,
+        game,
+        version,
+        destination,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -79,7 +97,12 @@ mod tests {
 
     #[test]
     fn ipc_accepts_task_manager_argument_names() {
+        let client: &'static MinecraftApiClient = Box::leak(Box::new(MinecraftApiClient::new(
+            pcl_core::io::download::Downloader::default(),
+            &pcl_core::io::net::http::api_client::ApiProvider::Official,
+        )));
         let app = tauri::test::mock_builder()
+            .manage(client)
             .invoke_handler(tauri::generate_handler![download_resource])
             .build(tauri::test::mock_context(tauri::test::noop_assets()))
             .unwrap();

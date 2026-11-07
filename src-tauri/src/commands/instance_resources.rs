@@ -18,11 +18,9 @@ pub async fn repair_instance_files(instance_directory: std::path::PathBuf) -> Re
             let details = instance
                 .read_version_json()
                 .map_err(|error| error.to_string())?;
-            let game_directory = pcl_core::minecraft::instance::isolation::directory(
-                &state.instance_isolation,
-                instance,
-            )
-            .to_path_buf();
+            let game_directory =
+                crate::config::isolation::directory(&state.instance_isolation, instance)
+                    .to_path_buf();
             // Loader instances share the parent's client JAR; only vanilla owns `jar_path`.
             let vanilla = instance
                 .plugins_version
@@ -44,9 +42,7 @@ pub async fn repair_instance_files(instance_directory: std::path::PathBuf) -> Re
             .map_err(|error| error.to_string())?,
         None => pcl_core::minecraft::version::McRuleContext::current(),
     };
-    let downloader = pcl_core::io::download::Downloader::with_bases(
-        ConfigManager::instance().api_client.api_bases_async().await,
-    );
+    let downloader = ConfigManager::instance().api_client.downloader().await;
     if vanilla && details.downloads.client.validate().is_ok() {
         downloader
             .download(&details.downloads.client, &jar_path)
@@ -82,10 +78,7 @@ pub(crate) fn instance_game_directory(
     let state = ConfigManager::instance().app_state.blocking_lock();
     let instance =
         current_instance(&state, instance_directory).map_err(|error| error.to_string())?;
-    Ok(
-        pcl_core::minecraft::instance::isolation::directory(&state.instance_isolation, instance)
-            .to_path_buf(),
-    )
+    Ok(crate::config::isolation::directory(&state.instance_isolation, instance).to_path_buf())
 }
 
 #[tauri::command]

@@ -1,14 +1,11 @@
 //! 下载任务与下载设置类命令。
+use crate::config::download::DownloadSettings;
 
 use std::path::PathBuf;
 
 use crate::config::manager::ConfigManager;
 
-use pcl_core::io::download::{
-    self, TaskItemReport,
-    resources::{DownloadSettings, DownloadStats, get_download_stats as core_stats},
-    tasks,
-};
+use pcl_core::io::download::{self, TaskItemReport, resources::DownloadStats, tasks};
 use pcl_core::io::net::http::api_client::FabricFamily;
 
 #[tauri::command(rename_all = "snake_case")]
@@ -20,6 +17,7 @@ pub async fn download_fabric_installer(
     on_event: tauri::ipc::Channel<TaskItemReport>,
 ) -> Result<(), String> {
     download::download_fabric_installer(
+        &ConfigManager::instance().api_client.downloader().await,
         family,
         version,
         destination,
@@ -37,7 +35,14 @@ pub async fn download_custom_file(
     on_event: tauri::ipc::Channel<TaskItemReport>,
 ) -> Result<(), String> {
     let url = crate::external::validate(&url)?;
-    download::download_custom_file(url, destination, task_id, super::channel_sink(on_event)).await
+    download::download_custom_file(
+        &ConfigManager::instance().api_client.downloader().await,
+        url,
+        destination,
+        task_id,
+        super::channel_sink(on_event),
+    )
+    .await
 }
 
 #[tauri::command]
@@ -62,7 +67,7 @@ pub fn release_download_task(task_id: i32) {
 
 #[tauri::command]
 pub fn get_download_stats() -> DownloadStats {
-    core_stats()
+    ConfigManager::instance().api_client.resources().stats()
 }
 
 #[tauri::command]

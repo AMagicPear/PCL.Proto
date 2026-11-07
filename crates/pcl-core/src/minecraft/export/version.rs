@@ -172,7 +172,7 @@ async fn export_version(
     } else {
         format!("{version_id}.jar")
     };
-    let downloader = Downloader::with_bases(client.api_bases_async().await);
+    let downloader = client.downloader().await;
     download_jar(
         info,
         staging.path.join(&jar_name),
@@ -255,7 +255,7 @@ mod tests {
     #[ignore = "Downloads official Minecraft files; run explicitly for network smoke testing"]
     async fn official_client_and_server_export() {
         let client = MinecraftApiClient::new(
-            reqwest::Client::new(),
+            crate::io::download::Downloader::default(),
             &crate::io::net::http::api_client::ApiProvider::Official,
         );
         let directory = temp_directory();

@@ -25,12 +25,9 @@ pub struct AuthlibProvider {
 
 impl AuthlibProvider {
     /// `server` 允许带或不带 `/authserver` 后缀，对照 CE 的 `_NormalizeServer`。
-    pub fn new(server: &str) -> AuthResult<Self> {
+    pub fn new(client: reqwest::Client, server: &str) -> AuthResult<Self> {
         let api_root = normalize_server(server)?;
-        Ok(Self {
-            client: super::http_client()?,
-            api_root,
-        })
+        Ok(Self { client, api_root })
     }
 
     /// 用户名密码登录，对照 CE 的 `AuthlibProvider.AuthenticateAsync`。
@@ -291,7 +288,11 @@ mod tests {
     #[tokio::test]
     #[ignore = "需要网络与真实认证服务器"]
     async fn wrong_credentials_return_the_server_error() {
-        let provider = super::AuthlibProvider::new("https://littleskin.cn/api/yggdrasil").unwrap();
+        let provider = super::AuthlibProvider::new(
+            reqwest::Client::new(),
+            "https://littleskin.cn/api/yggdrasil",
+        )
+        .unwrap();
         let error = provider
             .login("pcl-proto-smoke@example.org", "not-the-password", false)
             .await

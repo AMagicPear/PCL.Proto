@@ -3,7 +3,6 @@ use super::{JavaEntry, JavaSource, requirements::JavaRequirements};
 use crate::{
     io::download::Downloader,
     io::files::{safe_join, validate_file_name},
-    io::net::http::api_client::ApiBases,
     minecraft::version::DownloadFile,
 };
 use anyhow::{Context, ensure};
@@ -83,7 +82,7 @@ pub(super) fn platform_key(os: &str, arch: &str) -> Option<&'static str> {
 pub async fn install(
     requirements: JavaRequirements,
     runtime_dir: PathBuf,
-    bases: ApiBases,
+    downloader: Downloader,
     progress: impl Fn(JavaInstallProgress) + Clone + Send + Sync + 'static,
 ) -> anyhow::Result<JavaEntry> {
     let major = requirements
@@ -94,11 +93,9 @@ pub async fn install(
         crate::utils::platform::host_architecture(),
     )
     .context("Mojang does not provide a runtime for this OS/architecture; install Java manually")?;
-    let client = crate::io::net::proxy::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()?;
+    let client = downloader.http_client();
     let index: BTreeMap<String, BTreeMap<String, Vec<RuntimeRelease>>> =
-        fetch_index(&client, &bases).await?;
+        fetch_index(&client, &downloader).await?;
     let components = index
         .get(platform)
         .context("No Mojang runtimes available for this platform")?;
@@ -128,7 +125,6 @@ pub async fn install(
         path: staging.clone(),
         committed: false,
     };
-    let downloader = Downloader::with_bases(bases);
     let manifest_file = staging.join("runtime-manifest.json");
     downloader
         .download(&release.manifest, &manifest_file)
@@ -258,14 +254,12 @@ pub async fn install(
 
 async fn fetch_index(
     client: &reqwest::Client,
-    bases: &ApiBases,
+    downloader: &Downloader,
 ) -> anyhow::Result<BTreeMap<String, BTreeMap<String, Vec<RuntimeRelease>>>> {
     let mut last = None;
-    for url in bases.download_urls(
+    for url in downloader.bases.download_urls(
         INDEX,
-        crate::io::download::resources::DOWNLOAD_RESOURCES
-            .settings()
-            .version_source,
+        downloader.resources().settings().version_source,
         false,
     ) {
         let result = async {

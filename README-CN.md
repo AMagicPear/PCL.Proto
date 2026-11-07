@@ -122,6 +122,6 @@ pcl-core = { git = "https://github.com/PCL-Community/PCL.Proto", rev = "<commit>
 
 ### 多语言开发
 
-[应用多语言方案与文案约定](docs/LOCALIZATION.md)
+[应用多语言方案与文案约定](docs/DEVELOPMENT.md#应用多语言)
 
 [代码组织与维护边界](docs/ARCHITECTURE.md)

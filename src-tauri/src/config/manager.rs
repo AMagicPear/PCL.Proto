@@ -2,7 +2,6 @@ pub use super::states::{AppState, WindowSettings};
 
 use tokio::sync::Mutex;
 
-use super::metadata::constants::USER_AGENT;
 use pcl_core::{
     io::net::http::api_client::{ApiProvider, MinecraftApiClient},
     minecraft::instance::{
@@ -59,7 +58,7 @@ pub async fn get_version_info() -> String {
 pub async fn set_version_info(value: String) -> Result<String, String> {
     tokio::task::spawn_blocking(move || {
         ConfigManager::instance().update(|state| {
-            pcl_core::minecraft::launch::settings::validate_info(&value)?;
+            crate::config::launch_settings::validate_info(&value)?;
             state.version_info = value.clone();
             Ok(value)
         })
@@ -150,8 +149,6 @@ impl ConfigManager {
     /// create a new config manager every time it launches
     /// and initialize the config file, for those who never use this launcher
     fn new() -> Result<Self, ConfigManagerError> {
-        // 核心库自己构造的 HTTP 客户端沿用启动器的 User-Agent。
-        pcl_core::io::net::set_user_agent(USER_AGENT);
         let config_dirs = directories::ProjectDirs::from("pcl-community", "pcl", "proto")
             .ok_or(ConfigManagerError::ConfigDirNotFound)?;
         let config_dir = config_dirs.config_dir();
@@ -179,10 +176,11 @@ impl ConfigManager {
             config_dir: config_dir.to_path_buf(),
             app_state: Arc::new(Mutex::new(AppState::default())),
             api_client: MinecraftApiClient::new(
-                reqwest::Client::builder()
-                    .user_agent(USER_AGENT)
-                    .build()
-                    .map_err(|_| ConfigManagerError::ApiClientBuildError)?,
+                {
+                    let (client, http1) = crate::config::network::clients(&Default::default())
+                        .map_err(|_| ConfigManagerError::ApiClientBuildError)?;
+                    pcl_core::io::download::Downloader::new(client, http1)
+                },
                 &ApiProvider::default(),
             ),
             pcl_identifier,
@@ -191,19 +189,16 @@ impl ConfigManager {
             super::paths::launcher_minecraft_directory().as_deref(),
             super::paths::official_minecraft_directory().as_deref(),
         )?;
-        // The API client is built before the proxy policy is loaded.
-        instance
-            .api_client
-            .rebuild_client()
-            .map_err(|_| ConfigManagerError::ApiClientBuildError)?;
         let download_settings = instance
             .app_state
             .blocking_lock()
             .download_settings
             .clone()
             .unwrap_or_default();
-        pcl_core::io::download::resources::DOWNLOAD_RESOURCES
-            .configure(download_settings)
+        instance
+            .api_client
+            .resources()
+            .configure(download_settings.options())
             .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
         log::debug!("launched config at {:?}", instance.config_path);
         Ok(instance)
@@ -222,17 +217,18 @@ impl ConfigManager {
 
     pub fn update_proxy_settings(
         &self,
-        settings: pcl_core::io::net::proxy::ProxySettings,
-    ) -> Result<pcl_core::io::net::proxy::ProxySettings, String> {
+        settings: crate::config::network::ProxySettings,
+    ) -> Result<crate::config::network::ProxySettings, String> {
         settings.validate()?;
         // Validate the resulting client before committing the setting.
-        pcl_core::io::net::proxy::build_proxy_client(&settings)?;
-        self.update(|state| {
-            state.proxy = settings.clone();
-            Ok(settings.clone())
-        })?;
-        pcl_core::io::net::proxy::apply(&settings)?;
-        self.api_client.rebuild_client()?;
+        let (client, http1) = crate::config::network::clients(&settings)?;
+        let mut state = self.app_state.blocking_lock();
+        let mut candidate = state.clone();
+        candidate.proxy = settings.clone();
+        save_config_atomically(&self.config_path, &candidate)
+            .map_err(|error| format!("{error:?}"))?;
+        *state = candidate;
+        self.api_client.replace_clients(client, http1);
         Ok(settings)
     }
 
@@ -342,16 +338,14 @@ impl ConfigManager {
         {
             return Err(ConfigManagerError::ConfigFileCorrupted);
         }
-        pcl_core::io::net::proxy::apply(&state_read.proxy)
-            .map_err(|_| ConfigManagerError::ConfigFileCorrupted)?;
+        let (client, http1) = crate::config::network::clients(&state_read.proxy)
+            .map_err(|_| ConfigManagerError::ApiClientBuildError)?;
         let mut state = self.app_state.blocking_lock();
         *state = state_read;
         // update the api provider
         self.api_client
             .switch_provider(&state.launcher_setup.api_provider);
-        self.api_client
-            .rebuild_client()
-            .map_err(|_| ConfigManagerError::ApiClientBuildError)?;
+        self.api_client.replace_clients(client, http1);
         Ok(())
     }
 
@@ -433,8 +427,8 @@ impl ConfigManager {
 
     pub fn update_download_settings(
         &self,
-        settings: pcl_core::io::download::resources::DownloadSettings,
-    ) -> Result<pcl_core::io::download::resources::DownloadSettings, String> {
+        settings: crate::config::download::DownloadSettings,
+    ) -> Result<crate::config::download::DownloadSettings, String> {
         settings.validate()?;
         let mut state = self.app_state.blocking_lock();
         let mut candidate = state.clone();
@@ -442,7 +436,7 @@ impl ConfigManager {
         save_config_atomically(&self.config_path, &candidate).map_err(|e| format!("{e:?}"))?;
         *state = candidate;
         // 副作用放在提交之后：失败时磁盘与内存一致，用户重试即可恢复。
-        pcl_core::io::download::resources::DOWNLOAD_RESOURCES.configure(settings.clone())?;
+        self.api_client.resources().configure(settings.options())?;
         Ok(settings)
     }
 
@@ -531,10 +525,13 @@ mod java_config_tests {
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState {
                 active_game_instance: Some(Arc::new(instance)),
-                isolation_default: pcl_core::minecraft::instance::isolation::IsolationDefault::Off,
+                isolation_default: crate::config::isolation::IsolationDefault::Off,
                 ..Default::default()
             })),
-            api_client: MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::default()),
+            api_client: MinecraftApiClient::new(
+                pcl_core::io::download::Downloader::default(),
+                &ApiProvider::default(),
+            ),
             pcl_identifier: String::new(),
         };
         fs::create_dir(&config_path).unwrap();
@@ -552,8 +549,7 @@ mod java_config_tests {
         assert_eq!(saved.instance_isolation.get(&path), Some(&false));
         manager
             .update(|state| {
-                state.isolation_default =
-                    pcl_core::minecraft::instance::isolation::IsolationDefault::All;
+                state.isolation_default = crate::config::isolation::IsolationDefault::All;
                 Ok(())
             })
             .unwrap();
@@ -563,8 +559,8 @@ mod java_config_tests {
 
     #[test]
     fn launch_arguments_validate_and_commit_per_instance_transactionally() {
+        use crate::config::arguments::LaunchArguments;
         use crate::config::arguments::update;
-        use pcl_core::minecraft::launch::arguments::LaunchArguments;
         let root =
             std::env::temp_dir().join(format!("pcl-argument-config-{}", uuid::Uuid::new_v4()));
         let repo = McFolder::new("test", root.clone());
@@ -588,7 +584,10 @@ mod java_config_tests {
                 active_game_instance: Some(Arc::new(instances[0].clone())),
                 ..Default::default()
             })),
-            api_client: MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::default()),
+            api_client: MinecraftApiClient::new(
+                pcl_core::io::download::Downloader::default(),
+                &ApiProvider::default(),
+            ),
             pcl_identifier: String::new(),
         };
         let valid = LaunchArguments {
@@ -659,7 +658,10 @@ mod java_config_tests {
             config_path: root.join("config.json"),
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
-            api_client: MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::default()),
+            api_client: MinecraftApiClient::new(
+                pcl_core::io::download::Downloader::default(),
+                &ApiProvider::default(),
+            ),
             pcl_identifier: String::new(),
         };
         let custom = WindowSettings {
@@ -706,7 +708,10 @@ mod java_config_tests {
             config_path: path.clone(),
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
-            api_client: MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::default()),
+            api_client: MinecraftApiClient::new(
+                pcl_core::io::download::Downloader::default(),
+                &ApiProvider::default(),
+            ),
             pcl_identifier: String::new(),
         };
         fs::write(&path, b"invalid json").unwrap();
@@ -767,8 +772,8 @@ mod java_config_tests {
         state.launcher_setup.selected_java = Some(PathBuf::from("/test/jdk/bin/java"));
         state.java_preferences.insert(
             PathBuf::from("/test/game"),
-            pcl_core::minecraft::java::preference::InstanceJavaSettings {
-                preference: pcl_core::minecraft::java::preference::JavaPreference::Auto,
+            crate::config::java_preference::InstanceJavaSettings {
+                preference: crate::config::java_preference::JavaPreference::Auto,
                 ignore_compatibility: true,
             },
         );
@@ -791,7 +796,10 @@ mod java_config_tests {
             config_path: path.clone(),
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
-            api_client: MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::default()),
+            api_client: MinecraftApiClient::new(
+                pcl_core::io::download::Downloader::default(),
+                &ApiProvider::default(),
+            ),
             pcl_identifier: String::new(),
         });
         fs::create_dir(&path).unwrap();
@@ -845,7 +853,10 @@ mod java_config_tests {
             config_path: path.clone(),
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
-            api_client: MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::default()),
+            api_client: MinecraftApiClient::new(
+                pcl_core::io::download::Downloader::default(),
+                &ApiProvider::default(),
+            ),
             pcl_identifier: String::new(),
         };
         manager.add_repository("Games", &repo).unwrap();
@@ -876,8 +887,7 @@ mod java_config_tests {
     }
     #[test]
     fn download_settings_validate_and_failed_save_preserves_state() {
-        use pcl_core::io::download::resources::{DOWNLOAD_RESOURCES, DownloadSettings};
-        let previous = DOWNLOAD_RESOURCES.settings();
+        use crate::config::download::DownloadSettings;
         let root =
             std::env::temp_dir().join(format!("pcl-download-settings-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&root).unwrap();
@@ -886,7 +896,10 @@ mod java_config_tests {
             config_path: path.clone(),
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
-            api_client: MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::default()),
+            api_client: MinecraftApiClient::new(
+                pcl_core::io::download::Downloader::default(),
+                &ApiProvider::default(),
+            ),
             pcl_identifier: String::new(),
         };
         let first = DownloadSettings {
@@ -939,8 +952,10 @@ mod java_config_tests {
                 .max_connections,
             32
         );
-        assert_eq!(DOWNLOAD_RESOURCES.settings().max_connections, 32);
-        DOWNLOAD_RESOURCES.configure(previous).unwrap();
+        assert_eq!(
+            manager.api_client.resources().settings().max_connections,
+            32
+        );
         fs::remove_dir_all(root).unwrap();
     }
     #[test]
@@ -958,13 +973,16 @@ mod java_config_tests {
             app_state: Arc::new(Mutex::new(AppState {
                 repositories: vec![repo],
                 active_repo_path: root.clone(),
-                download_settings: Some(pcl_core::io::download::resources::DownloadSettings {
+                download_settings: Some(crate::config::download::DownloadSettings {
                     auto_select_instance: Some(false),
                     ..Default::default()
                 }),
                 ..Default::default()
             })),
-            api_client: MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::default()),
+            api_client: MinecraftApiClient::new(
+                pcl_core::io::download::Downloader::default(),
+                &ApiProvider::default(),
+            ),
             pcl_identifier: String::new(),
         };
         assert!(
@@ -1016,7 +1034,10 @@ mod java_config_tests {
             config_path: path.clone(),
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
-            api_client: MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::default()),
+            api_client: MinecraftApiClient::new(
+                pcl_core::io::download::Downloader::default(),
+                &ApiProvider::default(),
+            ),
             pcl_identifier: String::new(),
         };
         assert_eq!(manager.update_log_max_lines(500).unwrap(), 500);

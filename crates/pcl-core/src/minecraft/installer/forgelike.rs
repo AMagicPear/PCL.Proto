@@ -166,7 +166,7 @@ pub async fn download_forgelike_installer(
             let archive = directory.path().join("installer");
             download_installer(
                 &file,
-                &super::Downloader::default(),
+                &client.downloader().await,
                 &archive,
                 task_id,
                 0,
@@ -279,31 +279,15 @@ fn downloadable_java(
 pub(super) async fn select_java(
     requirements: crate::minecraft::java::requirements::JavaRequirements,
     task_id: i32,
-    java: &crate::minecraft::java::JavaState,
+    java: &[crate::minecraft::java::JavaEntry],
 ) -> anyhow::Result<Option<crate::minecraft::java::JavaEntry>> {
-    use crate::minecraft::java::preference::{self, InstanceJavaSettings};
-    let known = java.runtimes.clone();
-    let global = java.selected.clone();
+    let known = java.to_vec();
     crate::io::download::tasks::blocking(task_id, move || {
-        let selected = preference::select(
-            &known,
-            global.as_deref(),
-            &InstanceJavaSettings::default(),
-            &requirements,
-        )
-        .0;
-
-        selected
-            .filter(|java| requirements.accepts(java.parsed_version()))
-            .or_else(|| {
-                preference::select(
-                    &known,
-                    None,
-                    &InstanceJavaSettings::default(),
-                    &requirements,
-                )
-                .0
-            })
+        known
+            .iter()
+            .filter(|java| java.is_enabled)
+            .filter_map(|java| crate::minecraft::java::reprobe(&java.java_exe, &known))
+            .find(|java| requirements.accepts(java.parsed_version()))
     })
     .await
     .map_err(Into::into)
@@ -337,7 +321,7 @@ pub async fn prepare_forgelike_java(
     client: &super::MinecraftApiClient,
     version_id: String,
     loader: super::LoaderInstall,
-    java: &crate::minecraft::java::JavaState,
+    java: &[crate::minecraft::java::JavaEntry],
 ) -> Result<Option<JavaInstallOffer>, String> {
     if !requires_java(&loader, &version_id).map_err(|e| e.to_string())? {
         return Ok(None);
@@ -369,8 +353,8 @@ pub(super) async fn ensure_java(
     install_java: bool,
     task_id: i32,
     on_event: &EventSink<super::TaskItemReport>,
-    java: &crate::minecraft::java::JavaState,
-    paths: &crate::runtime::RuntimePaths,
+    java: &[crate::minecraft::java::JavaEntry],
+    java_runtime_dir: &Path,
 ) -> anyhow::Result<crate::minecraft::java::JavaEntry> {
     let requirements = java_requirements(metadata, game);
     if let Some(java) = select_java(requirements.clone(), task_id, java).await? {
@@ -395,8 +379,8 @@ pub(super) async fn ensure_java(
     let channel = std::sync::Arc::clone(on_event);
     let runtime = crate::minecraft::java::install::install(
         requirements,
-        paths.java_runtime_dir.clone(),
-        client.api_bases_async().await,
+        java_runtime_dir.to_owned(),
+        client.downloader().await,
         move |progress| {
             channel(super::TaskItemReport {
                 task_id,
@@ -1044,9 +1028,7 @@ mod tests {
     }
 
     async fn real_installer_smoke() {
-        use super::super::{
-            Downloader, LoaderFamily, LoaderInstall, McVersion, MinecraftApiClient,
-        };
+        use super::super::{LoaderFamily, LoaderInstall, McVersion, MinecraftApiClient};
         use crate::io::net::http::api_client::ApiProvider;
         let case = std::env::var("PCL_FORGE_SMOKE_CASE").unwrap_or_else(|_| "forge".into());
         let (game, version, family) = match case.as_str() {
@@ -1056,8 +1038,11 @@ mod tests {
             "legacy" => ("1.7.10", "10.13.0.1151", LoaderFamily::Forge),
             _ => panic!("Unknown smoke case"),
         };
-        let client = MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::BMCLApi);
-        let downloader = Downloader::with_bases(client.api_bases_async().await);
+        let client = MinecraftApiClient::new(
+            crate::io::download::Downloader::default(),
+            &ApiProvider::BMCLApi,
+        );
+        let downloader = client.downloader().await;
         let metadata = client.get_version_metadata(game).await.unwrap();
         let vanilla: McVersion = serde_json::from_value(metadata.clone()).unwrap();
         let loader = LoaderInstall {
@@ -1067,11 +1052,8 @@ mod tests {
             install_java: false,
         };
         let events = event_sink(|_| ());
-        let paths = crate::runtime::RuntimePaths {
-            config_dir: std::env::temp_dir().join("pcl-forge-smoke"),
-            java_runtime_dir: std::env::temp_dir().join("pcl-forge-smoke-jre"),
-        };
-        let java_state = crate::minecraft::java::JavaState::default();
+        let paths = std::env::temp_dir().join("pcl-forge-smoke-jre");
+        let java_state = Vec::new();
         // 忽略的网络冒烟测试直接使用应用打包的安装器桥接文件。
         let installer = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../pcl-assets/resources/forge-installer.jar");
@@ -1157,7 +1139,7 @@ mod tests {
                 &events,
                 &java_state,
                 &paths,
-                &installer,
+                Some(&installer),
             )
             .await
             .unwrap();

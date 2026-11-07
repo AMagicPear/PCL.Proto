@@ -5,12 +5,10 @@
 //! LGPL-3.0 License & scl License | https://github.com/Steve-xmh/scl
 //! Start script referenced from HMCL
 //! GPL-3.0 License | https://github.com/HMCL-dev/HMCL
-// use crate::app::config::constants::LAUNCHER_NAME;
 
 use crate::io::net::http::api_client::game::McVersion;
 use crate::minecraft::version::{McArgument, McArgumentValue, McRuleContext, rules_allow};
 use crate::minecraft::{instance::McInstance, java::JavaEntry, profile::McProfile};
-use crate::runtime::RuntimePaths;
 use std::sync::Arc;
 
 /// `(自定义 JVM 参数, JVM 参数, 游戏参数)`，由 `metadata_arguments` 一次算好。
@@ -37,7 +35,7 @@ pub struct LaunchHelpers {
 
 /// 启动一次游戏所需的全部输入；由宿主应用从自己的配置组装。
 pub struct LaunchRequest {
-    pub paths: RuntimePaths,
+    pub wrapper_temp_dir: std::path::PathBuf,
     pub brand: LauncherBrand,
     pub helpers: LaunchHelpers,
     pub instance: Arc<McInstance>,
@@ -48,14 +46,13 @@ pub struct LaunchRequest {
     pub initial_memory: Option<usize>,
     pub width: Option<usize>,
     pub height: Option<usize>,
-    pub launcher_size: bool,
     pub arguments: crate::minecraft::launch::arguments::LaunchArguments,
     pub extras: crate::minecraft::launch::settings::LaunchExtras,
 }
 
 /// Essential options for launching a Minecraft game
 pub struct LaunchOption {
-    paths: RuntimePaths,
+    wrapper_temp_dir: std::path::PathBuf,
     brand: LauncherBrand,
     helpers: LaunchHelpers,
     account: Arc<McProfile>,
@@ -66,7 +63,6 @@ pub struct LaunchOption {
     initial_memory: Option<usize>,
     width: Option<usize>,
     height: Option<usize>,
-    launcher_size: bool,
     version_details: McVersion,
     natives_path: std::path::PathBuf,
     arguments: crate::minecraft::launch::arguments::LaunchArguments,
@@ -153,10 +149,6 @@ impl LaunchOption {
         self.width = Some(width);
         self.height = Some(height);
         self
-    }
-
-    pub fn uses_launcher_size(&self) -> bool {
-        self.launcher_size
     }
 
     pub fn launch_checked(&self) -> Result<std::process::Child, GameLaunchError> {
@@ -300,7 +292,7 @@ impl LaunchOption {
         }
         args.push(format!(
             "-Doolloo.jlw.tmpdir={}",
-            self.paths.config_dir.display()
+            self.wrapper_temp_dir.display()
         ));
         Ok(Some((args, path)))
     }
@@ -680,10 +672,10 @@ impl LaunchOption {
         })?);
         request
             .arguments
-            .validate(true)
+            .validate()
             .map_err(GameLaunchError::CustomArguments)?;
         Ok(Self {
-            paths: request.paths,
+            wrapper_temp_dir: request.wrapper_temp_dir,
             brand: request.brand,
             helpers: request.helpers,
             account: Arc::new(request.profile),
@@ -696,7 +688,6 @@ impl LaunchOption {
             initial_memory: request.initial_memory,
             width: request.width,
             height: request.height,
-            launcher_size: request.launcher_size,
             arguments: request.arguments,
             extras: request.extras,
             server: None,
@@ -1046,10 +1037,7 @@ pub(crate) fn test_request(
     game_directory: std::path::PathBuf,
 ) -> LaunchRequest {
     LaunchRequest {
-        paths: RuntimePaths {
-            config_dir: std::env::temp_dir(),
-            java_runtime_dir: std::env::temp_dir(),
-        },
+        wrapper_temp_dir: std::env::temp_dir(),
         brand: LauncherBrand {
             name: "PCL.Proto".into(),
             version: "test".into(),
@@ -1063,8 +1051,7 @@ pub(crate) fn test_request(
         initial_memory: None,
         width: None,
         height: None,
-        launcher_size: false,
-        arguments: crate::minecraft::launch::arguments::LaunchArguments::global_default(),
+        arguments: crate::minecraft::launch::arguments::LaunchArguments::default(),
         extras: Default::default(),
     }
 }
@@ -1146,10 +1133,7 @@ mod tests {
         }))
         .unwrap();
         let mut option = LaunchOption {
-            paths: RuntimePaths {
-                config_dir: std::env::temp_dir(),
-                java_runtime_dir: std::env::temp_dir(),
-            },
+            wrapper_temp_dir: std::env::temp_dir(),
             brand: LauncherBrand {
                 name: "PCL.Proto".into(),
                 version: "test".into(),
@@ -1167,10 +1151,9 @@ mod tests {
             initial_memory: None,
             width: Some(1024),
             height: Some(768),
-            launcher_size: false,
             version_details: instance.read_version_json().unwrap(),
             natives_path: instance.natives_path.clone(),
-            arguments: crate::minecraft::launch::arguments::LaunchArguments::global_default(),
+            arguments: crate::minecraft::launch::arguments::LaunchArguments::default(),
             extras: Default::default(),
             server: None,
             authlib: None,
@@ -1310,17 +1293,12 @@ mod tests {
                 .windows(2)
                 .any(|pair| pair == ["--gameDir", root.to_str().unwrap()])
         );
-        // 自定义内存和参数覆盖全局值。
-        let global_arguments = crate::minecraft::launch::arguments::LaunchArguments {
-            jvm: "-Dglobal=true".into(),
-            game: "--server 'my host' --asset ${assets_root}".into(),
-            classpath: String::new(),
-        };
+        // 宿主已解析的内存和参数交给实际进程。
         let first_head = root.join("first extra.jar");
         let second_head = root.join("second.jar");
         let instance_arguments = crate::minecraft::launch::arguments::LaunchArguments {
             jvm: "-XX:+UseZGC -Xmx8G -Xms256m -Xms512m -Dfixture='two words' -Droot=${game_directory}".into(),
-            game: String::new(),
+            game: "--server 'my host' --asset ${assets_root}".into(),
             classpath: format!("{};{}", first_head.display(), second_head.display()),
         };
         let mut request = test_request(
@@ -1331,7 +1309,7 @@ mod tests {
         );
         request.max_memory = 3072;
         request.initial_memory = Some(1024);
-        request.arguments = instance_arguments.effective(&global_arguments);
+        request.arguments = instance_arguments;
         let custom = LaunchOption::new(request).unwrap();
         assert!(custom.launch_checked().unwrap().wait().unwrap().success());
         let output = fs::read_to_string(root.join("captured")).unwrap();
@@ -1466,20 +1444,6 @@ mod tests {
             root.join("libraries/net/minecraftforge/forge/1.20.1-47.0.0/forge-1.20.1-47.0.0.jar");
         fs::create_dir_all(forge_library.parent().unwrap()).unwrap();
         fs::write(&forge_library, b"forge").unwrap();
-        // 32 位 Java 把内存上限压到 1024 MiB。
-        let resolved = crate::minecraft::launch::memory::resolve(
-            &crate::minecraft::launch::memory::MemorySettings::Custom {
-                maximum_mib: 1536,
-                initial_mib: Some(1200),
-            },
-            0,
-            &option.game_instance,
-            &child,
-            false,
-        )
-        .unwrap();
-        assert_eq!(resolved, (1024, Some(1024)));
-
         let mut request = test_request(
             option.game_instance.clone(),
             option.account.as_ref().clone(),
@@ -1489,7 +1453,6 @@ mod tests {
         request.width = Some(1280);
         request.height = Some(720);
         let custom = LaunchOption::new(request).unwrap();
-        assert!(!custom.uses_launcher_size());
         assert!(custom.launch_checked().unwrap().wait().unwrap().success());
         assert!(
             fs::read_to_string(root.join("captured"))
@@ -1497,14 +1460,6 @@ mod tests {
                 .lines()
                 .any(|line| line == "-Dwidth=1280")
         );
-        let mut request = test_request(
-            option.game_instance.clone(),
-            option.account.as_ref().clone(),
-            option.java_runtime.clone(),
-            child.clone(),
-        );
-        request.launcher_size = true;
-        assert!(LaunchOption::new(request).unwrap().uses_launcher_size());
         let option = LaunchOption::new(test_request(
             option.game_instance.clone(),
             option.account.as_ref().clone(),

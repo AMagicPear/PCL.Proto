@@ -283,7 +283,6 @@ async fn add_maven_libraries(
     downloader: &Downloader,
     stage: i32,
 ) -> anyhow::Result<()> {
-    use crate::io::download::resources::DOWNLOAD_RESOURCES;
     let mut seen = std::collections::HashSet::new();
     for library in &details.libraries {
         if !library.rule_allow(context)?
@@ -353,7 +352,7 @@ async fn add_maven_libraries(
         }
         let mut checksum_url = url.clone();
         checksum_url.set_path(&format!("{}.sha1", url.path()));
-        let resources = &*DOWNLOAD_RESOURCES;
+        let resources = downloader.resources();
         let sha1 = if let Some(sha1) = library.sha1.as_ref().filter(|_| native.is_none()) {
             sha1.clone()
         } else {
@@ -432,18 +431,18 @@ async fn maven_metadata_request(
     downloader: &Downloader,
     url: &str,
 ) -> anyhow::Result<reqwest::Response> {
-    use crate::io::download::{resources::DOWNLOAD_RESOURCES, send_request};
     let mut last_error = None;
     for source in downloader.source_urls(url) {
-        match send_request(
-            DOWNLOAD_RESOURCES.settings().http_mode,
-            false,
-            &source,
-            None,
-            None,
-        )
-        .await
-        .and_then(reqwest::Response::error_for_status)
+        match downloader
+            .send_request(
+                downloader.resources().settings().http_mode,
+                false,
+                &source,
+                None,
+                None,
+            )
+            .await
+            .and_then(reqwest::Response::error_for_status)
         {
             Ok(response) => return Ok(response),
             Err(error) => last_error = Some(error),
@@ -927,9 +926,9 @@ pub async fn install_version(
     loader: Option<&LoaderInstall>,
     task_id: i32,
     on_event: &EventSink<TaskItemReport>,
-    java: &crate::minecraft::java::JavaState,
-    paths: &crate::runtime::RuntimePaths,
-    forge_installer: &Path,
+    java: &[crate::minecraft::java::JavaEntry],
+    java_runtime_dir: &Path,
+    forge_installer: Option<&Path>,
 ) -> anyhow::Result<InstallOutcome> {
     install_version_with_modpack(
         client,
@@ -941,7 +940,7 @@ pub async fn install_version(
         task_id,
         on_event,
         java,
-        paths,
+        java_runtime_dir,
         forge_installer,
     )
     .await
@@ -958,9 +957,9 @@ async fn install_version_with_modpack(
     pack: Option<&modpack::Modpack>,
     task_id: i32,
     on_event: &EventSink<TaskItemReport>,
-    java: &crate::minecraft::java::JavaState,
-    paths: &crate::runtime::RuntimePaths,
-    forge_installer: &Path,
+    java: &[crate::minecraft::java::JavaEntry],
+    java_runtime_dir: &Path,
+    forge_installer: Option<&Path>,
 ) -> anyhow::Result<InstallOutcome> {
     validate_file_name(version_id)?;
     ensure!(
@@ -982,8 +981,7 @@ async fn install_version_with_modpack(
         speed: None,
     });
     let mut metadata = client.get_version_metadata(version_id).await?;
-    let bases = client.api_bases_async().await;
-    let downloader = Downloader::with_bases(bases);
+    let downloader = client.downloader().await;
     let mut forgelike = None;
     if let Some(loader) = loader {
         on_event(TaskItemReport {
@@ -1043,7 +1041,7 @@ async fn install_version_with_modpack(
                 task_id,
                 on_event,
                 java,
-                paths,
+                java_runtime_dir,
             )
             .await?,
         )
@@ -1121,7 +1119,7 @@ async fn install_version_with_modpack(
                 &directory.path.join(format!("{name}.jar")),
                 task_id,
                 on_event,
-                forge_installer,
+                forge_installer.context("Forge processor bridge was not supplied")?,
             )
             .await?
         } else {
@@ -1203,9 +1201,9 @@ pub async fn download_minecraft_version(
     task_id: i32,
     instance_name: String,
     loader: Option<LoaderInstall>,
-    java: &crate::minecraft::java::JavaState,
-    paths: &crate::runtime::RuntimePaths,
-    forge_installer: &Path,
+    java: &[crate::minecraft::java::JavaEntry],
+    java_runtime_dir: &Path,
+    forge_installer: Option<&Path>,
 ) -> Result<InstallOutcome, String> {
     crate::io::download::tasks::run(task_id, async {
         install_version(
@@ -1217,7 +1215,7 @@ pub async fn download_minecraft_version(
             task_id,
             &on_event,
             java,
-            paths,
+            java_runtime_dir,
             forge_installer,
         )
         .await
@@ -1236,11 +1234,7 @@ pub(crate) async fn install_version_for_test(
     task_id: i32,
     on_event: &EventSink<TaskItemReport>,
 ) -> anyhow::Result<InstallOutcome> {
-    let paths = crate::runtime::RuntimePaths {
-        config_dir: std::env::temp_dir().join("pcl-test-config"),
-        java_runtime_dir: std::env::temp_dir().join("pcl-test-jre"),
-    };
-    let forge_installer = std::env::temp_dir().join("forge-installer.jar");
+    let paths = std::env::temp_dir().join("pcl-test-jre");
     install_version(
         client,
         repo,
@@ -1249,9 +1243,9 @@ pub(crate) async fn install_version_for_test(
         loader,
         task_id,
         on_event,
-        &crate::minecraft::java::JavaState::default(),
+        &[],
         &paths,
-        &forge_installer,
+        None,
     )
     .await
 }

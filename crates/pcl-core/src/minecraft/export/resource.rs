@@ -38,12 +38,12 @@ pub(crate) fn validate(info: &DownloadFile) -> anyhow::Result<()> {
 }
 
 pub(crate) async fn download_to(
+    downloader: &Downloader,
     info: DownloadFile,
     destination: PathBuf,
     task_id: i32,
     on_event: &EventSink<TaskItemReport>,
 ) -> anyhow::Result<()> {
-    let downloader = Downloader::default();
     downloader
         .download_with_progress(
             DownloadConfig {
@@ -70,6 +70,7 @@ pub(crate) async fn download_to(
 }
 
 pub async fn download_resource(
+    downloader: &Downloader,
     info: DownloadFile,
     destination: PathBuf,
     task_id: i32,
@@ -87,7 +88,7 @@ pub async fn download_resource(
                 "Destination already exists or is invalid"
             );
             let temp = TempFile(parent.join(format!(".pcl-resource-{}.tmp", uuid::Uuid::new_v4())));
-            download_to(info, temp.0.clone(), task_id, &on_event).await?;
+            download_to(downloader, info, temp.0.clone(), task_id, &on_event).await?;
             std::fs::hard_link(&temp.0, &destination)
                 .context("Cannot publish resource (the destination may already exist)")?;
             Ok::<(), anyhow::Error>(())

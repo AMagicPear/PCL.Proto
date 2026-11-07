@@ -218,16 +218,17 @@ impl FabricFamily {
     }
 }
 
-fn fabric_metadata_sources(base: &'static str) -> Vec<&'static str> {
+fn fabric_metadata_sources(
+    base: &'static str,
+    preference: crate::io::download::resources::SourcePreference,
+) -> Vec<&'static str> {
     let official = "https://meta.fabricmc.net/v2/versions/loader";
     let mirror = "https://bmclapi2.bangbang93.com/fabric-meta/v2/versions/loader";
     if base != official && base != mirror {
         return vec![base];
     }
     if matches!(
-        crate::io::download::resources::DOWNLOAD_RESOURCES
-            .settings()
-            .version_source,
+        preference,
         crate::io::download::resources::SourcePreference::Official
     ) {
         vec![official, mirror]
@@ -381,7 +382,7 @@ fn parse_fabric_installers(
 }
 
 pub struct MinecraftApiClient {
-    client: std::sync::RwLock<Client>,
+    transport: crate::io::download::Downloader,
     api_bases: RwLock<ApiBases>,
     cache: DashMap<String, (Instant, serde_json::Value)>,
     ttl: Duration,
@@ -399,7 +400,9 @@ impl MinecraftApiClient {
         };
         drop(bases);
         let mut last_error = None;
-        for source in fabric_metadata_sources(base) {
+        for source in
+            fabric_metadata_sources(base, self.transport.resources().settings().version_source)
+        {
             let url = format!(
                 "{}/installer",
                 source.strip_suffix("/loader").unwrap_or(source)
@@ -418,27 +421,37 @@ impl MinecraftApiClient {
         }))
     }
     /// Create a new MinecraftApiClient
-    pub fn new(client: Client, api_provider: &ApiProvider) -> Self {
+    pub fn new(transport: crate::io::download::Downloader, api_provider: &ApiProvider) -> Self {
         Self {
-            client: std::sync::RwLock::new(client),
+            transport,
             api_bases: RwLock::new(ApiBases::new(api_provider)),
             cache: DashMap::new(),
             ttl: Duration::from_secs(60 * 5),
         }
     }
 
-    /// Rebuild the dedicated client after the proxy policy changed.
-    pub fn rebuild_client(&self) -> Result<(), String> {
-        let client = crate::io::net::proxy::builder()
-            .build()
-            .map_err(|error| error.to_string())?;
-        *self.client.write().unwrap() = client;
-        Ok(())
+    pub fn replace_clients(&self, client: Client, http1: Client) {
+        self.transport.replace_clients(client, http1);
+    }
+
+    pub fn http_client(&self) -> Client {
+        self.transport.http_client()
+    }
+
+    pub fn resources(&self) -> &std::sync::Arc<crate::io::download::resources::DownloadResources> {
+        self.transport.resources()
+    }
+
+    pub async fn downloader(&self) -> crate::io::download::Downloader {
+        self.transport.for_bases(self.api_bases_async().await)
     }
 
     #[cfg(test)]
     pub(crate) fn with_test_bases(bases: ApiBases) -> Self {
-        let mut client = Self::new(Client::new(), &ApiProvider::Official);
+        let mut client = Self::new(
+            crate::io::download::Downloader::default(),
+            &ApiProvider::Official,
+        );
         client.api_bases = RwLock::new(bases);
         client
     }
@@ -466,10 +479,10 @@ impl MinecraftApiClient {
         url: &str,
         validate: impl Fn(&[u8]) -> McApiResult<T>,
     ) -> McApiResult<T> {
-        use crate::io::download::resources::{DOWNLOAD_RESOURCES, SourcePreference};
+        use crate::io::download::resources::SourcePreference;
         use futures_util::StreamExt;
         use std::sync::atomic::Ordering;
-        let settings = DOWNLOAD_RESOURCES.settings();
+        let settings = self.resources().settings();
         let manifest = url.ends_with(game::VERSION_MANIFEST_ENDPOINT);
         let preference = if manifest {
             settings.version_source
@@ -479,14 +492,14 @@ impl MinecraftApiClient {
         let urls = self.api_bases.read().await.download_urls(
             url,
             preference,
-            manifest || DOWNLOAD_RESOURCES.official_fast.load(Ordering::Relaxed),
+            manifest || self.resources().official_fast.load(Ordering::Relaxed),
         );
         let mut last_error = None;
         for actual_url in urls {
             let official_manifest =
                 manifest && actual_url.starts_with("https://piston-meta.mojang.com/");
             let result = async {
-                let _lease = DOWNLOAD_RESOURCES.acquire().await;
+                let _lease = self.resources().acquire().await;
                 let started = Instant::now();
                 let timeout = Duration::from_secs(
                     if official_manifest && matches!(preference, SourcePreference::Auto) {
@@ -495,26 +508,22 @@ impl MinecraftApiClient {
                         15
                     },
                 );
-                let response = crate::io::download::send_request(
-                    settings.http_mode,
-                    false,
-                    &actual_url,
-                    None,
-                    Some(timeout),
-                )
-                .await?
-                .error_for_status()?;
+                let response = self
+                    .transport
+                    .send_request(settings.http_mode, false, &actual_url, None, Some(timeout))
+                    .await?
+                    .error_for_status()?;
                 let mut stream = response.bytes_stream();
                 let mut bytes = Vec::new();
                 while let Some(chunk) = stream.next().await {
                     let chunk = chunk?;
-                    DOWNLOAD_RESOURCES.record_bytes(chunk.len());
-                    DOWNLOAD_RESOURCES.throttle(chunk.len()).await;
+                    self.resources().record_bytes(chunk.len());
+                    self.resources().throttle(chunk.len()).await;
                     bytes.extend_from_slice(&chunk);
                 }
                 let value = validate(&bytes)?;
                 if official_manifest {
-                    DOWNLOAD_RESOURCES.official_fast.store(
+                    self.resources().official_fast.store(
                         started.elapsed() < Duration::from_secs(4),
                         Ordering::Relaxed,
                     );
@@ -523,7 +532,7 @@ impl MinecraftApiClient {
             }
             .await;
             if official_manifest && result.is_err() {
-                DOWNLOAD_RESOURCES
+                self.resources()
                     .official_fast
                     .store(false, Ordering::Relaxed);
             }
@@ -662,10 +671,7 @@ impl MinecraftApiClient {
         let mirror = format!(
             "https://bmclapi2.bangbang93.com/neoforge/meta/api/maven/details/releases/net/neoforged/{package}"
         );
-        let urls = match crate::io::download::resources::DOWNLOAD_RESOURCES
-            .settings()
-            .version_source
-        {
+        let urls = match self.resources().settings().version_source {
             crate::io::download::resources::SourcePreference::Official => [official, mirror],
             _ => [mirror, official],
         };
@@ -698,7 +704,9 @@ impl MinecraftApiClient {
         drop(bases);
         let mut last_error = None;
         let mut fabric_versions = None;
-        for source in fabric_metadata_sources(base) {
+        for source in
+            fabric_metadata_sources(base, self.transport.resources().settings().version_source)
+        {
             let mut url = reqwest::Url::parse(source)
                 .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
             url.path_segments_mut()
@@ -748,7 +756,7 @@ impl MinecraftApiClient {
         loader: &str,
         family: FabricFamily,
     ) -> McApiResult<serde_json::Value> {
-        use crate::io::download::resources::{DOWNLOAD_RESOURCES, SourcePreference};
+        use crate::io::download::resources::SourcePreference;
         for value in [version_id, loader] {
             crate::io::files::validate_file_name(value)
                 .map_err(|error| McApiError::InvalidMetadata(error.to_string()))?;
@@ -762,7 +770,7 @@ impl MinecraftApiClient {
         let official = "https://meta.fabricmc.net/v2/versions/loader";
         let mirror = "https://bmclapi2.bangbang93.com/fabric-meta/v2/versions/loader";
         let sources = if configured == official || configured == mirror {
-            match DOWNLOAD_RESOURCES.settings().file_source {
+            match self.resources().settings().file_source {
                 SourcePreference::Official => vec![official, mirror],
                 _ => vec![mirror, official],
             }
@@ -833,16 +841,23 @@ impl MinecraftApiClient {
     pub async fn fetch_with_curseforge<T: DeserializeOwned + Serialize>(
         &self,
         endpoint: &str,
+        api_key: &str,
     ) -> McApiResult<T> {
-        let api_key =
-            crate::secrets::curseforge_api_key().ok_or(McApiError::MissingApiKey("CurseForge"))?;
+        if api_key.trim().is_empty() {
+            return Err(McApiError::MissingApiKey("CurseForge"));
+        }
         let curseforge_base = self.api_bases.read().await.curseforge_base;
         let url = format!("{curseforge_base}/{endpoint}");
+        use sha2::Digest;
+        let cache_key = format!(
+            "curseforge:{:x}:{url}",
+            sha2::Sha256::digest(api_key.as_bytes())
+        );
         let now = Instant::now();
-        if let Some(data) = self.cache_hit(&url) {
+        if let Some(data) = self.cache_hit(&cache_key) {
             return Ok(data);
         }
-        let client = self.client.read().unwrap().clone();
+        let client = self.http_client();
         let data: T = client
             .get(&url)
             .header("x-api-key", api_key)
@@ -852,7 +867,7 @@ impl MinecraftApiClient {
             .error_for_status()?
             .json()
             .await?;
-        self.cache_store(&url, now, &data);
+        self.cache_store(&cache_key, now, &data);
         Ok(data)
     }
 
@@ -861,33 +876,127 @@ impl MinecraftApiClient {
     }
 }
 
-pub async fn fetch_with_modrinth(
-    api_client: &MinecraftApiClient,
-    endpoint: &str,
-) -> Result<serde_json::Value, String> {
-    api_client
-        .fetch_with_modrinth(endpoint)
-        .await
-        .map_err(|err| err.to_string())
-}
-
-pub async fn fetch_with_curseforge(
-    api_client: &MinecraftApiClient,
-    endpoint: &str,
-) -> Result<serde_json::Value, String> {
-    api_client
-        .fetch_with_curseforge(endpoint)
-        .await
-        .map_err(|err| err.to_string())
-}
-
-/// 未配置密钥时界面需要隐藏 CurseForge 选项（对照 CE 的 SupportCurseForge）。
-pub fn curseforge_available() -> bool {
-    crate::secrets::curseforge_available()
-}
-
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn independent_clients_isolate_transport_credentials_and_quotas() {
+        use crate::io::download::resources::DownloadOptions;
+        use axum::{Json, Router, http::HeaderMap, routing::get};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base: &'static str =
+            Box::leak(format!("http://{}", listener.local_addr().unwrap()).into_boxed_str());
+        let server = tokio::spawn(async move {
+            axum::serve(
+                listener,
+                Router::new().route(
+                    "/echo",
+                    get(|headers: HeaderMap| async move {
+                        Json(serde_json::json!({
+                            "agent": headers.get("user-agent").unwrap().to_str().unwrap(),
+                            "key": headers.get("x-api-key").map(|v| v.to_str().unwrap()),
+                        }))
+                    }),
+                ),
+            )
+            .await
+            .unwrap();
+        });
+        let clients = |agent: &str| {
+            (
+                Client::builder()
+                    .no_proxy()
+                    .user_agent(agent)
+                    .build()
+                    .unwrap(),
+                Client::builder()
+                    .no_proxy()
+                    .user_agent(agent)
+                    .http1_only()
+                    .build()
+                    .unwrap(),
+            )
+        };
+        let make = |agent: &str| {
+            let mut bases = ApiBases::new(&ApiProvider::Official);
+            bases.curseforge_base = base;
+            let api = MinecraftApiClient::with_test_bases(bases);
+            let (client, http1) = clients(agent);
+            api.replace_clients(client, http1);
+            api
+        };
+        let first = make("FirstLauncher");
+        let second = make("SecondLauncher");
+        let download = first.downloader().await;
+        first
+            .resources()
+            .configure(DownloadOptions {
+                max_connections: 1,
+                ..Default::default()
+            })
+            .unwrap();
+        let lease = download.resources().acquire().await;
+        assert!(
+            tokio::time::timeout(Duration::from_millis(10), first.resources().acquire())
+                .await
+                .is_err()
+        );
+        let other_lease = second.resources().acquire().await;
+        assert_eq!(second.resources().settings().max_connections, 64);
+        drop((lease, other_lease));
+        let echo = format!("{base}/echo");
+        let metadata: serde_json::Value =
+            serde_json::from_slice(&first.get_bytes(&echo).await.unwrap()).unwrap();
+        assert_eq!(
+            metadata,
+            serde_json::json!({"agent": "FirstLauncher", "key": null})
+        );
+        let reply: serde_json::Value = first
+            .fetch_with_curseforge("echo", "first-key")
+            .await
+            .unwrap();
+        assert_eq!(
+            reply,
+            serde_json::json!({"agent": "FirstLauncher", "key": "first-key"})
+        );
+        let reply: serde_json::Value = first
+            .fetch_with_curseforge("echo", "another-key")
+            .await
+            .unwrap();
+        assert_eq!(reply["key"], "another-key");
+        let reply: serde_json::Value = first.get(&echo, true).await.unwrap();
+        assert_eq!(reply["key"], serde_json::Value::Null);
+        let reply: serde_json::Value = second
+            .fetch_with_curseforge("echo", "second-key")
+            .await
+            .unwrap();
+        assert_eq!(
+            reply,
+            serde_json::json!({"agent": "SecondLauncher", "key": "second-key"})
+        );
+        let (client, http1) = clients("UpdatedLauncher");
+        first.replace_clients(client, http1);
+        let reply: serde_json::Value = download
+            .http_client()
+            .get(&echo)
+            .send()
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
+        assert_eq!(
+            reply,
+            serde_json::json!({"agent": "UpdatedLauncher", "key": null})
+        );
+        let reply: serde_json::Value =
+            serde_json::from_slice(&second.get_bytes(&echo).await.unwrap()).unwrap();
+        assert_eq!(
+            reply,
+            serde_json::json!({"agent": "SecondLauncher", "key": null})
+        );
+        server.abort();
+    }
+
     #[test]
     fn neoforge_versions_match_ce_game_mapping() {
         use super::*;

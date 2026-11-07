@@ -3,7 +3,7 @@ use crate::config::{current_instance, manager::ConfigManager};
 #[tauri::command]
 pub async fn get_launch_arguments(
     instance_directory: Option<std::path::PathBuf>,
-) -> Result<pcl_core::minecraft::launch::arguments::LaunchArguments, String> {
+) -> Result<crate::config::arguments::LaunchArguments, String> {
     let state = ConfigManager::instance().app_state.lock().await;
     if let Some(path) = instance_directory {
         current_instance(&state, &path).map_err(|error| error.to_string())?;
@@ -13,17 +13,18 @@ pub async fn get_launch_arguments(
             .cloned()
             .unwrap_or_default())
     } else {
-        Ok(state.launch_arguments.clone().unwrap_or_else(
-            pcl_core::minecraft::launch::arguments::LaunchArguments::global_default,
-        ))
+        Ok(state
+            .launch_arguments
+            .clone()
+            .unwrap_or_else(crate::config::arguments::LaunchArguments::global_default))
     }
 }
 
 #[tauri::command]
 pub async fn set_launch_arguments(
     instance_directory: Option<std::path::PathBuf>,
-    settings: pcl_core::minecraft::launch::arguments::LaunchArguments,
-) -> Result<pcl_core::minecraft::launch::arguments::LaunchArguments, String> {
+    settings: crate::config::arguments::LaunchArguments,
+) -> Result<crate::config::arguments::LaunchArguments, String> {
     tauri::async_runtime::spawn_blocking(move || {
         ConfigManager::instance().update(|state| {
             crate::config::arguments::update(state, instance_directory.as_deref(), settings)
@@ -36,7 +37,7 @@ pub async fn set_launch_arguments(
 #[tauri::command]
 pub async fn get_instance_launch_settings(
     instance_directory: std::path::PathBuf,
-) -> Result<pcl_core::minecraft::launch::settings::InstanceLaunchSettings, String> {
+) -> Result<crate::config::launch_settings::InstanceLaunchSettings, String> {
     let state = ConfigManager::instance().app_state.lock().await;
     current_instance(&state, &instance_directory).map_err(|error| error.to_string())?;
     Ok(state
@@ -49,8 +50,8 @@ pub async fn get_instance_launch_settings(
 #[tauri::command]
 pub async fn set_instance_launch_settings(
     instance_directory: std::path::PathBuf,
-    settings: pcl_core::minecraft::launch::settings::InstanceLaunchSettings,
-) -> Result<pcl_core::minecraft::launch::settings::InstanceLaunchSettings, String> {
+    settings: crate::config::launch_settings::InstanceLaunchSettings,
+) -> Result<crate::config::launch_settings::InstanceLaunchSettings, String> {
     tauri::async_runtime::spawn_blocking(move || {
         ConfigManager::instance().update(|state| {
             crate::config::launch_settings::update(state, &instance_directory, settings)
@@ -70,7 +71,7 @@ mod tests {
                 .unwrap();
         assert_eq!(
             ui["PageSetupLaunch"]["TextAdvanceJvm"],
-            pcl_core::minecraft::launch::arguments::DEFAULT_JVM
+            crate::config::arguments::DEFAULT_JVM
         );
     }
 }

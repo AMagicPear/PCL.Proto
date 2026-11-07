@@ -13,8 +13,6 @@ use super::yggdrasil::YggdrasilProfile;
 use super::{AuthError, AuthResult, AuthenticationResult, Candidate};
 use crate::minecraft::profile::{McProfile, ProfileType};
 
-/// CE 的 `_BuiltInClientIds`。
-const BUILT_IN_CLIENT_IDS: &[(&str, &str)] = &[("littleskin.cn", "1514")];
 /// 设备码流程申请的 scope，对照 CE 的 `_Scopes`。
 const SCOPES: &str = "openid offline_access Yggdrasil.PlayerProfiles.Select Yggdrasil.Server.Join";
 /// 元数据必须支持的 scope，对照 CE 的 `_scopesRequired`。
@@ -76,14 +74,6 @@ pub enum Login {
         candidates: Vec<Candidate>,
         oauth: AuthorizeResult,
     },
-}
-
-pub fn built_in_client_id(host: &str) -> Option<&'static str> {
-    let normalized = host.trim().trim_end_matches('.');
-    BUILT_IN_CLIENT_IDS
-        .iter()
-        .find(|(candidate, _)| candidate.eq_ignore_ascii_case(normalized))
-        .map(|(_, client_id)| *client_id)
 }
 
 /// authlib-injector 元数据里的 OpenID 发现地址。
@@ -216,26 +206,12 @@ pub struct Connect {
 
 impl Connect {
     pub async fn new(
+        client: reqwest::Client,
         discovery_address: &str,
         client_id: Option<&str>,
         server: Option<&str>,
     ) -> AuthResult<Self> {
-        let client = super::http_client()?;
-        // CE 的优先级：调用方指定的 ClientId → 按服务器主机名匹配的内置 ID → 发现文档的 shared_client_id。
-        let client_id = client_id
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(str::to_owned)
-            .or_else(|| {
-                reqwest::Url::parse(server.unwrap_or(discovery_address))
-                    .ok()
-                    .and_then(|url| {
-                        url.host_str()
-                            .and_then(built_in_client_id)
-                            .map(str::to_owned)
-                    })
-            });
-        let discovery = initialize(&client, discovery_address, client_id.as_deref()).await?;
+        let discovery = initialize(&client, discovery_address, client_id).await?;
         Ok(Self {
             client,
             discovery,
@@ -588,13 +564,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn built_in_client_ids_match_ce() {
-        assert_eq!(built_in_client_id("littleskin.cn"), Some("1514"));
-        assert_eq!(built_in_client_id("LittleSkin.cn."), Some("1514"));
-        assert_eq!(built_in_client_id("example.org"), None);
-    }
-
-    #[test]
     fn discovery_address_comes_from_authlib_metadata() {
         let metadata = serde_json::json!({
             "meta": { "serverName": "LittleSkin", "feature.openid_configuration_url": "https://auth.littleskin.cn/.well-known/openid-configuration" }
@@ -642,7 +611,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "需要网络与真实认证服务器"]
     async fn littleskin_supports_device_flow() {
-        let client = super::super::http_client().unwrap();
+        let client = reqwest::Client::new();
         let api_root = super::super::authlib::resolve_api_location(
             &client,
             "https://littleskin.cn/api/yggdrasil",
@@ -665,7 +634,7 @@ mod tests {
             .host_str()
             .unwrap()
             .to_owned();
-        let built_in = super::built_in_client_id(&host);
+        let built_in = host.eq_ignore_ascii_case("littleskin.cn").then_some("1514");
         assert_eq!(built_in, Some("1514"));
         let resolved = super::initialize(&client, &discovery, built_in)
             .await
@@ -676,7 +645,7 @@ mod tests {
         assert!(!resolved.jwks_uri.is_empty());
 
         // 设备码请求本身也要能成功（不完成登录，用户码随后过期）。
-        let connect = super::Connect::new(&discovery, built_in, Some(&api_root))
+        let connect = super::Connect::new(client.clone(), &discovery, built_in, Some(&api_root))
             .await
             .unwrap();
         assert_eq!(

@@ -2,12 +2,13 @@
 //!
 //! 档案读写会阻塞式锁住配置，所以统一放进 `spawn_blocking`。
 
+use crate::config::manager::ConfigManager;
 use serde::{Deserialize, Serialize};
 
 use crate::config::profiles as service;
 use crate::config::profiles::blocking;
 use crate::login::{self, LoginRequest, View};
-use pcl_core::minecraft::profile::auth::{AuthError, AuthResult, authlib, connect, microsoft};
+use pcl_core::minecraft::profile::auth::{AuthError, AuthResult, authlib, connect};
 use pcl_core::minecraft::profile::{McProfile, ProfileType, SafeProfile, uuid};
 
 /// 档案列表与当前选择，界面一次拿全。
@@ -170,7 +171,7 @@ pub async fn rename_microsoft_profile(
     if profile.profile_type != ProfileType::Microsoft {
         return Err(AuthError::configuration("只有正版账号能在启动器里改名"));
     }
-    let provider = microsoft::MicrosoftProvider::new()?;
+    let provider = crate::secrets::microsoft_provider()?;
     let renamed = provider.change_name(&profile.access_token, name).await?;
     blocking(move || {
         let mut updated = profile;
@@ -186,13 +187,13 @@ pub async fn rename_microsoft_profile(
 #[tauri::command]
 pub async fn probe_auth_server(address: String) -> Result<AuthServerInfo, AuthError> {
     let address = address.trim().to_owned();
-    let client = pcl_core::minecraft::profile::auth::http_client()?;
+    let client = ConfigManager::instance().api_client.http_client();
     let api_location = authlib::resolve_api_location(&client, &address).await;
     let normalized = authlib::normalize_server(&api_location)?;
     // CE：主机名命中内置 ClientId 时直接认为支持 OAuth。
     let built_in = reqwest::Url::parse(&normalized).ok().and_then(|url| {
         url.host_str()
-            .and_then(connect::built_in_client_id)
+            .and_then(crate::secrets::built_in_client_id)
             .map(str::to_owned)
     });
     let server_name = authlib::server_name(&client, &normalized).await;

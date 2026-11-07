@@ -2,12 +2,11 @@
 
 use std::sync::Arc;
 
+use crate::config::arguments::LaunchArguments;
 use pcl_core::minecraft::java::JavaEntry;
-use pcl_core::minecraft::launch::arguments::LaunchArguments;
 use pcl_core::minecraft::launch::launcher::{
     GameLaunchError, LaunchOption, LaunchRequest, LauncherBrand,
 };
-use pcl_core::runtime::RuntimePaths;
 
 use crate::config::manager::ConfigManager;
 use crate::config::metadata::constants::{APP_VERSION, LAUNCHER_NAME};
@@ -20,21 +19,15 @@ pub fn request(state: &AppState, java: Arc<JavaEntry>) -> Result<LaunchOption, G
     let Some(account) = state.profile.current() else {
         return Err(GameLaunchError::MissingAccount);
     };
-    let game_directory = pcl_core::minecraft::instance::isolation::directory(
-        &state.instance_isolation,
-        game_instance,
-    )
-    .to_owned();
+    let game_directory =
+        crate::config::isolation::directory(&state.instance_isolation, game_instance).to_owned();
     let (max_memory, initial_memory) = match state
         .instance_memory_settings
         .get(&game_instance.directory)
         .or(state.memory_settings.as_ref())
     {
         Some(settings) => {
-            let available = if matches!(
-                settings,
-                pcl_core::minecraft::launch::memory::MemorySettings::Auto
-            ) {
+            let available = if matches!(settings, crate::config::memory::MemorySettings::Auto) {
                 match sysinfo::System::new() {
                     Ok(mut system) => {
                         system.refresh_memory();
@@ -45,7 +38,7 @@ pub fn request(state: &AppState, java: Arc<JavaEntry>) -> Result<LaunchOption, G
             } else {
                 0
             };
-            pcl_core::minecraft::launch::memory::resolve(
+            crate::config::memory::resolve(
                 settings,
                 available,
                 game_instance,
@@ -64,15 +57,12 @@ pub fn request(state: &AppState, java: Arc<JavaEntry>) -> Result<LaunchOption, G
         .instance_launch_arguments
         .get(&game_instance.directory)
         .map(|instance| instance.effective(&global))
-        .unwrap_or(global);
+        .unwrap_or_else(|| global.effective(&global));
     let window = state.window_settings.as_ref();
     let custom = window.filter(|settings| settings.mode == WindowMode::Custom);
     let config = ConfigManager::instance();
     LaunchOption::new(LaunchRequest {
-        paths: RuntimePaths {
-            config_dir: config.config_dir().to_path_buf(),
-            java_runtime_dir: config.java_runtime_dir(),
-        },
+        wrapper_temp_dir: config.config_dir().to_path_buf(),
         brand: LauncherBrand {
             name: LAUNCHER_NAME.into(),
             version: APP_VERSION.into(),
@@ -86,7 +76,6 @@ pub fn request(state: &AppState, java: Arc<JavaEntry>) -> Result<LaunchOption, G
         initial_memory,
         width: custom.map(|settings| settings.width as usize),
         height: custom.map(|settings| settings.height as usize),
-        launcher_size: window.is_some_and(|settings| settings.mode == WindowMode::Launcher),
         arguments,
         extras: crate::config::launch_settings::resolve_for(state, Some(&game_instance.directory)),
     })

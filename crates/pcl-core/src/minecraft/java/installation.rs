@@ -319,13 +319,6 @@ fn architecture_of(value: &str) -> Option<Architecture> {
     }
 }
 
-pub fn launcher_directory() -> anyhow::Result<PathBuf> {
-    Ok(std::env::current_exe()?
-        .parent()
-        .context("Missing launcher directory")?
-        .to_owned())
-}
-
 pub(super) fn command_output(mut command: Command) -> anyhow::Result<std::process::Output> {
     use std::io::Read;
     #[cfg(windows)]

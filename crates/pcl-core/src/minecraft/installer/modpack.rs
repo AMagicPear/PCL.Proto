@@ -324,12 +324,13 @@ pub async fn inspect_modpack(path: PathBuf) -> Result<PackInfo, String> {
 }
 
 pub async fn prepare_online_modpack(
+    downloader: &crate::io::download::Downloader,
     info: DownloadFile,
     task_id: i32,
     on_event: EventSink<TaskItemReport>,
 ) -> Result<OnlinePackInfo, String> {
     let prepared = crate::io::download::tasks::run(task_id, async {
-        prepare_online_archive(info, task_id, &on_event)
+        prepare_online_archive(downloader, info, task_id, &on_event)
             .await
             .map_err(|e| format!("{e:#}"))
     })
@@ -344,6 +345,7 @@ pub async fn prepare_online_modpack(
 }
 
 async fn prepare_online_archive(
+    downloader: &crate::io::download::Downloader,
     info: DownloadFile,
     task_id: i32,
     on_event: &EventSink<TaskItemReport>,
@@ -351,7 +353,14 @@ async fn prepare_online_archive(
     crate::minecraft::export::resource::validate(&info)?;
     let directory = tempfile::tempdir()?;
     let path = directory.path().join("modpack.zip");
-    crate::minecraft::export::resource::download_to(info, path.clone(), task_id, on_event).await?;
+    crate::minecraft::export::resource::download_to(
+        downloader,
+        info,
+        path.clone(),
+        task_id,
+        on_event,
+    )
+    .await?;
     crate::io::download::tasks::blocking(task_id, move || {
         let pack = Modpack::open(&path)?;
         Ok(PreparedPack {
@@ -378,9 +387,9 @@ async fn install_pack(
     install_java: bool,
     task_id: i32,
     on_event: &EventSink<TaskItemReport>,
-    java: &crate::minecraft::java::JavaState,
-    paths: &crate::runtime::RuntimePaths,
-    forge_installer: &Path,
+    java: &[crate::minecraft::java::JavaEntry],
+    java_runtime_dir: &Path,
+    forge_installer: Option<&Path>,
 ) -> anyhow::Result<()> {
     let available: HashSet<_> = pack.info().optional_files.into_iter().collect();
     ensure_optional(&available, &optional_files)?;
@@ -396,7 +405,7 @@ async fn install_pack(
         task_id,
         on_event,
         java,
-        paths,
+        java_runtime_dir,
         forge_installer,
     )
     .await?;
@@ -413,9 +422,9 @@ pub async fn install_modpack(
     install_java: bool,
     task_id: i32,
     on_event: EventSink<TaskItemReport>,
-    java: &crate::minecraft::java::JavaState,
-    paths: &crate::runtime::RuntimePaths,
-    forge_installer: &Path,
+    java: &[crate::minecraft::java::JavaEntry],
+    java_runtime_dir: &Path,
+    forge_installer: Option<&Path>,
 ) -> Result<(), String> {
     crate::io::download::tasks::run(task_id, async {
         let pack = crate::io::download::tasks::blocking(task_id, move || Modpack::open(&path))
@@ -432,7 +441,7 @@ pub async fn install_modpack(
             task_id,
             &on_event,
             java,
-            paths,
+            java_runtime_dir,
             forge_installer,
         )
         .await
@@ -451,9 +460,9 @@ pub async fn install_online_modpack(
     install_java: bool,
     task_id: i32,
     on_event: EventSink<TaskItemReport>,
-    java: &crate::minecraft::java::JavaState,
-    paths: &crate::runtime::RuntimePaths,
-    forge_installer: &Path,
+    java: &[crate::minecraft::java::JavaEntry],
+    java_runtime_dir: &Path,
+    forge_installer: Option<&Path>,
 ) -> Result<(), String> {
     let prepared = PREPARED
         .lock()
@@ -472,7 +481,7 @@ pub async fn install_online_modpack(
             task_id,
             &on_event,
             java,
-            paths,
+            java_runtime_dir,
             forge_installer,
         )
         .await
@@ -615,7 +624,14 @@ mod tests {
             path: None,
         };
         let events = event_sink(|_| ());
-        let prepared = prepare_online_archive(info, -2000, &events).await.unwrap();
+        let prepared = prepare_online_archive(
+            &crate::io::download::Downloader::default(),
+            info,
+            -2000,
+            &events,
+        )
+        .await
+        .unwrap();
         assert_eq!(prepared.pack.info().minecraft, "1.20.1");
         assert!(matches!(
             prepared.pack.info().loader.unwrap().family,
@@ -624,7 +640,7 @@ mod tests {
         let temporary_path = prepared._directory.path().to_owned();
         let repo = tempfile::tempdir_in(&root).unwrap();
         let client = MinecraftApiClient::new(
-            reqwest::Client::new(),
+            crate::io::download::Downloader::default(),
             &crate::io::net::http::api_client::ApiProvider::Official,
         );
         let PreparedPack { pack, _directory } = prepared;
@@ -637,12 +653,9 @@ mod tests {
             false,
             -2000,
             &events,
-            &crate::minecraft::java::JavaState::default(),
-            &crate::runtime::RuntimePaths {
-                config_dir: root.clone(),
-                java_runtime_dir: root.join("jre"),
-            },
-            &std::env::temp_dir().join("forge-installer.jar"),
+            &[],
+            &root.join("jre"),
+            None,
         )
         .await
         .unwrap();

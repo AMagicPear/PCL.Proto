@@ -1,8 +1,6 @@
 #[cfg(windows)]
 use super::installation::command_output;
-use super::{
-    JavaEntry, JavaInstallation, JavaManager, JavaSource, java_binary, launcher_directory,
-};
+use super::{JavaEntry, JavaInstallation, JavaManager, JavaSource, java_binary};
 #[cfg(windows)]
 use std::process::Command;
 use std::{
@@ -59,10 +57,7 @@ const EXCLUDED: &[&str] = &[
     ".git",
 ];
 
-pub(crate) async fn scan(
-    known: Vec<JavaEntry>,
-    roots: Vec<PathBuf>,
-) -> Result<Vec<JavaEntry>, String> {
+pub async fn scan(known: Vec<JavaEntry>, roots: Vec<PathBuf>) -> Result<Vec<JavaEntry>, String> {
     tokio::task::spawn_blocking(move || scan_sync(known, roots))
         .await
         .map_err(|e| format!("Java scan failed: {e}"))
@@ -92,14 +87,6 @@ fn scan_sync(known: Vec<JavaEntry>, extra_roots: Vec<PathBuf>) -> Vec<JavaEntry>
             home.join("Library/Java/JavaVirtualMachines"),
             home.join("Library/Application Support/minecraft/runtime"),
             home.join("Applications"),
-        ]);
-    }
-    if let Ok(directory) = launcher_directory() {
-        roots.extend([
-            directory.join("PCL"),
-            directory.join("runtime"),
-            directory.join("jre"),
-            directory.join(".minecraft/runtime"),
         ]);
     }
     #[cfg(target_os = "macos")]

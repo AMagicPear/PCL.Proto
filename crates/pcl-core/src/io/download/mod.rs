@@ -50,7 +50,8 @@ impl Drop for PartialFile {
 #[derive(Clone)]
 pub struct Downloader {
     resources: Arc<DownloadResources>,
-    bases: crate::io::net::http::api_client::ApiBases,
+    clients: Arc<std::sync::RwLock<(reqwest::Client, reqwest::Client)>>,
+    pub(crate) bases: crate::io::net::http::api_client::ApiBases,
 }
 
 impl Default for Downloader {
@@ -67,54 +68,12 @@ mod range;
 pub mod resources;
 pub mod tasks;
 
-use resources::{DOWNLOAD_RESOURCES, DownloadResources, HttpMode};
-use std::sync::{Arc, LazyLock, atomic::Ordering};
+use resources::{DownloadResources, HttpMode};
+use std::sync::{Arc, atomic::Ordering};
 use tokio::io::BufWriter;
 
 pub(super) const SMALL_FILE_THRESHOLD: u64 = 4 * 1024 * 1024;
 type ProgressSink<'a> = Option<(&'a DownloadConfig, &'a mpsc::Sender<ProgressUpdate>)>;
-
-struct DownloadClients {
-    generation: u64,
-    multiplexed: reqwest::Client,
-    http1: reqwest::Client,
-}
-static CLIENTS: LazyLock<std::sync::RwLock<DownloadClients>> =
-    LazyLock::new(|| std::sync::RwLock::new(build_clients()));
-
-fn build_clients() -> DownloadClients {
-    let build = |http1| {
-        let mut builder = crate::io::net::proxy::builder()
-            .connect_timeout(Duration::from_secs(15))
-            .read_timeout(Duration::from_secs(15))
-            .pool_max_idle_per_host(64)
-            .pool_idle_timeout(Duration::from_secs(90));
-        if http1 {
-            builder = builder.http1_only();
-        }
-        builder.build().expect("static download HTTP configuration")
-    };
-    DownloadClients {
-        generation: crate::io::net::proxy::generation(),
-        multiplexed: build(false),
-        http1: build(true),
-    }
-}
-
-/// Proxy changes replace both clients outside in-flight requests.
-fn clients() -> (reqwest::Client, reqwest::Client) {
-    {
-        let guard = CLIENTS.read().unwrap();
-        if guard.generation == crate::io::net::proxy::generation() {
-            return (guard.multiplexed.clone(), guard.http1.clone());
-        }
-    }
-    let mut guard = CLIENTS.write().unwrap();
-    if guard.generation != crate::io::net::proxy::generation() {
-        *guard = build_clients();
-    }
-    (guard.multiplexed.clone(), guard.http1.clone())
-}
 
 impl Downloader {
     pub(crate) fn source_urls(&self, url: &str) -> Vec<String> {
@@ -127,9 +86,44 @@ impl Downloader {
     pub fn with_bases(bases: crate::io::net::http::api_client::ApiBases) -> Self {
         Self {
             bases,
-            resources: DOWNLOAD_RESOURCES.clone(),
+            resources: Arc::new(DownloadResources::default()),
+            clients: Arc::new(std::sync::RwLock::new((
+                default_client(false),
+                default_client(true),
+            ))),
         }
     }
+    pub fn new(client: reqwest::Client, http1: reqwest::Client) -> Self {
+        Self {
+            clients: Arc::new(std::sync::RwLock::new((client, http1))),
+            resources: Arc::new(DownloadResources::default()),
+            bases: crate::io::net::http::api_client::ApiBases::new(
+                &crate::io::net::http::api_client::ApiProvider::Official,
+            ),
+        }
+    }
+
+    /// Clones share transport, bandwidth budget and connection quota.
+    pub fn resources(&self) -> &Arc<DownloadResources> {
+        &self.resources
+    }
+
+    pub fn http_client(&self) -> reqwest::Client {
+        self.clients.read().unwrap().0.clone()
+    }
+
+    /// In-flight requests finish on their original client.
+    pub fn replace_clients(&self, client: reqwest::Client, http1: reqwest::Client) {
+        *self.clients.write().unwrap() = (client, http1);
+    }
+
+    pub fn for_bases(&self, bases: crate::io::net::http::api_client::ApiBases) -> Self {
+        Self {
+            bases,
+            ..self.clone()
+        }
+    }
+
     pub async fn start_download(
         &self,
         options: DownloadConfig,
@@ -334,15 +328,16 @@ impl Downloader {
         verify: bool,
     ) -> Result<u64, McApiError> {
         let _lease = self.resources.acquire().await;
-        let response = send_request(
-            self.resources.settings().http_mode,
-            info.size == 0 || info.size >= SMALL_FILE_THRESHOLD,
-            url,
-            None,
-            None,
-        )
-        .await?
-        .error_for_status()?;
+        let response = self
+            .send_request(
+                self.resources.settings().http_mode,
+                info.size == 0 || info.size >= SMALL_FILE_THRESHOLD,
+                url,
+                None,
+                None,
+            )
+            .await?
+            .error_for_status()?;
         let expected = (info.size > 0)
             .then_some(info.size)
             .or(response.content_length());
@@ -391,45 +386,63 @@ impl Downloader {
         Ok(bytes)
     }
 }
-pub async fn send_request(
-    mode: HttpMode,
-    large: bool,
-    url: &str,
-    range: Option<(u64, u64)>,
-    timeout: Option<Duration>,
-) -> Result<reqwest::Response, reqwest::Error> {
-    let send = |client: &reqwest::Client| {
-        let mut request = client
-            .get(url)
-            .header(reqwest::header::ACCEPT_ENCODING, "identity");
-        if let Some((start, end)) = range {
-            request = request.header(reqwest::header::RANGE, format!("bytes={start}-{end}"));
+impl Downloader {
+    pub async fn send_request(
+        &self,
+        mode: HttpMode,
+        large: bool,
+        url: &str,
+        range: Option<(u64, u64)>,
+        timeout: Option<Duration>,
+    ) -> Result<reqwest::Response, reqwest::Error> {
+        let send = |client: &reqwest::Client| {
+            let mut request = client
+                .get(url)
+                .header(reqwest::header::ACCEPT_ENCODING, "identity");
+            if let Some((start, end)) = range {
+                request = request.header(reqwest::header::RANGE, format!("bytes={start}-{end}"));
+            }
+            if let Some(timeout) = timeout {
+                request = request.timeout(timeout);
+            }
+            request.send()
+        };
+        let (multiplexed, http1) = self.clients.read().unwrap().clone();
+        let client = match mode {
+            HttpMode::Http11 => &http1,
+            HttpMode::Auto if large => &http1,
+            _ => &multiplexed,
+        };
+        let can_fallback = !std::ptr::eq(client, &http1);
+        match send(client).await {
+            Err(error) if can_fallback && !error.is_timeout() => {
+                log::debug!("HTTP negotiation failed for {url}, retrying HTTP/1.1: {error}");
+                send(&http1).await
+            }
+            result => result,
         }
-        if let Some(timeout) = timeout {
-            request = request.timeout(timeout);
-        }
-        request.send()
-    };
-    let (multiplexed, http1) = clients();
-    let client = match mode {
-        HttpMode::Http11 => &http1,
-        HttpMode::Auto if large => &http1,
-        _ => &multiplexed,
-    };
-    let can_fallback = !std::ptr::eq(client, &http1);
-    match send(client).await {
-        Err(error) if can_fallback && !error.is_timeout() => {
-            log::debug!("HTTP negotiation failed for {url}, retrying HTTP/1.1: {error}");
-            send(&http1).await
-        }
-        result => result,
     }
 }
+
+fn default_client(http1: bool) -> reqwest::Client {
+    let mut builder = reqwest::Client::builder()
+        .user_agent(concat!("pcl-core/", env!("CARGO_PKG_VERSION")))
+        .connect_timeout(Duration::from_secs(15))
+        .read_timeout(Duration::from_secs(15))
+        .pool_max_idle_per_host(64)
+        .pool_idle_timeout(Duration::from_secs(90));
+    if http1 {
+        builder = builder.http1_only();
+    }
+    builder.build().expect("static download HTTP configuration")
+}
+
 fn partial_file(path: &Path) -> PartialFile {
     PartialFile(path.with_file_name(format!(".pcl-download-{}.part", uuid::Uuid::new_v4())))
 }
 
 async fn custom_transfer_checked(
+    downloader: &Downloader,
     url: &str,
     destination: &Path,
     min_size: u64,
@@ -447,7 +460,7 @@ async fn custom_transfer_checked(
     crate::io::files::validate_file_name(name)?;
     ensure!(!destination.try_exists()?, "Destination already exists");
     let partial = PartialFile(parent.join(format!(".pcl-custom-{}.part", uuid::Uuid::new_v4())));
-    Downloader::default()
+    downloader
         .download_with_progress(
             DownloadConfig {
                 file_index: 0,
@@ -473,6 +486,7 @@ async fn custom_transfer_checked(
 }
 
 async fn run_custom_download(
+    downloader: &Downloader,
     url: String,
     destination: PathBuf,
     min_size: u64,
@@ -480,18 +494,24 @@ async fn run_custom_download(
     on_event: EventSink<TaskItemReport>,
 ) -> Result<(), String> {
     tasks::run(task_id, async {
-        custom_transfer_checked(&url, &destination, min_size, |bytes, size, speed| {
-            on_event(TaskItemReport {
-                task_id,
-                item_id: 0,
-                files_remaining: 1,
-                progress: size
-                    .filter(|size| *size > 0)
-                    .map_or(0.0, |size| (bytes as f64 / size as f64).min(1.0)),
-                status: TaskStatus::Running,
-                speed: Some(speed),
-            });
-        })
+        custom_transfer_checked(
+            downloader,
+            &url,
+            &destination,
+            min_size,
+            |bytes, size, speed| {
+                on_event(TaskItemReport {
+                    task_id,
+                    item_id: 0,
+                    files_remaining: 1,
+                    progress: size
+                        .filter(|size| *size > 0)
+                        .map_or(0.0, |size| (bytes as f64 / size as f64).min(1.0)),
+                    status: TaskStatus::Running,
+                    speed: Some(speed),
+                });
+            },
+        )
         .await
         .map_err(|error| format!("{error:#}"))
     })
@@ -499,6 +519,7 @@ async fn run_custom_download(
 }
 
 pub async fn download_fabric_installer(
+    downloader: &Downloader,
     family: crate::io::net::http::api_client::FabricFamily,
     version: String,
     destination: PathBuf,
@@ -508,16 +529,17 @@ pub async fn download_fabric_installer(
     let url = family
         .installer_url(&version)
         .map_err(|error| error.to_string())?;
-    run_custom_download(url, destination, 64 * 1024, task_id, on_event).await
+    run_custom_download(downloader, url, destination, 64 * 1024, task_id, on_event).await
 }
 
 pub async fn download_custom_file(
+    downloader: &Downloader,
     url: String,
     destination: PathBuf,
     task_id: i32,
     on_event: EventSink<TaskItemReport>,
 ) -> Result<(), String> {
-    run_custom_download(url, destination, 0, task_id, on_event).await
+    run_custom_download(downloader, url, destination, 0, task_id, on_event).await
 }
 
 pub async fn open_custom_download_folder(directory: PathBuf) -> Result<(), String> {

@@ -1,7 +1,6 @@
 pub mod files;
 pub mod folder;
 pub mod info;
-pub mod isolation;
 
 pub use info::{McInstanceInfo, McInstanceState, instance_state};
 
@@ -247,7 +246,7 @@ impl McInstance {
         Ok(serde_json::from_value(value)?)
     }
 
-    pub(crate) fn resolved_metadata(&self) -> anyhow::Result<Value> {
+    pub fn resolved_metadata(&self) -> anyhow::Result<Value> {
         let chain = read_version_chain(&self.json_path, &self.global_dir)?;
         merge_metadata(chain.iter().map(|(_, value)| value))
     }
@@ -589,16 +588,6 @@ mod inheritance_tests {
         fs::write(version.join("test.jar"), b"jar").unwrap();
         let repo = McFolder::new("test", root.clone());
         let instance = McInstance::from_version_folder(&version, &repo).unwrap();
-        assert!(
-            crate::minecraft::java::preference::current_instance(Some(&instance), &version).is_ok()
-        );
-        assert!(
-            crate::minecraft::java::preference::current_instance(
-                Some(&instance),
-                &root.join("other")
-            )
-            .is_err()
-        );
         assert_eq!(
             prepare_shortcut_directory(&instance, &instance.directory, McInstanceFolder::Instance)
                 .unwrap(),

@@ -71,7 +71,7 @@ pub async fn start(profile: &McProfile) -> Result<SkinServer, String> {
     let metadata = json!({
         "signaturePublickey": public_key,
         "skinDomains": ["127.0.0.1", "localhost"],
-        "meta": {"serverName": "PCL.Proto", "implementationName": "PCL.Proto", "implementationVersion": "1.0", "feature.non_email_login": true}
+        "meta": {"serverName": "Offline skins", "implementationName": "pcl-core", "implementationVersion": env!("CARGO_PKG_VERSION"), "feature.non_email_login": true}
     });
     let mut skin_texture = json!({"url": format!("{url}/textures/skin.png")});
     if skin.slim {

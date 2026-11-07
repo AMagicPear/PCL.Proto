@@ -135,7 +135,7 @@ async fn custom_transfer(
     destination: &Path,
     on_progress: impl Fn(u64, Option<u64>, f64),
 ) -> anyhow::Result<()> {
-    custom_transfer_checked(url, destination, 0, on_progress).await
+    custom_transfer_checked(&Downloader::default(), url, destination, 0, on_progress).await
 }
 
 #[tokio::test]
@@ -143,9 +143,15 @@ async fn installer_minimum_size_does_not_publish_short_files() {
     let server = Server::new(payload(1024), Behavior::Ignore, Duration::ZERO).await;
     let temp = Temp::new();
     assert!(
-        custom_transfer_checked(&server.url, &temp.file(), 64 * 1024, |_, _, _| {})
-            .await
-            .is_err()
+        custom_transfer_checked(
+            &Downloader::default(),
+            &server.url,
+            &temp.file(),
+            64 * 1024,
+            |_, _, _| {}
+        )
+        .await
+        .is_err()
     );
     assert!(!temp.file().exists());
     temp.assert_clean();
@@ -307,7 +313,7 @@ fn downloader(max: usize, file: usize) -> Downloader {
     };
     downloader
         .resources
-        .configure(resources::DownloadSettings {
+        .configure(resources::DownloadOptions {
             max_connections: max,
             file_connections: file,
             ..Default::default()
@@ -460,7 +466,10 @@ async fn per_file_limit_bounds_workers_even_with_a_larger_global_quota() {
 #[ignore = "Downloads the official 1.21.1 client into a disposable directory"]
 async fn official_large_client_range_smoke() {
     use crate::io::net::http::api_client::{ApiProvider, MinecraftApiClient};
-    let client = MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::Official);
+    let client = MinecraftApiClient::new(
+        crate::io::download::Downloader::default(),
+        &ApiProvider::Official,
+    );
     let metadata = client.get_version_metadata("1.21.1").await.unwrap();
     let info: DownloadFile =
         serde_json::from_value(metadata["downloads"]["client"].clone()).unwrap();

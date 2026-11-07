@@ -144,13 +144,6 @@ impl AuthenticationResult {
     }
 }
 
-/// HTTP client that honours the launcher proxy policy (CE 的 `NetworkService.GetClient`)。
-pub fn http_client() -> AuthResult<reqwest::Client> {
-    crate::io::net::proxy::builder()
-        .build()
-        .map_err(|error| AuthError::network(error.to_string()))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

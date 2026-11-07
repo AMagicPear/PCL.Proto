@@ -1,4 +1,4 @@
-use crate::minecraft::{instance::McInstance, mod_loader::ModLoaderType};
+use pcl_core::minecraft::{instance::McInstance, mod_loader::ModLoaderType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn automatic_counts_mods_in_the_resolved_game_directory() {
-        use crate::minecraft::instance::InstanceJava;
+        use pcl_core::minecraft::instance::InstanceJava;
         let root = std::env::temp_dir().join(format!("pcl-memory-dir-{}", uuid::Uuid::new_v4()));
         let instance_dir = root.join("version");
         let shared_dir = root.join("shared");
@@ -235,6 +235,20 @@ mod tests {
             plugin_type: ModLoaderType::Forge,
             plugins_version: Default::default(),
         };
+        assert_eq!(
+            resolve(
+                &MemorySettings::Custom {
+                    maximum_mib: 1536,
+                    initial_mib: Some(1200)
+                },
+                0,
+                &instance,
+                &instance_dir,
+                false
+            )
+            .unwrap(),
+            (1024, Some(1024))
+        );
         let available = 8 * 1_073_741_824;
         let isolated = resolve(
             &MemorySettings::Auto,

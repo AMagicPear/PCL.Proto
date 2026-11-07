@@ -1,12 +1,8 @@
 use super::*;
-use super::{
-    installation::command_output,
-    preference::{InstanceJavaSettings, JavaPreference},
-    requirements::JavaRequirements,
-    scanner as discovery,
-};
+use super::{installation::command_output, requirements::JavaRequirements, scanner as discovery};
 use crate::utils::platform::{OS, compatibility_for};
 use serde_json::json;
+use std::time::Duration;
 use std::{
     collections::BTreeSet,
     fs,
@@ -201,7 +197,7 @@ fn candidate_sorting_prefers_the_lowest_compatible_major_and_native_architecture
         runtime("21.0.1", "Eclipse", true),
         runtime("21.0.7", "Eclipse", true),
     ];
-    list.sort_by(preference::candidate_order);
+    list.sort_by(candidate_order);
     assert_eq!(
         list.iter()
             .map(|j| (j.version.as_str(), j.vendor(), j.is_jdk()))
@@ -217,7 +213,7 @@ fn candidate_sorting_prefers_the_lowest_compatible_major_and_native_architecture
     let native = runtime("21.0.1", "Azul", true);
     let mut translated = runtime("21.0.8", "Eclipse", true);
     translated.installation.compatibility = Compatibility::Translation;
-    assert!(preference::candidate_order(&native, &translated).is_lt());
+    assert!(candidate_order(&native, &translated).is_lt());
 }
 
 #[test]
@@ -313,14 +309,6 @@ fn relative_and_manifest_links_cannot_escape_their_roots() {
     let executable = root.join("runtime/bin").join(java_binary());
     fs::create_dir_all(executable.parent().unwrap()).unwrap();
     fs::write(&executable, b"java").unwrap();
-    assert_eq!(
-        preference::relative_java(&root, Path::new(&format!("runtime/bin/{}", java_binary())))
-            .unwrap(),
-        executable.canonicalize().unwrap()
-    );
-    for path in [Path::new("../outside"), executable.as_path()] {
-        assert!(preference::relative_java(&root, path).is_err());
-    }
     let link = root.join("legal/license");
     assert_eq!(
         install::link_target(&root, &link, "../lib/license").unwrap(),
@@ -334,7 +322,6 @@ fn relative_and_manifest_links_cannot_escape_their_roots() {
         let outside = temp.0.join("outside");
         fs::write(&outside, b"outside").unwrap();
         std::os::unix::fs::symlink(&outside, root.join("symlink")).unwrap();
-        assert!(preference::relative_java(&root, Path::new("symlink")).is_err());
         std::os::unix::fs::symlink(&root, root.join("cycle")).unwrap();
         assert_eq!(discovery::discover_paths(vec![root]).len(), 1);
     }
@@ -355,119 +342,6 @@ fn fake_java(root: &Path, version: &str, vendor: &str) -> JavaEntry {
     .unwrap();
     fs::write(bin.join("javac"), b"fixture").unwrap();
     JavaEntry::probe(&path).unwrap()
-}
-
-#[cfg(unix)]
-#[test]
-fn selection_reprobes_overrides_warns_and_falls_back_from_disabled_or_missing_paths() {
-    let temp = TestDirectory::new();
-    let java21 = fake_java(&temp.0.join("jdk21"), "21.0.7", "Azul");
-    let java25 = fake_java(&temp.0.join("jdk25"), "25.0.1", "Eclipse");
-    let known = vec![java21.clone(), java25.clone()];
-    assert!(preference::is_game_set_64_bit(
-        &known,
-        Some(&java21.java_exe),
-        &JavaPreference::Global
-    ));
-    assert!(preference::is_game_set_64_bit(
-        &known,
-        None,
-        &JavaPreference::Auto
-    ));
-    assert!(!preference::is_game_set_64_bit(
-        &known,
-        None,
-        &JavaPreference::Existing {
-            java_exe: temp.0.join("missing")
-        }
-    ));
-    let req = requirements(25, 999);
-    let (automatic, warnings) =
-        preference::select(&known, None, &InstanceJavaSettings::default(), &req);
-    assert_eq!(automatic.unwrap().major_version(), 25);
-    assert!(warnings.is_empty());
-    let (explicit, warnings) = preference::select(
-        &known,
-        Some(&java21.java_exe),
-        &InstanceJavaSettings::default(),
-        &req,
-    );
-    assert_eq!(explicit.unwrap().major_version(), 21);
-    assert_eq!(
-        warnings[0].key,
-        "Minecraft.Launch.Java.Compatibility.GlobalSelectedOutOfRange"
-    );
-    let settings = InstanceJavaSettings {
-        preference: JavaPreference::Existing {
-            java_exe: java25.java_exe.clone(),
-        },
-        ignore_compatibility: false,
-    };
-    assert_eq!(
-        preference::select(&known, Some(&java21.java_exe), &settings, &req)
-            .0
-            .unwrap()
-            .major_version(),
-        25
-    );
-    let mut disabled = java21.clone();
-    disabled.is_enabled = false;
-    assert_eq!(
-        preference::select(
-            &[disabled, java25.clone()],
-            Some(&java21.java_exe),
-            &InstanceJavaSettings::default(),
-            &req
-        )
-        .0
-        .unwrap()
-        .major_version(),
-        25
-    );
-    let missing = InstanceJavaSettings {
-        preference: JavaPreference::Existing {
-            java_exe: temp.0.join("missing"),
-        },
-        ignore_compatibility: false,
-    };
-    assert_eq!(
-        preference::select(&known, None, &missing, &req)
-            .0
-            .unwrap()
-            .major_version(),
-        25
-    );
-    // The probed version is authoritative; there is no separate cached major
-    // that could disagree with it.
-    let mut relabeled = java21.clone();
-    relabeled.installation.version = "25".into();
-    assert!(
-        preference::select(&[relabeled], None, &InstanceJavaSettings::default(), &req)
-            .0
-            .is_none(),
-        "Java 21 does not satisfy a Java 25 requirement"
-    );
-    let ignored = InstanceJavaSettings {
-        ignore_compatibility: true,
-        ..Default::default()
-    };
-    assert!(
-        preference::select(&known, Some(&java21.java_exe), &ignored, &req)
-            .1
-            .is_empty()
-    );
-    let auto = InstanceJavaSettings {
-        preference: JavaPreference::Auto,
-        ..Default::default()
-    };
-    assert_eq!(
-        preference::select(&known, Some(&java21.java_exe), &auto, &req)
-            .0
-            .unwrap()
-            .major_version(),
-        21,
-        "CE's Auto preference still falls through to the global override"
-    );
 }
 
 #[test]
@@ -595,9 +469,14 @@ mod download_tests {
         let mirror = mirror(false, false, false).await;
         let mut req = requirements(25, 999);
         req.component = Some("java-runtime-epsilon".into());
-        let runtime = install::install(req, temp.0.clone(), mirror.bases.clone(), |_| {})
-            .await
-            .unwrap();
+        let runtime = install::install(
+            req,
+            temp.0.clone(),
+            crate::io::download::Downloader::with_bases(mirror.bases.clone()),
+            |_| {},
+        )
+        .await
+        .unwrap();
         assert_eq!(runtime.major_version(), 25);
         assert!(runtime.is_enabled);
         assert!(!runtime.is_jdk());
@@ -623,7 +502,7 @@ mod download_tests {
                 install::install(
                     requirements(25, 999),
                     temp.0.clone(),
-                    mirror.bases.clone(),
+                    crate::io::download::Downloader::with_bases(mirror.bases.clone()),
                     |_| {}
                 )
                 .await
@@ -645,7 +524,7 @@ mod download_tests {
         let task = tokio::spawn(install::install(
             requirements(25, 999),
             temp.0.clone(),
-            mirror.bases.clone(),
+            crate::io::download::Downloader::with_bases(mirror.bases.clone()),
             progress,
         ));
         tokio::time::timeout(Duration::from_secs(5), started.notified())
@@ -752,9 +631,7 @@ async fn official_native_java25_install_smoke() {
     let runtime = install::install(
         req,
         temp.0.clone(),
-        crate::io::net::http::api_client::ApiBases::new(
-            &crate::io::net::http::api_client::ApiProvider::Official,
-        ),
+        crate::io::download::Downloader::default(),
         |_| {},
     )
     .await

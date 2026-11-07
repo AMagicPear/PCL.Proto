@@ -206,7 +206,7 @@ async fn official_vanilla_install_with_custom_name() {
     let root = std::env::temp_dir().join(format!("pcl-install-smoke-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();
     let client = MinecraftApiClient::new(
-        reqwest::Client::new(),
+        crate::io::download::Downloader::default(),
         &crate::io::net::http::api_client::ApiProvider::Official,
     );
     let result = install_version_for_test(
@@ -342,7 +342,7 @@ async fn maven_libraries_are_verified_and_published_before_launch() {
         ]),
         false,
     );
-    let downloader = Downloader::with_bases(server.client().api_bases_async().await);
+    let downloader = server.client().downloader().await;
     let root = std::env::temp_dir().join(format!("pcl-maven-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();
     let download = json!({"sha1":"a".repeat(40),"size":1,"url":"https://example.org/file"});
@@ -401,7 +401,10 @@ async fn maven_libraries_are_verified_and_published_before_launch() {
 #[ignore = "Downloads official Fabric profile libraries into a temporary directory"]
 async fn official_fabric_maven_libraries_smoke() {
     use crate::io::net::http::api_client::{ApiProvider, FabricFamily};
-    let client = MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::Official);
+    let client = MinecraftApiClient::new(
+        crate::io::download::Downloader::default(),
+        &ApiProvider::Official,
+    );
     for (game, version, family) in [
         ("1.20.1", "0.16.14", FabricFamily::Fabric),
         ("1.12.2", "0.20.1", FabricFamily::Legacyfabric),
@@ -485,7 +488,10 @@ async fn official_fabric_install(
     let root = std::env::temp_dir().join(format!("pcl-fabric-full-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();
     let result: anyhow::Result<()> = async {
-        let client = MinecraftApiClient::new(reqwest::Client::new(), &ApiProvider::Official);
+        let client = MinecraftApiClient::new(
+            crate::io::download::Downloader::default(),
+            &ApiProvider::Official,
+        );
         let choice = LoaderInstall {
             family: match family {
                 crate::io::net::http::api_client::FabricFamily::Fabric => LoaderFamily::Fabric,
@@ -530,9 +536,7 @@ async fn official_fabric_install(
             Arc::new(runtime),
             directory,
         ))?;
-        let natives = option
-            .prepare_natives(&Downloader::with_bases(client.api_bases_async().await))
-            .await?;
+        let natives = option.prepare_natives(&client.downloader().await).await?;
         ensure!(
             option.launch_checked()?.wait()?.success(),
             "Fake Java failed"
@@ -725,7 +729,7 @@ async fn launch_preparation_selects_java_classifier_and_isolates_natives() {
     assert_eq!(fs::read(repaired.join("native.bin")).unwrap(), b"32");
     fs::remove_file(root.join("libraries/test/32.jar")).unwrap();
     let mirror = MockMirror::new([("/maven/test/32.jar".into(), archive32)].into(), false);
-    let downloader = Downloader::with_bases(mirror.client().api_bases_async().await);
+    let downloader = mirror.client().downloader().await;
     let downloaded = prepare_launch_libraries(&details, &root, &root, &x86, &downloader, true)
         .await
         .unwrap();
@@ -1117,7 +1121,7 @@ async fn full_install_retries_publishes_custom_name_and_reuses_verified_cache() 
     assert_eq!(instances.len(), 1, "the same repository sees new installs");
     assert_eq!(instances[0].version, "1.test");
     let details = instances[0].read_version_json().unwrap();
-    let downloader = Downloader::with_bases(client.api_bases_async().await);
+    let downloader = client.downloader().await;
     prepare_legacy_assets(&details, &root, &root, &downloader, true)
         .await
         .unwrap();
@@ -1289,7 +1293,7 @@ async fn tampered_version_json_fails_before_downloading_files() {
 #[ignore = "Fetches official version JSON and asset indexes; run explicitly"]
 async fn official_metadata_across_generations() {
     let client = MinecraftApiClient::new(
-        reqwest::Client::new(),
+        crate::io::download::Downloader::default(),
         &crate::io::net::http::api_client::ApiProvider::Official,
     );
     let root = std::env::temp_dir().join(format!("pcl-metadata-smoke-{}", uuid::Uuid::new_v4()));

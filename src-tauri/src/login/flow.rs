@@ -1,10 +1,11 @@
 //! 登录流程编排：复用、刷新与重新认证，对照 CE 的 `ProfileService.AuthenticateAsync`。
 
 use super::{LoginRequest, Ui, cancelled};
+use crate::config::manager::ConfigManager;
 use crate::config::profiles as service;
 use crate::config::profiles::blocking;
 use pcl_core::minecraft::profile::auth::{
-    AuthError, AuthResult, AuthenticationResult, authlib, connect, microsoft,
+    AuthError, AuthResult, AuthenticationResult, authlib, connect,
 };
 use pcl_core::minecraft::profile::{McProfile, ProfileType};
 
@@ -142,7 +143,7 @@ pub async fn login_for_launch(profile: &McProfile, force_refresh: bool) -> AuthR
 /// 皮肤上传这类接口可能在令牌“未过期但已被服务器拒绝”时返回 401，
 /// CE 的做法是重跑登录加载器；这里直接刷新，避免在没有界面时要求重新登录。
 pub async fn refresh_microsoft(profile: &McProfile) -> AuthResult<McProfile> {
-    let provider = microsoft::MicrosoftProvider::new()?;
+    let provider = crate::secrets::microsoft_provider()?;
     let oauth = provider.refresh_oauth(&profile.refresh_token).await?;
     let result = provider.complete(&oauth).await?;
     let existing = profile.clone();
@@ -150,7 +151,7 @@ pub async fn refresh_microsoft(profile: &McProfile) -> AuthResult<McProfile> {
 }
 
 async fn microsoft_login(ui: &Ui) -> AuthResult<AuthenticationResult> {
-    let provider = microsoft::MicrosoftProvider::new()?;
+    let provider = crate::secrets::microsoft_provider()?;
     let data = provider.device_code().await?;
     let oauth = ui
         .device_code(&data, || provider.poll_device_code(&data))
@@ -205,8 +206,13 @@ async fn connect_login(
         .ok_or_else(|| AuthError::configuration("Yggdrasil Connect 缺少发现地址"))?
         .to_owned();
     let client = connect::Connect::new(
+        ConfigManager::instance().api_client.http_client(),
         &discovery,
-        request.client_id.as_deref(),
+        crate::secrets::connect_client_id(
+            request.client_id.as_deref(),
+            request.server.as_deref().unwrap_or(&discovery),
+        )
+        .as_deref(),
         request.server.as_deref(),
     )
     .await?;
@@ -236,7 +242,7 @@ async fn refresh(
 ) -> AuthResult<AuthenticationResult> {
     match profile.profile_type {
         ProfileType::Microsoft => {
-            let provider = microsoft::MicrosoftProvider::new()?;
+            let provider = crate::secrets::microsoft_provider()?;
             let oauth = provider.refresh_oauth(&profile.refresh_token).await?;
             provider.complete(&oauth).await
         }
@@ -249,8 +255,13 @@ async fn refresh(
                 AuthError::configuration("Yggdrasil Connect profile has no discovery address.")
             })?;
             let client = connect::Connect::new(
+                ConfigManager::instance().api_client.http_client(),
                 &discovery,
-                request.client_id.as_deref(),
+                crate::secrets::connect_client_id(
+                    request.client_id.as_deref(),
+                    profile.server.as_deref().unwrap_or(&discovery),
+                )
+                .as_deref(),
                 profile.server.as_deref(),
             )
             .await?;
@@ -282,6 +293,7 @@ async fn refresh(
 
 fn authlib_provider(profile: &McProfile) -> AuthResult<authlib::AuthlibProvider> {
     authlib::AuthlibProvider::new(
+        ConfigManager::instance().api_client.http_client(),
         profile
             .server
             .as_deref()
@@ -292,7 +304,7 @@ fn authlib_provider(profile: &McProfile) -> AuthResult<authlib::AuthlibProvider>
 
 /// 登录前跟随 `X-Authlib-Injector-Api-Location`，对照 CE 的 `ApiLocation.TryRequestAsync`。
 async fn authlib_provider_for_server(server: &str) -> AuthResult<authlib::AuthlibProvider> {
-    let client = pcl_core::minecraft::profile::auth::http_client()?;
+    let client = ConfigManager::instance().api_client.http_client();
     let api_root = authlib::resolve_api_location(&client, server).await;
-    authlib::AuthlibProvider::new(&api_root)
+    authlib::AuthlibProvider::new(client, &api_root)
 }

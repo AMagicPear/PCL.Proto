@@ -93,7 +93,7 @@ The launcher core is a standalone crate at `crates/pcl-core`, usable to build an
 pcl-core = { git = "https://github.com/PCL-Community/PCL.Proto", rev = "<commit>" }
 ```
 
-See the [core crate guide](crates/pcl-core/README.md) for runtime paths, credential injection,
+See the [core crate guide](crates/pcl-core/README.md) for explicit HTTP clients, credentials,
 launch inputs, and the optional `pcl-assets` files.
 
 ## Credits
@@ -126,6 +126,6 @@ launch inputs, and the optional `pcl-assets` files.
 
 ### Localization
 
-[应用多语言方案与文案约定](docs/LOCALIZATION.md)
+[应用多语言方案与文案约定](docs/DEVELOPMENT.md#应用多语言)
 
 [Code organization and maintenance boundaries](docs/ARCHITECTURE.md)
