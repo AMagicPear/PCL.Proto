@@ -358,7 +358,8 @@ impl ConfigManager {
                 ConfigManagerError::ConfigFileCorrupted
             }
         })?;
-        let input = serde_yaml::from_slice::<serde_yaml::Value>(&bytes).unwrap_or_default();
+        let input = serde_yaml::from_slice::<serde_yaml::Value>(super::strip_bom(&bytes))
+            .unwrap_or_default();
         let mut rewrite =
             input.get("config_version").and_then(|v| v.as_u64()) != Some(CONFIG_VERSION);
         let mut fields = serde_yaml::Value::Mapping(Default::default());

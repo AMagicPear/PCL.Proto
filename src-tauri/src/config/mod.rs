@@ -21,3 +21,8 @@ pub mod states;
 
 pub use java::active_instance as current_instance;
 pub use states::WindowSettings;
+
+/// serde_yaml 会把 UTF-8 BOM 当成第二个空文档而拒绝整个文件，CE 写出的配置常带 BOM。
+pub(crate) fn strip_bom(bytes: &[u8]) -> &[u8] {
+    bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(bytes)
+}

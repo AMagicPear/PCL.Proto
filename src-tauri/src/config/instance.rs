@@ -5,6 +5,7 @@ use super::{
     java_preference::{InstanceJavaSettings, JavaPreference},
     launch_settings::InstanceLaunchSettings,
     memory::{MemoryCustom, MemorySettings, MemorySnapshot},
+    strip_bom,
 };
 use serde::{Serialize, de::DeserializeOwned};
 use serde_yaml::{Mapping, Value};
@@ -57,15 +58,20 @@ impl InstanceConfig {
             }
         }
         let values = match fs::read(&path) {
-            Ok(bytes) => match serde_yaml::from_slice::<Value>(&bytes)
+            Ok(bytes) => match serde_yaml::from_slice::<Value>(strip_bom(&bytes))
                 .map_err(|error| format!("{}: {error}", path.display()))?
             {
                 Value::Mapping(values) => values,
                 Value::Null
-                    if String::from_utf8_lossy(&bytes).lines().all(|line| {
-                        let line = line.trim().trim_start_matches('\u{feff}');
-                        line.is_empty() || line.starts_with('#') || line == "---" || line == "..."
-                    }) =>
+                    if String::from_utf8_lossy(strip_bom(&bytes))
+                        .lines()
+                        .all(|line| {
+                            let line = line.trim();
+                            line.is_empty()
+                                || line.starts_with('#')
+                                || line == "---"
+                                || line == "..."
+                        }) =>
                 {
                     Mapping::new()
                 }
