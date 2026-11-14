@@ -209,7 +209,6 @@ pub struct ConfigManager {
     config_dir: PathBuf,
     pub app_state: Arc<Mutex<AppState>>,
     pub api_client: MinecraftApiClient,
-    pub pcl_identifier: String,
 }
 
 #[derive(Debug)]
@@ -217,7 +216,6 @@ pub enum ConfigManagerError {
     ConfigDirNotFound,
     ConfigFileNotFound,
     ConfigFileCorrupted,
-    IdentifierFailure,
     ApiClientBuildError,
 }
 
@@ -241,17 +239,6 @@ impl ConfigManager {
             fs::create_dir_all(config_dir).map_err(|_| ConfigManagerError::ConfigDirNotFound)?;
         }
         let config_path = config_dir.join("config.yml");
-        let identifier_path = config_dir.join("pcl_identifier.txt");
-        let pcl_identifier = if identifier_path.exists() {
-            fs::read_to_string(identifier_path)
-                .map_err(|_| ConfigManagerError::IdentifierFailure)?
-        } else {
-            let pcl_identifier = crate::identity::Identify::launcher_id()
-                .map_err(|_| ConfigManagerError::IdentifierFailure)?;
-            fs::write(identifier_path, pcl_identifier.clone())
-                .map_err(|_| ConfigManagerError::IdentifierFailure)?;
-            pcl_identifier
-        };
         let instance = Self {
             config_path,
             config_dir: config_dir.to_path_buf(),
@@ -262,7 +249,6 @@ impl ConfigManager {
                 pcl_core::io::net::http::HttpTransport::new(client, http1)
             })
             .with_curseforge_api_key(crate::secrets::CURSEFORGE_API_KEY.as_deref()),
-            pcl_identifier,
         };
         instance.load_or_init(
             super::paths::launcher_minecraft_directory().as_deref(),
@@ -647,7 +633,6 @@ mod java_config_tests {
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
             api_client: MinecraftApiClient::new(pcl_core::io::net::http::HttpTransport::default()),
-            pcl_identifier: String::new(),
         };
         let custom = WindowSettings {
             mode: WindowMode::Custom,
@@ -694,7 +679,6 @@ mod java_config_tests {
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
             api_client: MinecraftApiClient::new(pcl_core::io::net::http::HttpTransport::default()),
-            pcl_identifier: String::new(),
         };
         fs::write(&path, b"broken: [").unwrap();
         manager.load_or_init(None, None).unwrap();
@@ -830,7 +814,6 @@ mod java_config_tests {
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
             api_client: MinecraftApiClient::new(pcl_core::io::net::http::HttpTransport::default()),
-            pcl_identifier: String::new(),
         });
         fs::create_dir(&path).unwrap();
         assert!(
@@ -882,7 +865,6 @@ mod java_config_tests {
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
             api_client: MinecraftApiClient::new(pcl_core::io::net::http::HttpTransport::default()),
-            pcl_identifier: String::new(),
         };
         manager.add_repository("Games", &repo).unwrap();
         assert!(manager.add_repository("Other", &repo.join(".")).is_err());
@@ -922,7 +904,6 @@ mod java_config_tests {
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
             api_client: MinecraftApiClient::new(pcl_core::io::net::http::HttpTransport::default()),
-            pcl_identifier: String::new(),
         };
         let first = DownloadSettings {
             max_connections: 17,
@@ -1002,7 +983,6 @@ mod java_config_tests {
                 ..Default::default()
             })),
             api_client: MinecraftApiClient::new(pcl_core::io::net::http::HttpTransport::default()),
-            pcl_identifier: String::new(),
         };
         assert!(
             !manager
@@ -1054,7 +1034,6 @@ mod java_config_tests {
             config_dir: root.clone(),
             app_state: Arc::new(Mutex::new(AppState::default())),
             api_client: MinecraftApiClient::new(pcl_core::io::net::http::HttpTransport::default()),
-            pcl_identifier: String::new(),
         };
         assert_eq!(manager.update_log_max_lines(500).unwrap(), 500);
         assert_eq!(manager.update_log_max_lines(100).unwrap(), 100);

@@ -27,9 +27,9 @@ pub async fn system_fonts() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
-/// 获取今日人品，只考虑到日期
+/// 根据日期与联机机器码获取今日人品。
 pub fn get_lucky_today() -> u8 {
-    let identifier = &crate::config::manager::ConfigManager::instance().pcl_identifier;
+    let identifier = pcl_core::link::machine_id();
     let now = chrono::Local::now();
     let str1 = format!("asdfgbn{}12#3$45{}IUY", now.day(), now.year());
     let hash1 = get_pcl_hash(&str1);

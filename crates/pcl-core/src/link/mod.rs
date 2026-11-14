@@ -4,6 +4,9 @@ pub mod mcping;
 #[cfg(feature = "link")]
 pub mod scaffolding;
 
+#[cfg(feature = "link")]
+pub use terracotta::machine_id;
+
 /// Initialize the optional Terracotta bridge with a host-owned identity file.
 #[cfg(feature = "link")]
 pub fn init(identifier_path: std::path::PathBuf) {

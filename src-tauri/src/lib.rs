@@ -13,7 +13,6 @@ mod assets;
 mod commands;
 mod config;
 mod external;
-mod identity;
 mod link;
 mod login;
 mod protocol;
@@ -56,7 +55,7 @@ pub fn run() {
             if let Ok(config_manager) = crate::config::manager::CONFIG_MANAGER.as_ref() {
                 app.manage(Arc::clone(&config_manager.app_state));
                 app.manage(&config_manager.api_client);
-                // 联机机器码独立存放，避免 launcher id 文件长度变化时被 Terracotta 覆写。
+                // 启动器与联机共用同一个机器码。
                 pcl_core::link::init(crate::config::link::machine_id_path(config_manager.config_dir()));
             } else {
                 log::error!("Config manager failed: {:?}", crate::config::manager::CONFIG_MANAGER.as_ref().err());

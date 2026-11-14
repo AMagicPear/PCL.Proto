@@ -48,7 +48,7 @@ impl LinkState {
     }
 }
 
-/// 沿用旧 Terracotta 的 16 字节身份，同时分离启动器自己的标识文件。
+/// 兼容旧版保存在 pcl_identifier.txt 中的 16 字节联机机器码。
 pub fn machine_id_path(config_dir: &std::path::Path) -> std::path::PathBuf {
     use std::io::Write;
     let path = config_dir.join("link_machine_id.bin");
